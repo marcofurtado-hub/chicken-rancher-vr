@@ -1,0 +1,3302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>chicken rancher VR — defenda as galinhas</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Helvetica Neue','Segoe UI',Arial,sans-serif;user-select:none;-webkit-user-select:none}
+canvas{display:block}
+
+#err{position:fixed;bottom:0;left:0;right:0;background:#600;color:#fff;font-family:monospace;font-size:12px;padding:10px;z-index:40;display:none;white-space:pre-wrap;word-break:break-word;max-height:40vh;overflow:auto}
+#err.show{display:block}
+#start{position:fixed;inset:0;background:radial-gradient(ellipse at center,#08300a 0%,#000 100%);z-index:30;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:20px;color:#fff;text-align:center;cursor:pointer;touch-action:manipulation;overflow-y:auto}
+#start h1{font-size:72px;letter-spacing:5px;color:#80ff40;text-shadow:0 0 30px rgba(128,255,64,0.85),0 0 60px rgba(64,200,40,0.4);margin-bottom:6px;font-family:'Impact','Arial Black',sans-serif}
+#start .sub{color:#a8e890;font-size:13px;letter-spacing:4px;margin-bottom:24px;opacity:0.9}
+#start .panel{background:rgba(8,30,8,0.7);border:1px solid rgba(128,255,64,0.4);padding:18px 28px;max-width:600px;text-align:left;line-height:1.65;font-size:14px;color:#cfcfcf;border-radius:6px;box-shadow:0 0 40px rgba(128,255,64,0.15)}
+#start .panel b{color:#a8e890}
+#start .panel .red{color:#ff6060}
+#start .panel .yel{color:#ffd040}
+#start .panel ul{margin:6px 0 6px 18px}
+#start .panel li{margin:2px 0}
+#start .hint{color:#888;font-size:12px;margin-top:14px;letter-spacing:1px}
+#start .hint b{color:#80ff40}
+
+#hud{position:fixed;top:6px;left:8px;color:#666;font-size:10px;font-family:monospace;pointer-events:none;z-index:5;text-shadow:0 0 4px #000;opacity:0.5}
+#instr{position:fixed;top:80px;left:50%;transform:translateX(-50%);color:#fff;font-size:15px;background:rgba(0,0,0,0.65);padding:10px 20px;border-radius:6px;letter-spacing:1px;z-index:6;pointer-events:none;display:none;border:1px solid rgba(128,255,64,0.4);text-align:center}
+#instr.show{display:block}
+#wave-banner{position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);color:#ffd040;font-family:'Impact','Arial Black',sans-serif;font-size:80px;letter-spacing:8px;text-shadow:0 0 30px rgba(255,208,64,0.9),0 0 60px rgba(255,140,40,0.5);z-index:7;pointer-events:none;opacity:0;transition:opacity 0.4s;text-align:center;line-height:1}
+#wave-banner.show{opacity:1}
+#wave-banner .sub{font-family:sans-serif;font-size:22px;color:#fff;letter-spacing:6px;margin-top:8px;display:block;text-shadow:0 0 10px #000}
+#wave-banner .weapon{font-family:sans-serif;font-size:32px;color:#80ff40;letter-spacing:6px;margin-top:14px;display:block;text-shadow:0 0 14px rgba(128,255,64,0.8)}
+#score-d{position:fixed;top:14px;right:14px;color:#fff;font-size:18px;background:linear-gradient(135deg,rgba(8,30,8,0.85),rgba(4,20,4,0.85));padding:10px 18px;border-radius:6px;letter-spacing:2px;z-index:6;pointer-events:none;display:none;border:1px solid rgba(128,255,64,0.5);font-family:'Impact','Arial Black',sans-serif;box-shadow:0 0 20px rgba(128,255,64,0.25);min-width:220px}
+#score-d.show{display:block}
+#score-d .label{font-size:10px;color:#a8e890;letter-spacing:3px;display:block;margin-bottom:2px}
+#score-d .row{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+#score-d .row b{color:#fff;font-size:18px}
+#score-d .row .small{color:#888;font-size:13px}
+#score-d #sd-weapon{color:#80ff40}
+
+#crosshair{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border:2px solid rgba(255,255,255,0.6);border-radius:50%;z-index:6;pointer-events:none;display:none}
+#crosshair.show{display:block}
+#crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.6)}
+#crosshair::before{left:-6px;top:50%;width:4px;height:1px;transform:translateY(-50%)}
+#crosshair::after{right:-6px;top:50%;width:4px;height:1px;transform:translateY(-50%)}
+
+#hurt-flash{position:fixed;inset:0;pointer-events:none;z-index:24;background:radial-gradient(ellipse at center,transparent 25%,rgba(220,40,40,0.55) 100%);opacity:0;transition:opacity 0.15s}
+#hurt-flash.show{opacity:1}
+
+#go{position:fixed;inset:0;pointer-events:none;z-index:25;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;opacity:0;transition:opacity 0.5s;background:radial-gradient(ellipse at center,rgba(40,4,4,0.7) 0%,rgba(0,0,0,0.85) 100%)}
+#go.show{opacity:1}
+#go h2{font-family:'Impact','Arial Black',sans-serif;font-size:80px;letter-spacing:8px;color:#ff4040;text-shadow:0 0 30px rgba(255,80,80,0.9)}
+#go p{margin-top:8px;color:#fff;font-size:15px;letter-spacing:3px}
+
+#win{position:fixed;inset:0;pointer-events:none;z-index:25;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;opacity:0;transition:opacity 0.5s}
+#win.show{opacity:1}
+#win h2{font-family:'Impact','Arial Black',sans-serif;font-size:80px;letter-spacing:8px;color:#ffd040;text-shadow:0 0 30px rgba(255,208,64,0.9),0 0 60px rgba(255,140,40,0.5)}
+#win p{margin-top:8px;color:#fff;font-size:15px;letter-spacing:3px;text-shadow:0 0 10px #000}
+</style>
+</head>
+<body>
+
+<div id="err"></div>
+
+<script>
+// Catch any error early — show it on screen so it's debuggable on Quest browser
+(function(){
+  function showErr(msg){
+    const el = document.getElementById('err');
+    if (!el) { document.body.insertAdjacentHTML('beforeend', '<div id="err" style="position:fixed;bottom:0;left:0;right:0;background:#600;color:#fff;font-family:monospace;font-size:12px;padding:10px;z-index:40;white-space:pre-wrap;max-height:40vh;overflow:auto">' + msg + '</div>'); return; }
+    el.textContent += msg + '\n';
+    el.classList.add('show');
+  }
+  window.addEventListener('error', e => {
+    const stack = e.error?.stack ? '\n' + e.error.stack.split('\n').slice(0,3).join('\n') : '';
+    showErr('ERR: ' + (e.message || 'unknown') + ' @ ' + (e.filename ? e.filename.split('/').pop() : '?') + ':' + (e.lineno || '?') + ':' + (e.colno || '?') + stack);
+  });
+  window.addEventListener('unhandledrejection', e => {
+    showErr('REJECT: ' + (e.reason?.message || e.reason || 'unknown'));
+  });
+  window.__showErr = showErr;
+})();
+</script>
+
+<div id="start">
+  <h1>CHICKEN&nbsp;RANCHER</h1>
+  <div class="sub">QUEST 2 · WEBXR · WAVES + ARMAS + BOSSES</div>
+  <div class="panel">
+    Você está numa <b>cadeira de rodas na varanda</b>. Mini-UFOs alienígenas tentam abduzir suas <b class="yel">5 galinhas</b> com feixe de luz. Atire neles antes.<br><br>
+    <b>5 waves crescentes — cada uma melhora sua arma:</b>
+    <ul>
+      <li><b>Wave 1</b> — 🪨 Estilingue (puxa & solta)</li>
+      <li><b>Wave 2</b> — 🏹 Besta horizontal (puxa a corda & solta a flecha)</li>
+      <li><b>Wave 3</b> — 💥 Escopeta (12 pellets)</li>
+      <li><b>Wave 4</b> — 🔥 Gatling (6 canos giratórios — segura)</li>
+      <li><b>Wave 5</b> — ⚡ Laser (feixe contínuo — segura)</li>
+    </ul>
+    <b class="red">Cada wave tem um BOSS</b> — UFO gigante com HP, abduz mais rápido e exige tiros consecutivos pra cair.<br><br>
+    <b>VR — Estilingue / Besta:</b> mão direita segura a arma, leve a esquerda até a corda/saquinho, <b>aperte trigger esquerdo</b>, puxe pra trás e <b>solte</b> pra disparar.<br>
+    <b>VR — Escopeta / Gatling / Laser:</b> mão direita aponta, <b>trigger direito</b>. Gatling/Laser = segurar.<br>
+    <b>Desktop:</b> mouse mira, <b>clique</b> atira (segura pra metralhadora/laser).<br>
+    <b>📱 Mobile:</b> arraste o dedo pra mirar, <b>toque</b> pra atirar (segura pra metralhadora/laser).<br>
+    <b>Movimento:</b> sentado e parado. Thumbstick direito vira (snap). <b>Sem vertigem</b>.<br>
+    <b>Desktop:</b> mouse mira, <b>clique</b> atira (segurar = metralhadora). <b>Espaço</b> começa próxima wave.
+  </div>
+  <div class="hint"><b>VR (Quest 2):</b> toque na tela e aperte <b>ENTER VR</b>.<br><b>Desktop / mobile:</b> toque/clique aqui pra começar.</div>
+</div>
+
+<div id="hud"></div>
+<div id="instr"></div>
+<div id="wave-banner"><span class="text">WAVE 1</span><span class="sub">PREPARE-SE</span><span class="weapon">ESTILINGUE</span></div>
+<div id="crosshair"></div>
+<div id="score-d">
+  <span class="label">RANCH</span>
+  <div class="row"><span class="small">WAVE</span><b id="sd-wave">1/5</b></div>
+  <div class="row"><span class="small">🔫 ARMA</span><b id="sd-weapon">ESTILINGUE</b></div>
+  <div class="row"><span class="small">🐔 GALINHAS</span><b id="sd-chk">5/5</b></div>
+  <div class="row"><span class="small">🛸 ABATIDAS</span><b id="sd-kill">0</b></div>
+</div>
+<div id="hurt-flash"></div>
+<div id="go"><h2>GAME OVER</h2><p>Eles levaram suas galinhas</p></div>
+<div id="win"><h2>VITÓRIA!</h2><p>Você salvou o galinheiro</p></div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import {VRButton} from 'three/addons/webxr/VRButton.js';
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+const PORCH_LEVEL = 0.4;
+const YARD_FAR = 18;
+const YARD_NEAR = 1;
+const YARD_HALF_X = 9;
+const PLAYER_Y = PORCH_LEVEL;
+const POUCH_GRAB_DIST = 0.32;          // mais fácil de agarrar
+const SHOT_SPEED_FACTOR = 38;          // estilingue mais forte
+const MAX_SHOT_SPEED = 24;             // tope mais alto
+const SLINGSHOT_MIN_PULL = 0.025;      // libera com puxada bem pequena
+const CROSSBOW_ARROW_SPEED = 38;       // sempre forte e direto (sem gravidade)
+const UFO_HIT_RADIUS = 0.5;
+const TOTAL_CHICKENS = 5;
+
+// Wave config — UFOs ficam menores conforme avança; armas progressivas, todas atiram OVOS
+// spawnDist/spawnH: opcional override; sem isso usa default longe-e-alto
+const WAVES = [
+  { count: 4,  speed: 1.0, beamTime: 7.5, interval: 1.7,  weapon: 'hands',     label: 'OVOS NA MÃO', bossHp: 0,  ufoScale: 1.7,  spawnDist: 3, spawnDistRand: 3, spawnH: 14, spawnHRand: 4, spawnFront: true, descendY: 2.5 },
+  { count: 5,  speed: 1.6, beamTime: 6.0, interval: 1.4,  weapon: 'slingshot', label: 'ESTILINGUE',  bossHp: 3,  ufoScale: 1.45 },
+  { count: 7,  speed: 1.9, beamTime: 5.5, interval: 1.0,  weapon: 'crossbow',  label: 'BESTA',       bossHp: 5,  ufoScale: 1.25 },
+  { count: 11, speed: 2.2, beamTime: 5.0, interval: 0.75, weapon: 'shotgun',   label: 'ESCOPETA',    bossHp: 7,  ufoScale: 1.05 },
+  { count: 16, speed: 2.5, beamTime: 4.5, interval: 0.5,  weapon: 'gatling',   label: 'GATLING',     bossHp: 14, ufoScale: 0.85 },
+  { count: 22, speed: 2.9, beamTime: 4.0, interval: 0.38, weapon: 'laser',     label: 'LASER',       bossHp: 30, ufoScale: 0.7  },
+];
+
+// =============================================================================
+// RENDERER + SCENE
+// =============================================================================
+const renderer = new THREE.WebGLRenderer({antialias:false, powerPreference:'high-performance'});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setClearColor(0x88c8e8);
+renderer.xr.enabled = true;
+try { renderer.xr.setReferenceSpaceType('local-floor'); } catch(e) {}
+document.body.prepend(renderer.domElement);
+
+try {
+  const vrBtn = VRButton.createButton(renderer);
+  vrBtn.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);'
+    + 'z-index:50;background:#80ff40;color:#0a200a;border:4px solid #fff;font-family:inherit;'
+    + 'font-weight:bold;font-size:22px;letter-spacing:4px;border-radius:8px;'
+    + 'padding:18px 44px;cursor:pointer;box-shadow:0 0 40px rgba(128,255,64,0.7);'
+    + 'display:block !important;opacity:1 !important;visibility:visible !important;'
+    + 'min-width:200px;text-align:center;text-decoration:none';
+  document.body.appendChild(vrBtn);
+  // Also add a fallback duplicate at the bottom in case top is hidden
+  if (!('xr' in navigator)) {
+    if (window.__showErr) window.__showErr('navigator.xr não disponível neste browser. Você está no browser do Quest 2? Se for, tente Wolvic ou o Meta Browser oficial.');
+  }
+} catch(e) {
+  if (window.__showErr) window.__showErr('VRButton.createButton falhou: ' + (e.message || e));
+}
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xa8d0e0, 40, 200);
+
+const camera = new THREE.PerspectiveCamera(80, innerWidth/innerHeight, 0.05, 600);
+camera.position.set(0, 1.6, 0);
+const cameraRig = new THREE.Group();
+cameraRig.add(camera);
+cameraRig.position.set(0, PLAYER_Y, 0);
+scene.add(cameraRig);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// =============================================================================
+// LIGHTING + SKY
+// =============================================================================
+const sun = new THREE.DirectionalLight(0xfff0d0, 1.4);
+sun.position.set(60, 80, 30);
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xa8d0e8, 0x40682c, 0.7));
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+
+const skyMat = new THREE.ShaderMaterial({
+  uniforms: {
+    topColor:    { value: new THREE.Color(0x4a98d8) },
+    midColor:    { value: new THREE.Color(0xa8d0e8) },
+    bottomColor: { value: new THREE.Color(0xd8e8c8) }
+  },
+  vertexShader: `varying vec3 vWorld; void main(){ vWorld = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `
+    uniform vec3 topColor; uniform vec3 midColor; uniform vec3 bottomColor;
+    varying vec3 vWorld;
+    void main(){
+      float h = vWorld.y / 300.0;
+      vec3 c = mix(bottomColor, midColor, smoothstep(-0.3, 0.05, h));
+      c = mix(c, topColor, smoothstep(0.05, 0.7, h));
+      gl_FragColor = vec4(c, 1.0);
+    }`,
+  side: THREE.BackSide,
+  fog: false
+});
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(300, 24, 16), skyMat));
+
+const sunDisc = new THREE.Mesh(new THREE.CircleGeometry(8, 24), new THREE.MeshBasicMaterial({color:0xfff2c8, fog:false}));
+sunDisc.position.set(120, 80, 60); sunDisc.lookAt(0, 0, 0); scene.add(sunDisc);
+
+// Nuvens lowpoly — clusters de cubos brancos com tons leves
+const cloudCubeMatBright = new THREE.MeshLambertMaterial({color:0xffffff, fog:false});
+const cloudCubeMatMid    = new THREE.MeshLambertMaterial({color:0xeef0f5, fog:false});
+const cloudCubeMatShade  = new THREE.MeshLambertMaterial({color:0xc8d0dc, fog:false});
+function makeCubeCloud() {
+  const g = new THREE.Group();
+  const cubeCount = 5 + Math.floor(Math.random() * 4); // 5-8 cubos
+  const baseSize = 4 + Math.random() * 5;
+  // Cubo central grande
+  const center = new THREE.Mesh(new THREE.BoxGeometry(baseSize, baseSize * 0.7, baseSize), cloudCubeMatBright);
+  g.add(center);
+  // Cubos satélites em volta, formando silhueta achatada-embaixo, fofa-em-cima
+  for (let i = 0; i < cubeCount; i++) {
+    const sz = baseSize * (0.5 + Math.random() * 0.45);
+    // Distribui em arco superior — cumulus
+    const angle = Math.random() * Math.PI * 2;
+    const radial = baseSize * 0.55;
+    const cx = Math.cos(angle) * radial * (0.7 + Math.random() * 0.5);
+    const cz = Math.sin(angle) * radial * (0.7 + Math.random() * 0.5);
+    const cy = -baseSize * 0.05 + Math.random() * baseSize * 0.5; // bias pra cima
+    // Cor: mais claro no topo, sombra na base (visualmente bonito)
+    const mat = cy > baseSize * 0.15 ? cloudCubeMatBright : (Math.random() < 0.5 ? cloudCubeMatMid : cloudCubeMatShade);
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(sz, sz * 0.75, sz), mat);
+    cube.position.set(cx, cy, cz);
+    cube.rotation.y = Math.random() * Math.PI * 0.3; // leve variação
+    g.add(cube);
+  }
+  return g;
+}
+const clouds = [];
+for (let i = 0; i < 14; i++) {
+  const cloud = makeCubeCloud();
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 80 + Math.random() * 120;
+  cloud.position.set(Math.cos(angle) * dist, 28 + Math.random() * 42, Math.sin(angle) * dist);
+  // Escala variada pra parecer perspectiva natural
+  const s = 0.7 + Math.random() * 0.9;
+  cloud.scale.setScalar(s);
+  scene.add(cloud);
+  clouds.push(cloud);
+}
+
+// =============================================================================
+// GROUND + YARD
+// =============================================================================
+const distantGround = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshLambertMaterial({color:0x4a7a30}));
+distantGround.rotation.x = -Math.PI/2; distantGround.position.y = -0.05;
+scene.add(distantGround);
+
+const yardGrass = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshLambertMaterial({color:0x5a8a35}));
+yardGrass.rotation.x = -Math.PI/2; yardGrass.position.set(0, 0.01, 8);
+scene.add(yardGrass);
+
+function makeGrassTuft(x, z) {
+  const g = new THREE.Group();
+  for (let i = 0; i < 5; i++) {
+    const blade = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.18 + Math.random()*0.1, 0.04),
+      new THREE.MeshLambertMaterial({color: Math.random() < 0.5 ? 0x6a9c40 : 0x4a8030})
+    );
+    blade.position.set((Math.random()-0.5)*0.2, 0.09, (Math.random()-0.5)*0.2);
+    blade.rotation.z = (Math.random()-0.5) * 0.4;
+    g.add(blade);
+  }
+  g.position.set(x, 0, z);
+  return g;
+}
+for (let i = 0; i < 30; i++) scene.add(makeGrassTuft((Math.random()-0.5) * 18, 1.5 + Math.random() * 14));
+
+const dirtMat = new THREE.MeshLambertMaterial({color:0x8a6a40});
+for (let i = 0; i < 4; i++) {
+  const dirt = new THREE.Mesh(new THREE.CircleGeometry(1 + Math.random()*0.6, 12), dirtMat);
+  dirt.rotation.x = -Math.PI/2;
+  dirt.position.set((Math.random()-0.5)*12, 0.02, 3 + Math.random()*10);
+  scene.add(dirt);
+}
+
+const flowerColors = [0xff6080, 0xffd040, 0xff8030, 0xc060d0];
+for (let i = 0; i < 18; i++) {
+  const flower = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 6, 4),
+    new THREE.MeshLambertMaterial({color: flowerColors[Math.floor(Math.random()*flowerColors.length)]})
+  );
+  flower.position.set((Math.random()-0.5) * 17, 0.18, 1.5 + Math.random() * 14);
+  scene.add(flower);
+}
+
+// =============================================================================
+// HOUSE + PORCH
+// =============================================================================
+const houseGroup = new THREE.Group();
+scene.add(houseGroup);
+
+const porchDeckMat = new THREE.MeshLambertMaterial({color:0x9a7848});
+const porchDeck = new THREE.Mesh(new THREE.BoxGeometry(8, PORCH_LEVEL, 4), porchDeckMat);
+porchDeck.position.set(0, PORCH_LEVEL/2, -1.5);
+houseGroup.add(porchDeck);
+
+for (let i = -3.5; i <= 3.5; i += 0.5) {
+  const line = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.005, 4), new THREE.MeshLambertMaterial({color:0x6a5028}));
+  line.position.set(i, PORCH_LEVEL + 0.005, -1.5);
+  houseGroup.add(line);
+}
+
+const railMat = new THREE.MeshLambertMaterial({color:0xe8e0d0});
+const railSide1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 4), railMat);
+railSide1.position.set(-3.96, PORCH_LEVEL + 0.45, -1.5); houseGroup.add(railSide1);
+const railSide2 = railSide1.clone(); railSide2.position.x = 3.96; houseGroup.add(railSide2);
+const railFrontL = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.85, 0.08), railMat);
+railFrontL.position.set(-2.7, PORCH_LEVEL + 0.45, 0.5); houseGroup.add(railFrontL);
+const railFrontR = railFrontL.clone(); railFrontR.position.x = 2.7; houseGroup.add(railFrontR);
+const railTopL = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.06, 0.18), railMat);
+railTopL.position.set(-2.7, PORCH_LEVEL + 0.85, 0.5); houseGroup.add(railTopL);
+const railTopR = railTopL.clone(); railTopR.position.x = 2.7; houseGroup.add(railTopR);
+for (let x = -3.95; x <= -1.5; x += 0.3) {
+  const b = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.85, 0.05), railMat);
+  b.position.set(x, PORCH_LEVEL + 0.45, 0.5); houseGroup.add(b);
+}
+for (let x = 1.5; x <= 3.95; x += 0.3) {
+  const b = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.85, 0.05), railMat);
+  b.position.set(x, PORCH_LEVEL + 0.45, 0.5); houseGroup.add(b);
+}
+
+const postMat = new THREE.MeshLambertMaterial({color:0xe8e0d0});
+const post1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.0, 0.2), postMat);
+post1.position.set(-3.95, 1.5 + PORCH_LEVEL, 0.5); houseGroup.add(post1);
+const post2 = post1.clone(); post2.position.x = 3.95; houseGroup.add(post2);
+const post3 = post1.clone(); post3.position.set(-3.95, 1.5 + PORCH_LEVEL, -3.4); houseGroup.add(post3);
+const post4 = post1.clone(); post4.position.set(3.95, 1.5 + PORCH_LEVEL, -3.4); houseGroup.add(post4);
+
+const porchRoofMat = new THREE.MeshLambertMaterial({color:0x8a3838});
+const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.15, 4.5), porchRoofMat);
+porchRoof.position.set(0, 3.05 + PORCH_LEVEL, -1.5);
+houseGroup.add(porchRoof);
+
+const roofTrim = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.08, 0.12), railMat);
+roofTrim.position.set(0, 3.0 + PORCH_LEVEL, 0.7);
+houseGroup.add(roofTrim);
+
+const wallMat = new THREE.MeshLambertMaterial({color:0xd8c8a0});
+const houseFront = new THREE.Mesh(new THREE.BoxGeometry(8, 4, 0.3), wallMat);
+houseFront.position.set(0, 2, -3.65); houseGroup.add(houseFront);
+
+const doorMat = new THREE.MeshLambertMaterial({color:0x6a3818});
+const door = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2, 0.05), doorMat);
+door.position.set(0, 1, -3.5); houseGroup.add(door);
+const doorKnob = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshLambertMaterial({color:0xd0a830}));
+doorKnob.position.set(0.32, 1, -3.45); houseGroup.add(doorKnob);
+
+function makeWindow(x) {
+  const g = new THREE.Group();
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.0, 0.06), railMat);
+  g.add(frame);
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshLambertMaterial({color:0x80a8c0, emissive:0x102040}));
+  glass.position.z = 0.04; g.add(glass);
+  const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 0.05), railMat); crossH.position.z = 0.045; g.add(crossH);
+  const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.9, 0.05), railMat); crossV.position.z = 0.045; g.add(crossV);
+  g.position.set(x, 1.6, -3.5);
+  return g;
+}
+houseGroup.add(makeWindow(-2.2));
+houseGroup.add(makeWindow(2.2));
+
+const roofPeakMat = new THREE.MeshLambertMaterial({color:0x6a2828});
+const roofPeak = new THREE.Mesh(new THREE.BoxGeometry(8.6, 1.6, 4), roofPeakMat);
+roofPeak.position.set(0, 4.5, -4.6); roofPeak.rotation.x = -0.15;
+houseGroup.add(roofPeak);
+
+const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 0.4), new THREE.MeshLambertMaterial({color:0x8a3838}));
+chimney.position.set(2.8, 5.4, -4.5); houseGroup.add(chimney);
+
+function makeHangingPlant(x) {
+  const g = new THREE.Group();
+  const string = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.5, 4), new THREE.MeshBasicMaterial({color:0x402810}));
+  string.position.y = 0.25; g.add(string);
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.16, 12), new THREE.MeshLambertMaterial({color:0x9a4030}));
+  pot.position.y = -0.08; g.add(pot);
+  for (let i = 0; i < 6; i++) {
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.08 + Math.random()*0.04, 8, 6), new THREE.MeshLambertMaterial({color:0x4a8030}));
+    leaf.position.set((Math.random()-0.5)*0.2, -0.02 + Math.random()*0.06, (Math.random()-0.5)*0.2);
+    g.add(leaf);
+  }
+  g.position.set(x, 2.6 + PORCH_LEVEL, 0.4);
+  return g;
+}
+houseGroup.add(makeHangingPlant(-1.5));
+houseGroup.add(makeHangingPlant(1.5));
+
+// =============================================================================
+// FENCE + BARN + TREES
+// =============================================================================
+function makeFenceSegment(x, z, length, axis) {
+  const g = new THREE.Group();
+  const w = axis === 'x' ? length : 0.06;
+  const d = axis === 'x' ? 0.06 : length;
+  const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, d), railMat);
+  top.position.y = 0.85; g.add(top);
+  const bot = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, d), railMat);
+  bot.position.y = 0.35; g.add(bot);
+  const pickCount = Math.floor(length / 0.25);
+  for (let i = 0; i <= pickCount; i++) {
+    const pos = -length/2 + (i / pickCount) * length;
+    const picket = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.0, 0.04), railMat);
+    if (axis === 'x') picket.position.set(pos, 0.5, 0);
+    else picket.position.set(0, 0.5, pos);
+    g.add(picket);
+  }
+  g.position.set(x, 0, z);
+  return g;
+}
+scene.add(makeFenceSegment(0, YARD_FAR, YARD_HALF_X * 2, 'x'));
+scene.add(makeFenceSegment(YARD_HALF_X, (YARD_NEAR + YARD_FAR)/2, YARD_FAR - YARD_NEAR, 'z'));
+scene.add(makeFenceSegment(-YARD_HALF_X, (YARD_NEAR + YARD_FAR)/2, YARD_FAR - YARD_NEAR, 'z'));
+
+const gatePost1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.4, 0.12), railMat);
+gatePost1.position.set(-1.2, 0.7, YARD_FAR); scene.add(gatePost1);
+const gatePost2 = gatePost1.clone(); gatePost2.position.x = 1.2; scene.add(gatePost2);
+
+const barn = new THREE.Group();
+const barnMat = new THREE.MeshLambertMaterial({color:0xa83030});
+const barnBody = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 6), barnMat);
+barnBody.position.y = 2.5; barn.add(barnBody);
+const barnRoof = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.3, 6.5), new THREE.MeshLambertMaterial({color:0x6a2020}));
+barnRoof.position.y = 5.2; barn.add(barnRoof);
+const barnDoor = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.5, 0.1), new THREE.MeshLambertMaterial({color:0x6a1818}));
+barnDoor.position.set(0, 1.75, 3.0); barn.add(barnDoor);
+const barnCrossV = new THREE.Mesh(new THREE.BoxGeometry(0.15, 3.5, 0.05), new THREE.MeshLambertMaterial({color:0xfafafa}));
+barnCrossV.position.set(0, 1.75, 3.06); barn.add(barnCrossV);
+const barnCrossH = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.15, 0.05), new THREE.MeshLambertMaterial({color:0xfafafa}));
+barnCrossH.position.set(0, 1.75, 3.06); barn.add(barnCrossH);
+const barnWindow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 8), new THREE.MeshLambertMaterial({color:0x303040, emissive:0x101020}));
+barnWindow.position.set(0, 4.2, 3.05); barn.add(barnWindow);
+const vanePost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 6), new THREE.MeshLambertMaterial({color:0x303030}));
+vanePost.position.set(0, 6.0, 0); barn.add(vanePost);
+const vaneRooster = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.1), new THREE.MeshLambertMaterial({color:0x303030}));
+vaneRooster.position.set(0, 6.7, 0); barn.add(vaneRooster);
+barn.position.set(-15, 0, 25); barn.rotation.y = 0.4;
+scene.add(barn);
+
+function makeTree(x, z, scale) {
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 1.6, 8), new THREE.MeshLambertMaterial({color:0x6a4828}));
+  trunk.position.y = 0.8; g.add(trunk);
+  const foliage = new THREE.Mesh(new THREE.SphereGeometry(1.2, 10, 8), new THREE.MeshLambertMaterial({color:0x3a7028}));
+  foliage.position.y = 2.0; foliage.scale.set(1, 1.1, 1); g.add(foliage);
+  const foliage2 = new THREE.Mesh(new THREE.SphereGeometry(0.8, 10, 8), new THREE.MeshLambertMaterial({color:0x4a8030}));
+  foliage2.position.set(0.3, 2.6, 0.2); g.add(foliage2);
+  g.position.set(x, 0, z); g.scale.setScalar(scale);
+  return g;
+}
+scene.add(makeTree(-12, 18, 1.2));
+scene.add(makeTree(11, 22, 1.0));
+scene.add(makeTree(18, 12, 0.9));
+scene.add(makeTree(-18, 8, 1.1));
+scene.add(makeTree(20, -2, 1.3));
+scene.add(makeTree(-20, -5, 1.0));
+
+const road = new THREE.Mesh(new THREE.PlaneGeometry(80, 3), new THREE.MeshLambertMaterial({color:0xa08068}));
+road.rotation.x = -Math.PI/2;
+road.position.set(0, 0.02, 35); road.rotation.z = 0.2;
+scene.add(road);
+
+// =============================================================================
+// WHEELCHAIR — filha do cameraRig pra rotacionar junto com o player
+// =============================================================================
+const wheelchair = new THREE.Group();
+wheelchair.position.set(0, 0, 0);  // local ao cameraRig (que já tá em PORCH_LEVEL)
+cameraRig.add(wheelchair);
+
+const chairMat = new THREE.MeshLambertMaterial({color:0x303038});
+const chairCushionMat = new THREE.MeshLambertMaterial({color:0x603040});
+
+const seat = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.06, 0.5), chairMat);
+seat.position.set(0, 0.5, -0.1); wheelchair.add(seat);
+const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.45), chairCushionMat);
+cushion.position.set(0, 0.55, -0.1); wheelchair.add(cushion);
+const backrest = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.06), chairMat);
+backrest.position.set(0, 0.78, -0.32); wheelchair.add(backrest);
+const backCushion = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.5, 0.04), chairCushionMat);
+backCushion.position.set(0, 0.78, -0.30); wheelchair.add(backCushion);
+const armrestL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.4), chairMat);
+armrestL.position.set(-0.32, 0.7, -0.1); wheelchair.add(armrestL);
+const armrestR = armrestL.clone(); armrestR.position.x = 0.32; wheelchair.add(armrestR);
+const armSuppL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.04), chairMat);
+armSuppL.position.set(-0.32, 0.6, -0.25); wheelchair.add(armSuppL);
+const armSuppR = armSuppL.clone(); armSuppR.position.x = 0.32; wheelchair.add(armSuppR);
+
+function makeBigWheel(side) {
+  const g = new THREE.Group();
+  const tire = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.04, 8, 18), new THREE.MeshLambertMaterial({color:0x101010}));
+  g.add(tire);
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.04, 18), new THREE.MeshLambertMaterial({color:0x707078}));
+  rim.rotation.x = Math.PI/2; g.add(rim);
+  for (let i = 0; i < 6; i++) {
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.015, 0.02), new THREE.MeshLambertMaterial({color:0x808088}));
+    spoke.rotation.z = (i / 6) * Math.PI;
+    g.add(spoke);
+  }
+  g.position.set(side * 0.4, 0.32, -0.1);
+  g.rotation.y = Math.PI/2;
+  return g;
+}
+wheelchair.add(makeBigWheel(-1)); wheelchair.add(makeBigWheel(1));
+
+function makeCaster(side) {
+  const g = new THREE.Group();
+  const tire = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.03, 6, 12), new THREE.MeshLambertMaterial({color:0x101010}));
+  g.add(tire);
+  const fork = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.2, 0.04), chairMat);
+  fork.position.y = 0.12; g.add(fork);
+  g.position.set(side * 0.25, 0.1, 0.18);
+  g.rotation.y = Math.PI/2;
+  return g;
+}
+wheelchair.add(makeCaster(-1)); wheelchair.add(makeCaster(1));
+
+const footplate = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.04, 0.18), chairMat);
+footplate.position.set(0, 0.25, 0.22); wheelchair.add(footplate);
+const footSupL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.4, 0.03), chairMat);
+footSupL.position.set(-0.2, 0.4, 0.22); wheelchair.add(footSupL);
+const footSupR = footSupL.clone(); footSupR.position.x = 0.2; wheelchair.add(footSupR);
+const handleL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.04), chairMat);
+handleL.position.set(-0.27, 1.1, -0.32); wheelchair.add(handleL);
+const handleR = handleL.clone(); handleR.position.x = 0.27; wheelchair.add(handleR);
+const handleBar = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.04, 0.04), chairMat);
+handleBar.position.set(0, 1.18, -0.32); wheelchair.add(handleBar);
+
+// Pernas (calça jeans) — coxas horizontais no assento, joelhos pra frente, canelas verticais
+const jeanMat = new THREE.MeshLambertMaterial({color:0x3a5fa8});
+const jeanDarkMat = new THREE.MeshLambertMaterial({color:0x2a4880});
+// Coxas
+const thighL = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.40, 10), jeanMat);
+thighL.rotation.x = Math.PI/2;
+thighL.position.set(-0.13, 0.55, 0.10);
+wheelchair.add(thighL);
+const thighR = thighL.clone(); thighR.position.x = 0.13; wheelchair.add(thighR);
+// Joelhos (esferas pra dar volume)
+const kneeL = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), jeanDarkMat);
+kneeL.position.set(-0.13, 0.50, 0.30);
+wheelchair.add(kneeL);
+const kneeR = kneeL.clone(); kneeR.position.x = 0.13; wheelchair.add(kneeR);
+// Canelas (verticais, descendo do joelho até o sapato)
+const shinL = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.052, 0.42, 10), jeanMat);
+shinL.position.set(-0.13, 0.28, 0.32);
+wheelchair.add(shinL);
+const shinR = shinL.clone(); shinR.position.x = 0.13; wheelchair.add(shinR);
+// Bainha mais escura (final da calça)
+const cuffL = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.04, 10), jeanDarkMat);
+cuffL.position.set(-0.13, 0.10, 0.36);
+wheelchair.add(cuffL);
+const cuffR = cuffL.clone(); cuffR.position.x = 0.13; wheelchair.add(cuffR);
+// Sapatos (botas marrom/preto)
+const shoeMat = new THREE.MeshLambertMaterial({color:0x1a1008});
+const shoeL = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.07, 0.22), shoeMat);
+shoeL.position.set(-0.13, 0.06, 0.40);
+wheelchair.add(shoeL);
+const shoeR = shoeL.clone(); shoeR.position.x = 0.13; wheelchair.add(shoeR);
+// Sola dos sapatos
+const soleL = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.018, 0.225), new THREE.MeshLambertMaterial({color:0x0a0604}));
+soleL.position.set(-0.13, 0.02, 0.40);
+wheelchair.add(soleL);
+const soleR = soleL.clone(); soleR.position.x = 0.13; wheelchair.add(soleR);
+
+// =============================================================================
+// CHICKENS
+// =============================================================================
+function makeChicken() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), new THREE.MeshLambertMaterial({color:0xfafafa}));
+  body.scale.set(1, 0.9, 1.3); body.position.y = 0.22; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), new THREE.MeshLambertMaterial({color:0xfafafa}));
+  head.position.set(0, 0.36, 0.13); g.add(head);
+  const comb = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.12), new THREE.MeshLambertMaterial({color:0xd02828}));
+  comb.position.set(0, 0.43, 0.13); g.add(comb);
+  const wattle = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), new THREE.MeshLambertMaterial({color:0xc02020}));
+  wattle.position.set(0, 0.30, 0.16); g.add(wattle);
+  const beak = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.06, 6), new THREE.MeshLambertMaterial({color:0xffaa20}));
+  beak.rotation.x = Math.PI/2; beak.position.set(0, 0.34, 0.20); g.add(beak);
+  const eyeMat = new THREE.MeshBasicMaterial({color:0x000000});
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.013, 6, 6), eyeMat); eyeL.position.set(-0.04, 0.37, 0.18); g.add(eyeL);
+  const eyeR = eyeL.clone(); eyeR.position.x = 0.04; g.add(eyeR);
+  const wingMat = new THREE.MeshLambertMaterial({color:0xe8e8e8});
+  const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 0.18), wingMat);
+  wingL.position.set(-0.14, 0.22, 0); g.add(wingL);
+  const wingR = wingL.clone(); wingR.position.x = 0.14; g.add(wingR);
+  const tail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 0.04), wingMat);
+  tail.position.set(0, 0.30, -0.16); tail.rotation.x = -0.4; g.add(tail);
+  const legMat = new THREE.MeshLambertMaterial({color:0xee9020});
+  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.12, 6), legMat);
+  legL.position.set(-0.05, 0.09, 0); g.add(legL);
+  const legR = legL.clone(); legR.position.x = 0.05; g.add(legR);
+  const footL = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.02, 0.05), legMat);
+  footL.position.set(-0.05, 0.02, 0.02); g.add(footL);
+  const footR = footL.clone(); footR.position.x = 0.05; g.add(footR);
+  return { group: g, head, body, wingL, wingR };
+}
+
+const chickens = [];
+function scareChicken(c, fromPos) {
+  if (c.state === 'gone' || c.state === 'abducting' || c.state === 'scared' || c.state === 'safe') return;
+  c.state = 'scared';
+  c.scaredT = 0;
+  // Velocity: pula pra cima + se afasta do impacto
+  const dx = c.group.position.x - fromPos.x;
+  const dz = c.group.position.z - fromPos.z;
+  const horizMag = Math.hypot(dx, dz) || 1;
+  c.scaredVel = new THREE.Vector3(dx / horizMag * 2.4, 3.2, dz / horizMag * 2.4);
+  playCluck();
+}
+
+function pickChickenTarget() {
+  // Wave 0 (hands): galinhas ficam perto do player pra UFOs também ficarem perto
+  let w = null;
+  try { w = WAVES[currentWave]; } catch (e) { /* defensive: TDZ se chamado antes da declaração */ }
+  if (w && w.weapon === 'hands') {
+    return new THREE.Vector3(
+      (Math.random() - 0.5) * 5,        // -2.5 a +2.5
+      0,
+      2 + Math.random() * 3.5            // 2 a 5.5m do player
+    );
+  }
+  return new THREE.Vector3(
+    (Math.random() - 0.5) * (YARD_HALF_X * 2 - 2),
+    0,
+    YARD_NEAR + 1.5 + Math.random() * (YARD_FAR - YARD_NEAR - 3)
+  );
+}
+function spawnChicken(x, z) {
+  const c = makeChicken();
+  c.group.position.set(x, 0, z);
+  c.group.rotation.y = Math.random() * Math.PI * 2;
+  scene.add(c.group);
+  chickens.push({
+    ...c,
+    state: 'wandering',
+    target: pickChickenTarget(),
+    walkPhase: Math.random() * Math.PI * 2,
+    pecker: 0,
+    statePhase: Math.random() * 3 + 1,
+    fallVel: 0
+  });
+}
+const initialPositions = [
+  { x: -3.2, z: 5 }, { x: 2.5, z: 4 }, { x: -1, z: 8 }, { x: 4, z: 11 }, { x: -4, z: 13 }
+];
+for (const p of initialPositions) spawnChicken(p.x, p.z);
+
+// =============================================================================
+// UFO + ALIEN
+// =============================================================================
+function makeUfo(scale = 1) {
+  const g = new THREE.Group();
+  const bottom = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.18, 0.18, 10), new THREE.MeshLambertMaterial({color:0x808088}));
+  bottom.position.y = -0.05; g.add(bottom);
+  const mid = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.06, 12), new THREE.MeshLambertMaterial({color:0xa0a0a8}));
+  mid.position.y = 0.04; g.add(mid);
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 10, 7, 0, Math.PI*2, 0, Math.PI/2),
+    new THREE.MeshLambertMaterial({color:0x80ffe0, transparent:true, opacity:0.5, emissive:0x205040})
+  );
+  dome.position.y = 0.07; g.add(dome);
+  const lightsGroup = new THREE.Group();
+  const lightColors = [0xff4040, 0xffd040, 0x40ff40];
+  for (let i = 0; i < 3; i++) {
+    const angle = (i / 3) * Math.PI * 2;
+    const l = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 4), new THREE.MeshBasicMaterial({color: lightColors[i]}));
+    l.position.set(Math.cos(angle) * 0.36, -0.05, Math.sin(angle) * 0.36);
+    lightsGroup.add(l);
+  }
+  g.add(lightsGroup);
+
+  const alien = new THREE.Group();
+  const aBody = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshLambertMaterial({color:0x40c040}));
+  aBody.scale.set(1, 1.3, 1); alien.add(aBody);
+  const aHead = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshLambertMaterial({color:0x60d060}));
+  aHead.position.y = 0.10; aHead.scale.set(1, 1.1, 0.9); alien.add(aHead);
+  const aEyeMat = new THREE.MeshBasicMaterial({color:0x000000});
+  const aEyeL = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), aEyeMat);
+  aEyeL.scale.set(1, 1.4, 0.5); aEyeL.position.set(-0.025, 0.10, 0.05); alien.add(aEyeL);
+  const aEyeR = aEyeL.clone(); aEyeR.position.x = 0.025; alien.add(aEyeR);
+  alien.position.y = 0.04; g.add(alien);
+
+  const beam = new THREE.Mesh(
+    new THREE.ConeGeometry(0.45, 4, 12, 1, true),
+    new THREE.MeshBasicMaterial({color:0xffd040, transparent:true, opacity:0.35, side:THREE.DoubleSide, fog:false})
+  );
+  beam.position.y = -2.05; beam.visible = false; g.add(beam);
+
+  g.scale.setScalar(scale);
+  return { group: g, dome, lightsGroup, alien, aHead, beam };
+}
+
+function makeBossUfo() {
+  const u = makeUfo(2.4);
+  // Add extra antenna decorations (boss looks fancier)
+  const antennaTop = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.04, 0.3, 6),
+    new THREE.MeshLambertMaterial({color:0x303030})
+  );
+  antennaTop.position.y = 0.32 / 2.4; // local
+  u.group.add(antennaTop);
+  const antennaTip = new THREE.Mesh(
+    new THREE.SphereGeometry(0.04, 8, 6),
+    new THREE.MeshBasicMaterial({color:0xff2020})
+  );
+  antennaTip.position.y = 0.5 / 2.4;
+  u.group.add(antennaTip);
+  u.antennaTip = antennaTip;
+
+  // HP bar (canvas plane)
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 36;
+  const tex = new THREE.CanvasTexture(c);
+  const bar = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.6, 0.22),
+    new THREE.MeshBasicMaterial({map: tex, transparent: true, fog: false, depthTest: false})
+  );
+  bar.renderOrder = 999;
+  bar.userData.canvas = c;
+  bar.userData.tex = tex;
+  bar.userData.ctx = c.getContext('2d');
+  scene.add(bar);
+  u.hpBar = bar;
+
+  return u;
+}
+
+function updateBossHpBar(b) {
+  if (!b.hpBar || !b.hpBar.userData.ctx) return;
+  const ctx = b.hpBar.userData.ctx;
+  ctx.clearRect(0, 0, 256, 36);
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 256, 36);
+  ctx.strokeStyle = '#ffd040';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(2, 2, 252, 32);
+  const pct = Math.max(0, b.hp) / b.maxHp;
+  ctx.fillStyle = pct > 0.5 ? '#ff4040' : pct > 0.25 ? '#ffa030' : '#ff2020';
+  ctx.fillRect(6, 6, (252 - 8) * pct, 24);
+  // Text
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 18px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('BOSS  ' + Math.max(0, b.hp) + '/' + b.maxHp, 128, 18);
+  b.hpBar.userData.tex.needsUpdate = true;
+}
+
+const ufos = [];
+
+// =============================================================================
+// CONTROLLERS + WEAPON SYSTEM
+// =============================================================================
+const controller1 = renderer.xr.getController(0);
+const controller2 = renderer.xr.getController(1);
+cameraRig.add(controller1);
+cameraRig.add(controller2);
+
+function makeCtrlVisual(color) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.05, 0.13), new THREE.MeshLambertMaterial({color}));
+  g.add(body);
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.06, 8), new THREE.MeshLambertMaterial({color:0x202020}));
+  grip.rotation.x = Math.PI/2.5; grip.position.set(0, -0.04, 0.02); g.add(grip);
+  return g;
+}
+const ctrlVis1 = makeCtrlVisual(0x40c0ff); controller1.add(ctrlVis1);
+const ctrlVis2 = makeCtrlVisual(0xff4080); controller2.add(ctrlVis2);
+
+let rightCtrl = controller2;
+let leftCtrl = controller1;
+
+// ----- SLINGSHOT -----
+const slingshot = new THREE.Group();
+{
+  const slHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.12, 10), new THREE.MeshLambertMaterial({color:0x6a4828}));
+  slHandle.position.set(0, -0.02, 0); slingshot.add(slHandle);
+  const slWrap = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.08, 10), new THREE.MeshLambertMaterial({color:0x281610}));
+  slWrap.position.set(0, -0.02, 0); slingshot.add(slWrap);
+  const armMat = new THREE.MeshLambertMaterial({color:0x6a4828});
+  const armSlL = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.13, 8), armMat);
+  armSlL.position.set(-0.035, 0.10, 0); armSlL.rotation.z = 0.3; slingshot.add(armSlL);
+  const armSlR = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.13, 8), armMat);
+  armSlR.position.set(0.035, 0.10, 0); armSlR.rotation.z = -0.3; slingshot.add(armSlR);
+}
+const slTipL = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), new THREE.MeshLambertMaterial({color:0x402818}));
+slTipL.position.set(-0.058, 0.165, 0); slingshot.add(slTipL);
+const slTipR = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), new THREE.MeshLambertMaterial({color:0x402818}));
+slTipR.position.set(0.058, 0.165, 0); slingshot.add(slTipR);
+slingshot.visible = false;
+scene.add(slingshot);
+
+// ----- CROSSBOW (besta) — limbs horizontais, puxa pra trás -----
+const crossbow = new THREE.Group();
+const cbTipL = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), new THREE.MeshLambertMaterial({color:0x281610}));
+const cbTipR = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), new THREE.MeshLambertMaterial({color:0x281610}));
+{
+  const cbStock = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.22), new THREE.MeshLambertMaterial({color:0x6a4828}));
+  cbStock.position.set(0, 0, 0.04); crossbow.add(cbStock);
+  const cbGrip = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.13, 0.05), new THREE.MeshLambertMaterial({color:0x281610}));
+  cbGrip.position.set(0, -0.08, 0.10); cbGrip.rotation.x = 0.18; crossbow.add(cbGrip);
+  // Front rail (where the arrow rests)
+  const cbRail = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.04, 0.30), new THREE.MeshLambertMaterial({color:0x404048}));
+  cbRail.position.set(0, 0.02, -0.10); crossbow.add(cbRail);
+  // Bow body in front (bridge holding limbs)
+  const cbBridge = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.06), new THREE.MeshLambertMaterial({color:0x4a3018}));
+  cbBridge.position.set(0, 0.01, -0.20); crossbow.add(cbBridge);
+  // Bow limbs — horizontal, extending L+R
+  const limbMat = new THREE.MeshLambertMaterial({color:0x4a3018});
+  const limbL = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.018, 0.22, 8), limbMat);
+  limbL.rotation.z = Math.PI/2; limbL.position.set(-0.13, 0.02, -0.20); crossbow.add(limbL);
+  const limbR = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.018, 0.22, 8), limbMat);
+  limbR.rotation.z = Math.PI/2; limbR.position.set(0.13, 0.02, -0.20); crossbow.add(limbR);
+  // Limb tips (string attachment points)
+  cbTipL.position.set(-0.235, 0.02, -0.20); crossbow.add(cbTipL);
+  cbTipR.position.set(0.235, 0.02, -0.20); crossbow.add(cbTipR);
+  // Trigger
+  const cbTrigger = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.03, 0.02), new THREE.MeshLambertMaterial({color:0x808088}));
+  cbTrigger.position.set(0, -0.04, 0.07); crossbow.add(cbTrigger);
+  // Sight
+  const cbSight = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.025, 0.015), new THREE.MeshLambertMaterial({color:0x808088}));
+  cbSight.position.set(0, 0.045, -0.05); crossbow.add(cbSight);
+}
+crossbow.visible = false;
+scene.add(crossbow);
+
+// ----- SHOTGUN (cano duplo) -----
+const shotgun = new THREE.Group();
+{
+  const sGrip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.13, 0.06), new THREE.MeshLambertMaterial({color:0x6a4830}));
+  sGrip.position.set(0, -0.06, 0.05); sGrip.rotation.x = 0.3; shotgun.add(sGrip);
+  const sStock = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.09, 0.20), new THREE.MeshLambertMaterial({color:0x6a4830}));
+  sStock.position.set(0, -0.01, 0.20); shotgun.add(sStock);
+  const sReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.07, 0.18), new THREE.MeshLambertMaterial({color:0x303038}));
+  sReceiver.position.set(0, 0.015, 0.04); shotgun.add(sReceiver);
+  // CANO DUPLO — dois canos paralelos side-by-side
+  const barrelMat = new THREE.MeshLambertMaterial({color:0x202028});
+  const sBarrelL = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.020, 0.34, 10), barrelMat);
+  sBarrelL.rotation.x = Math.PI/2; sBarrelL.position.set(-0.024, 0.018, -0.18); shotgun.add(sBarrelL);
+  const sBarrelR = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.020, 0.34, 10), barrelMat);
+  sBarrelR.rotation.x = Math.PI/2; sBarrelR.position.set(0.024, 0.018, -0.18); shotgun.add(sBarrelR);
+  // Anel/chave que une os 2 canos na boca
+  const sBarrelBridge = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.018, 0.04), new THREE.MeshLambertMaterial({color:0x404048}));
+  sBarrelBridge.position.set(0, 0.018, -0.34); shotgun.add(sBarrelBridge);
+  // Mira na ponta
+  const sFront = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.018, 0.012), new THREE.MeshLambertMaterial({color:0xc0a040}));
+  sFront.position.set(0, 0.038, -0.34); shotgun.add(sFront);
+  // Forend (madeira embaixo dos canos)
+  const sForend = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.04, 0.14), new THREE.MeshLambertMaterial({color:0x5a3818}));
+  sForend.position.set(0, -0.012, -0.10); shotgun.add(sForend);
+  // Gatilho
+  const sTrigger = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.025, 0.018), new THREE.MeshLambertMaterial({color:0x808088}));
+  sTrigger.position.set(0, -0.04, 0.04); shotgun.add(sTrigger);
+}
+shotgun.visible = false;
+scene.add(shotgun);
+
+// ----- GATLING (6 canos giratórios) -----
+const gatling = new THREE.Group();
+const gatlingBarrels = new THREE.Group(); // rotates around forward axis
+{
+  const gGrip = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.14, 0.06), new THREE.MeshLambertMaterial({color:0x101018}));
+  gGrip.position.set(0, -0.08, 0.04); gGrip.rotation.x = 0.2; gatling.add(gGrip);
+  const gReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.10, 0.18), new THREE.MeshLambertMaterial({color:0x303038}));
+  gReceiver.position.set(0, 0.0, -0.05); gatling.add(gReceiver);
+  // Barrel cluster — 6 barrels in a circle
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const barrel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015, 0.015, 0.36, 8),
+      new THREE.MeshLambertMaterial({color: i === 0 ? 0x808088 : 0x202028})
+    );
+    barrel.rotation.x = Math.PI/2;
+    barrel.position.set(Math.cos(angle) * 0.045, Math.sin(angle) * 0.045, -0.30);
+    gatlingBarrels.add(barrel);
+  }
+  // Front cap (rotates with cluster)
+  const gFrontCap = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.04, 12), new THREE.MeshLambertMaterial({color:0x202028}));
+  gFrontCap.rotation.x = Math.PI/2; gFrontCap.position.set(0, 0, -0.46);
+  gatlingBarrels.add(gFrontCap);
+  // Back disc (rotates with cluster)
+  const gBackDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.04, 12), new THREE.MeshLambertMaterial({color:0x404048}));
+  gBackDisc.rotation.x = Math.PI/2; gBackDisc.position.set(0, 0, -0.13);
+  gatlingBarrels.add(gBackDisc);
+  gatling.add(gatlingBarrels);
+  // Ammo box (looks like a drum) — stays still
+  const gDrum = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.08, 12), new THREE.MeshLambertMaterial({color:0x4a3018}));
+  gDrum.rotation.z = Math.PI/2; gDrum.position.set(0, -0.04, 0.06); gatling.add(gDrum);
+  // Stock support
+  const gStock = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.07, 0.18), new THREE.MeshLambertMaterial({color:0x202028}));
+  gStock.position.set(0, 0, 0.16); gatling.add(gStock);
+  // Sight
+  const gSight = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.03, 0.02), new THREE.MeshLambertMaterial({color:0x808088}));
+  gSight.position.set(0, 0.07, -0.05); gatling.add(gSight);
+}
+gatling.visible = false;
+gatling.userData.barrels = gatlingBarrels;
+gatling.userData.spinSpeed = 0;
+scene.add(gatling);
+
+// ----- LASER -----
+const laser = new THREE.Group();
+{
+  const lGrip = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.14, 0.06), new THREE.MeshLambertMaterial({color:0x202028}));
+  lGrip.position.set(0, -0.08, 0.05); lGrip.rotation.x = 0.18; laser.add(lGrip);
+  const lBody = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.07, 0.34), new THREE.MeshLambertMaterial({color:0x202830}));
+  lBody.position.set(0, 0, -0.05); laser.add(lBody);
+  // Glowing core (yellow)
+  const lCore = new THREE.Mesh(new THREE.SphereGeometry(0.030, 12, 10), new THREE.MeshBasicMaterial({color:0xffd040}));
+  lCore.position.set(0, 0.0, -0.02); laser.add(lCore);
+  // Cooling fins
+  for (let i = 0; i < 4; i++) {
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.02, 0.04), new THREE.MeshLambertMaterial({color:0x404048}));
+    fin.position.set(0, 0.04, -0.08 - i * 0.05);
+    laser.add(fin);
+  }
+  // Front emitter (yellow)
+  const lEmitter = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.025, 0.10, 12), new THREE.MeshLambertMaterial({color:0xffd040, emissive:0x402010}));
+  lEmitter.rotation.x = Math.PI/2; lEmitter.position.set(0, 0, -0.27); laser.add(lEmitter);
+  // Outer ring on emitter (yellow)
+  const lRing = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.008, 6, 16), new THREE.MeshBasicMaterial({color:0xffeb80}));
+  lRing.rotation.x = Math.PI/2; lRing.position.set(0, 0, -0.32); laser.add(lRing);
+  // Stock
+  const lStock = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.16), new THREE.MeshLambertMaterial({color:0x303038}));
+  lStock.position.set(0, 0, 0.17); laser.add(lStock);
+  // Sight (yellow dot)
+  const lSight = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), new THREE.MeshBasicMaterial({color:0xffd040}));
+  lSight.position.set(0, 0.055, -0.10); laser.add(lSight);
+  laser.userData.core = lCore;
+  laser.userData.emitter = lEmitter;
+  laser.userData.ring = lRing;
+}
+laser.visible = false;
+scene.add(laser);
+
+// Beam visual (cylinder) — yellow, tremor (intermittent bursts like a machine gun)
+const laserBeamMesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.030, 0.030, 1, 10, 1, true),
+  new THREE.MeshBasicMaterial({color:0xffd040, transparent:true, opacity:0.85, fog:false, depthWrite:false, side:THREE.DoubleSide})
+);
+laserBeamMesh.visible = false; scene.add(laserBeamMesh);
+const laserBeamCore = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.010, 0.010, 1, 8, 1, true),
+  new THREE.MeshBasicMaterial({color:0xffffe0, transparent:true, opacity:1, fog:false, depthWrite:false, side:THREE.DoubleSide})
+);
+laserBeamCore.visible = false; scene.add(laserBeamCore);
+
+// HANDS — não tem mesh de arma, só ovos visíveis nas mãos
+const hands = new THREE.Group();
+hands.visible = false;
+scene.add(hands);
+
+// Egg meshes attached to each hand (visible in 'hands' weapon mode)
+function makeHandEggMesh() {
+  const g = new THREE.Group();
+  const egg = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 8), new THREE.MeshLambertMaterial({color:0xfaf6e8}));
+  egg.scale.set(1, 1.30, 1);
+  g.add(egg);
+  // Subtle yolk-color speckles
+  for (let i = 0; i < 5; i++) {
+    const speck = new THREE.Mesh(
+      new THREE.SphereGeometry(0.005, 4, 3),
+      new THREE.MeshLambertMaterial({color:0xc8a070})
+    );
+    const a = Math.random()*Math.PI*2;
+    const b = Math.random()*Math.PI;
+    speck.position.set(Math.sin(b)*Math.cos(a)*0.04, Math.cos(b)*0.05, Math.sin(b)*Math.sin(a)*0.04);
+    g.add(speck);
+  }
+  return g;
+}
+const eggInLeftHand = makeHandEggMesh();
+eggInLeftHand.visible = false;
+scene.add(eggInLeftHand);
+const eggInRightHand = makeHandEggMesh();
+eggInRightHand.visible = false;
+scene.add(eggInRightHand);
+
+// Controller velocity tracking (for throwing eggs)
+const ctrlPrevPos = { left: new THREE.Vector3(), right: new THREE.Vector3() };
+const ctrlVel = { left: new THREE.Vector3(), right: new THREE.Vector3() };
+// Buffer dos últimos frames pra capturar o PICO do swing (não a desaceleração)
+const VEL_HISTORY_SIZE = 10;
+const ctrlVelHistory = { left: [], right: [] };
+function getPeakVel(side) {
+  const hist = ctrlVelHistory[side];
+  if (hist.length === 0) return ctrlVel[side];
+  let peak = hist[0];
+  let peakSq = peak.lengthSq();
+  for (let i = 1; i < hist.length; i++) {
+    const sq = hist[i].lengthSq();
+    if (sq > peakSq) { peak = hist[i]; peakSq = sq; }
+  }
+  return peak;
+}
+let eggReadyLeft = true;
+let eggReadyRight = true;
+
+const allWeaponGroups = { hands, slingshot, crossbow, shotgun, gatling, laser };
+
+// ----- PEBBLE / POUCH (slingshot only) -----
+const pouchMesh = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.025, 0.025), new THREE.MeshLambertMaterial({color:0x382010}));
+pouchMesh.visible = false; scene.add(pouchMesh);
+const pebbleReadyMesh = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 8), new THREE.MeshLambertMaterial({color:0x404048}));
+pebbleReadyMesh.visible = false; scene.add(pebbleReadyMesh);
+
+// Elásticos como cilindros finos (Line não funciona com linewidth>1 na maioria dos browsers)
+const elasticMat = new THREE.MeshLambertMaterial({color:0x4a2418});
+const elasticL = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 1, 6), elasticMat);
+scene.add(elasticL);
+const elasticR = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 1, 6), elasticMat);
+scene.add(elasticR);
+function updateElasticStrand(mesh, fromW, toW) {
+  const mid = fromW.clone().add(toW).multiplyScalar(0.5);
+  mesh.position.copy(mid);
+  const dir = toW.clone().sub(fromW);
+  const len = dir.length();
+  if (len < 0.001) return;
+  mesh.scale.set(1, len, 1);
+  // Cilindro padrão tem eixo Y; rotaciona pra alinhar com dir
+  const q = new THREE.Quaternion();
+  q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.divideScalar(len));
+  mesh.quaternion.copy(q);
+}
+
+let pouchGrabbed = false;
+const POUCH_REST_BY_WEAPON = {
+  slingshot: new THREE.Vector3(0, 0.165, -0.005),
+  crossbow:  new THREE.Vector3(0, 0.020, -0.20),
+};
+function getPouchRestWorld() {
+  const local = POUCH_REST_BY_WEAPON[activeWeapon] || POUCH_REST_BY_WEAPON.slingshot;
+  const v = local.clone();
+  rightCtrl.localToWorld(v);
+  return v;
+}
+function getPouchPosWorld() {
+  if (pouchGrabbed) {
+    const lh = new THREE.Vector3();
+    leftCtrl.getWorldPosition(lh);
+    return lh;
+  }
+  return getPouchRestWorld();
+}
+
+// ===== Active weapon
+let activeWeapon = 'slingshot';
+let weaponCD = 0;
+let pendingShot = false;          // input buffer — segura aperto durante cooldown
+let laserBeamActive = false;
+let laserDamageTick = 0;
+const triggerHeld = { right: false, left: false };
+
+function equipWeapon(name) {
+  for (const k of Object.keys(allWeaponGroups)) allWeaponGroups[k].visible = false;
+  allWeaponGroups[name].visible = true;
+  activeWeapon = name;
+  pouchGrabbed = false;
+  weaponCD = 0;
+  pendingShot = false;
+  laserBeamActive = false;
+  laserBeamMesh.visible = false;
+  laserBeamCore.visible = false;
+  stopLaserHum();
+  if (name === 'slingshot' || name === 'crossbow') {
+    pouchMesh.visible = true;
+    pebbleReadyMesh.visible = true;
+    elasticL.visible = true;
+    elasticR.visible = true;
+    pebbleReadyMesh.scale.set(1, 1, name === 'crossbow' ? 4 : 1);
+    pebbleReadyMesh.material.color.setHex(name === 'crossbow' ? 0x6a4828 : 0x404048);
+  } else {
+    pouchMesh.visible = false;
+    pebbleReadyMesh.visible = false;
+    pebbleReadyMesh.scale.set(1, 1, 1);
+    elasticL.visible = false;
+    elasticR.visible = false;
+  }
+  // Hand eggs only in 'hands' weapon mode
+  if (name === 'hands') {
+    eggReadyLeft = true;
+    eggReadyRight = true;
+    eggInLeftHand.visible = true;
+    eggInRightHand.visible = true;
+  } else {
+    eggInLeftHand.visible = false;
+    eggInRightHand.visible = false;
+  }
+  updateHUD();
+  if (typeof updateScoreboard === 'function') updateScoreboard();
+}
+
+// =============================================================================
+// PROJECTILES + WEAPONS FIRE
+// =============================================================================
+const projectiles = [];
+const muzzleFlashes = [];
+const explosions = [];
+
+function makeBulletMesh() {
+  // Visual = ovo (todas as armas atiram ovos) — maior pra ficar bem visível em VR
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshLambertMaterial({color:0xfaf6e8}));
+  m.scale.set(1, 1.30, 1);
+  return m;
+}
+function makePebbleMesh() {
+  // Visual = ovo (estilingue atira ovo)
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshLambertMaterial({color:0xfaf6e8}));
+  m.scale.set(1, 1.30, 1);
+  return m;
+}
+function makePlasmaProj() {
+  const g = new THREE.Group();
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.10, 12, 10), new THREE.MeshBasicMaterial({color:0x80ffe0}));
+  g.add(core);
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), new THREE.MeshBasicMaterial({color:0x40e0ff, transparent:true, opacity:0.4}));
+  g.add(halo);
+  return g;
+}
+
+function spawnMuzzleFlash(pos, scale = 1, color = 0xffd040) {
+  const f = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.18 * scale, 0.18 * scale),
+    new THREE.MeshBasicMaterial({color, transparent:true, opacity:1, fog:false, depthWrite:false})
+  );
+  f.position.copy(pos);
+  f.userData.life = 0;
+  scene.add(f);
+  muzzleFlashes.push(f);
+}
+
+function spawnExplosion(pos, radius = 2.5, color = 0xffe060) {
+  // Big visible blast
+  const e = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 14, 10),
+    new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.9, fog:false, depthWrite:false})
+  );
+  e.position.copy(pos);
+  e.userData.life = 0;
+  e.userData.maxRadius = radius;
+  scene.add(e);
+  explosions.push(e);
+  // shockwave ring
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.3, 0.5, 16),
+    new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.7, side:THREE.DoubleSide, fog:false, depthWrite:false})
+  );
+  ring.position.copy(pos);
+  ring.lookAt(camera.getWorldPosition(new THREE.Vector3()));
+  ring.userData.life = 0;
+  ring.userData.maxRadius = radius * 1.2;
+  ring.userData.isRing = true;
+  scene.add(ring);
+  explosions.push(ring);
+}
+
+function getRightControllerForward() {
+  const fwd = new THREE.Vector3(0, 0, -1);
+  const q = new THREE.Quaternion();
+  if (renderer.xr.isPresenting) {
+    rightCtrl.getWorldQuaternion(q);
+  } else {
+    camera.getWorldQuaternion(q);
+  }
+  fwd.applyQuaternion(q);
+  return fwd;
+}
+function getRightControllerOrigin() {
+  const p = new THREE.Vector3();
+  if (renderer.xr.isPresenting) {
+    rightCtrl.getWorldPosition(p);
+  } else {
+    // Desktop/mobile: tiros saem da arma visível (canto inferior direito), não do centro da tela
+    const grp = allWeaponGroups[activeWeapon];
+    if (grp) grp.getWorldPosition(p);
+    else camera.getWorldPosition(p);
+  }
+  return p;
+}
+
+const MAX_PROJECTILES = 220;
+// Posição local do bocal de cada arma (em coords do weapon group)
+const WEAPON_MUZZLE = {
+  slingshot: new THREE.Vector3(0, 0.165, 0),
+  crossbow:  new THREE.Vector3(0, 0.020, -0.36),
+  shotgun:   new THREE.Vector3(0, 0.018, -0.36),
+  gatling:   new THREE.Vector3(0, 0, -0.48),
+  laser:     new THREE.Vector3(0, 0, -0.34),
+  hands:     new THREE.Vector3(0, 0, 0),
+};
+function getMuzzleWorld() {
+  const grp = allWeaponGroups[activeWeapon];
+  if (!grp) return getRightControllerOrigin();
+  const local = (WEAPON_MUZZLE[activeWeapon] || new THREE.Vector3()).clone();
+  grp.localToWorld(local);
+  return local;
+}
+
+function fireBullet(speed, damage, spreadRad = 0, scale = 1, flashColor = 0xffd040) {
+  if (projectiles.length > MAX_PROJECTILES) return;
+  const origin = getMuzzleWorld();        // bocal real da arma, não centro
+  let fwd = getRightControllerForward();
+  if (spreadRad > 0) {
+    const r1 = (Math.random() - 0.5) * spreadRad;
+    const r2 = (Math.random() - 0.5) * spreadRad;
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,-1), fwd.clone()));
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,-1), fwd.clone()));
+    fwd.add(right.multiplyScalar(r1)).add(up.multiplyScalar(r2)).normalize();
+  }
+  const proj = makeBulletMesh();
+  // Eggs always egg-white (no per-weapon color tinting on the projectile itself)
+  proj.scale.setScalar(scale);
+  proj.position.copy(origin);
+  proj.userData.vel = fwd.clone().multiplyScalar(speed);
+  proj.userData.life = 0;
+  proj.userData.damage = damage;
+  proj.userData.gravity = false;
+  proj.userData.isPlasma = false;
+  proj.userData.isEgg = true;
+  proj.userData.maxLife = 2.0;  // bullets despawnam em 2s pra liberar slot do cap
+  scene.add(proj);
+  projectiles.push(proj);
+  spawnMuzzleFlash(origin, scale, flashColor);
+}
+
+// SHOTGUN cano duplo — 14 ovos por tiro, hold-to-fire, ritmo de pump-action
+function fireShotgun() {
+  for (let i = 0; i < 14; i++) fireBullet(62, 1, 0.26, 0.85, 0xffe860);
+  playShotgunShot();
+  pulseController(rightCtrl, 0.95, 130);
+  weaponCD = 0.40;
+}
+
+// GATLING — 6 canos giratórios, dano 2 por bala, fire rate 0.05s
+function fireGatlingBurst() {
+  fireBullet(75, 2, 0.03, 0.95, 0xff8030);
+  playGatlingShot();
+  pulseController(rightCtrl, 0.35, 30);
+  weaponCD = 0.05;
+}
+
+// LASER tick — beam aparece em rajadas (pulse on/off, tipo metralhadora)
+let laserPulseT = 0;
+let laserPulseOn = false;
+const LASER_ON_TIME = 0.045;
+const LASER_OFF_TIME = 0.060;
+
+function tickLaser(dt) {
+  if (!laserBeamActive) return;
+  laserPulseT += dt;
+
+  // Toggle pulse on/off
+  if (laserPulseOn && laserPulseT >= LASER_ON_TIME) {
+    laserPulseOn = false; laserPulseT = 0;
+    laserBeamMesh.visible = false;
+    laserBeamCore.visible = false;
+  } else if (!laserPulseOn && laserPulseT >= LASER_OFF_TIME) {
+    laserPulseOn = true; laserPulseT = 0;
+    laserBeamMesh.visible = true;
+    laserBeamCore.visible = true;
+    playLaserPulse();
+    pulseController(rightCtrl, 0.25, 25);
+  }
+
+  if (!laserPulseOn) return;
+
+  // Origin & direction (com tremor leve)
+  const origin = new THREE.Vector3();
+  const fwd = new THREE.Vector3(0, 0, -1);
+  const q = new THREE.Quaternion();
+  if (renderer.xr.isPresenting) {
+    rightCtrl.getWorldPosition(origin);
+    rightCtrl.getWorldQuaternion(q);
+    fwd.applyQuaternion(q);
+    origin.addScaledVector(fwd, 0.32); // emitter offset à frente do controller
+  } else {
+    // Desktop/mobile: laser sai do bocal visível da arma; mira na direção da câmera
+    const lgrp = allWeaponGroups['laser'];
+    if (lgrp) {
+      const local = new THREE.Vector3(0, 0, -0.32); // posição do emitter no laser local
+      const w = local.clone();
+      lgrp.localToWorld(w);
+      origin.copy(w);
+    } else {
+      camera.getWorldPosition(origin);
+    }
+    camera.getWorldQuaternion(q);
+    fwd.applyQuaternion(q);
+  }
+  // tremor: small random jitter on direction
+  fwd.x += (Math.random() - 0.5) * 0.025;
+  fwd.y += (Math.random() - 0.5) * 0.025;
+  fwd.z += (Math.random() - 0.5) * 0.025;
+  fwd.normalize();
+
+  // Find closest UFO in beam
+  let closestT = 40;
+  let target = null;
+  for (const u of ufos) {
+    if (u.state === 'dead' || u.state === 'escaping_done') continue;
+    const v = u.group.position.clone().sub(origin);
+    const t = v.dot(fwd);
+    if (t < 0 || t > closestT) continue;
+    const closestPt = origin.clone().addScaledVector(fwd, t);
+    const distLine = closestPt.distanceTo(u.group.position);
+    const r = UFO_HIT_RADIUS * u.group.scale.x + 0.20;
+    if (distLine < r && t < closestT) { closestT = t; target = u; }
+  }
+
+  // Update beam visual
+  const beamLen = closestT;
+  const mid = origin.clone().addScaledVector(fwd, beamLen / 2);
+  const orientQ = new THREE.Quaternion();
+  orientQ.setFromUnitVectors(new THREE.Vector3(0, 1, 0), fwd);
+  laserBeamMesh.scale.set(1, beamLen, 1);
+  laserBeamMesh.position.copy(mid);
+  laserBeamMesh.quaternion.copy(orientQ);
+  laserBeamCore.scale.set(1, beamLen, 1);
+  laserBeamCore.position.copy(mid);
+  laserBeamCore.quaternion.copy(orientQ);
+  // Flicker opacity (during pulse-on phase)
+  laserBeamMesh.material.opacity = 0.7 + Math.random() * 0.3;
+
+  // Damage on each pulse-on transition (1 dmg per pulse)
+  if (target) {
+    damageUfo(target, 1);
+    const hitPos = origin.clone().addScaledVector(fwd, closestT);
+    spawnHitSparks(hitPos);
+  }
+}
+
+function startLaserBeam() {
+  laserBeamActive = true;
+  laserPulseOn = false;
+  laserPulseT = LASER_OFF_TIME;  // arma a próxima pulse imediatamente
+  pulseController(rightCtrl, 0.4, 60);
+}
+function stopLaserBeam() {
+  laserBeamActive = false;
+  laserBeamMesh.visible = false;
+  laserBeamCore.visible = false;
+  laserPulseOn = false;
+}
+
+// SLINGSHOT — pouco mais sensível e mais forte
+function fireSlingshotPouch() {
+  const restW = getPouchRestWorld();
+  const pouchW = pouchMesh.position.clone();
+  const pull = restW.clone().sub(pouchW);
+  const dist = pull.length();
+  if (dist < SLINGSHOT_MIN_PULL) return;
+  const speed = Math.min(dist * SHOT_SPEED_FACTOR, MAX_SHOT_SPEED);
+  const dir = pull.normalize();
+  const proj = makePebbleMesh();
+  proj.position.copy(pouchW);
+  proj.userData.vel = dir.multiplyScalar(speed);
+  proj.userData.life = 0;
+  proj.userData.damage = 2;             // dano dobrado
+  proj.userData.gravity = true;
+  proj.userData.isPlasma = false;
+  proj.userData.isEgg = true;
+  scene.add(proj);
+  projectiles.push(proj);
+  playSlingshotRelease();
+  pulseController(leftCtrl, 0.7, 90);
+  pulseController(rightCtrl, 0.4, 60);
+}
+
+// CROSSBOW (besta) — puxa e solta, sempre força máxima, sem gravidade, dano 2
+function fireCrossbowArrow() {
+  const restW = getPouchRestWorld();
+  const pouchW = pouchMesh.position.clone();
+  const pull = restW.clone().sub(pouchW);
+  const dist = pull.length();
+  if (dist < 0.04) return;
+  const dir = pull.normalize();
+  const arrow = makeArrowMesh();
+  arrow.position.copy(pouchW);
+  arrow.userData.vel = dir.clone().multiplyScalar(CROSSBOW_ARROW_SPEED);
+  arrow.userData.life = 0;
+  arrow.userData.damage = 2;
+  arrow.userData.gravity = false;
+  arrow.userData.isPlasma = false;
+  arrow.userData.isArrow = true;
+  arrow.userData.isEgg = true;
+  // Orient arrow shaft along velocity
+  const arrowQ = new THREE.Quaternion();
+  arrowQ.setFromUnitVectors(new THREE.Vector3(0, 0, -1), dir);
+  arrow.quaternion.copy(arrowQ);
+  scene.add(arrow);
+  projectiles.push(arrow);
+  playArrowRelease();
+  pulseController(leftCtrl, 0.85, 100);
+  pulseController(rightCtrl, 0.5, 70);
+}
+
+function makeArrowMesh() {
+  // Besta atira ovo (com pequena penacha vermelha pra estilizar)
+  const g = new THREE.Group();
+  const egg = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 8), new THREE.MeshLambertMaterial({color:0xfaf6e8}));
+  egg.scale.set(1, 1.35, 1); g.add(egg);
+  // little tail feather for visibility
+  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.04, 0.06), new THREE.MeshLambertMaterial({color:0xff4040}));
+  fin.position.set(0, 0, 0.06); g.add(fin);
+  return g;
+}
+
+// Egg projectile (used by hands + later by all weapons in action 3)
+function makeEggProj(scale = 1) {
+  const g = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshLambertMaterial({color:0xfaf6e8}));
+  g.scale.set(scale, scale * 1.30, scale);
+  return g;
+}
+
+// Throw egg — amplificação forte + gravidade leve, pra arremesso ter sensação física boa
+function throwEgg(ctrl, vel) {
+  const origin = new THREE.Vector3(); ctrl.getWorldPosition(origin);
+  const proj = makeEggProj(1);
+  proj.position.copy(origin);
+  // Multiplicador alto pra dar peso/força:
+  // speed 2 → 4.0x → ovo 8 m/s (lento mas chega na nave em wave 0)
+  // speed 6 → 7.5x → ovo 45 m/s (forte)
+  // speed 10 → 9.5x (cap) → ovo 95 m/s (muito forte)
+  const speedMag = vel.length();
+  const factor = Math.min(3.0 + speedMag * 0.6, 9.5);
+  const v = vel.clone().multiplyScalar(factor);
+  proj.userData.vel = v;
+  proj.userData.life = 0;
+  proj.userData.damage = 1;
+  proj.userData.gravity = true;
+  proj.userData.gravityScale = 0.35;  // ovo voa bem leve, com arco solto
+  proj.userData.isPlasma = false;
+  proj.userData.isEgg = true;
+  scene.add(proj);
+  projectiles.push(proj);
+  playEggThrow();
+  pulseController(ctrl, Math.min(0.95, 0.25 + speedMag * 0.1), 80);
+}
+
+// =============================================================================
+// AUDIO
+// =============================================================================
+let audioCtx = null;
+let masterGain = null;
+function initAudio() {
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return;
+  }
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.55;
+  masterGain.connect(audioCtx.destination);
+  startAmbient();
+}
+
+function tone(freq, dur, type='sine', vol=0.2, attack=0.005, freqEnd) {
+  if (!audioCtx) return;
+  const t0 = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t0);
+  if (freqEnd !== undefined) osc.frequency.exponentialRampToValueAtTime(freqEnd, t0 + dur);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(vol, t0 + attack);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  osc.connect(g).connect(masterGain);
+  osc.start(t0); osc.stop(t0 + dur + 0.05);
+}
+
+function noiseBurst(dur, vol, filterType, filterFreq, q, decay) {
+  if (!audioCtx) return;
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/d.length * (decay || 4));
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = filterType || 'bandpass';
+  filt.frequency.value = filterFreq;
+  filt.Q.value = q || 2;
+  const g = audioCtx.createGain();
+  g.gain.value = vol;
+  src.connect(filt).connect(g).connect(masterGain);
+  src.start();
+}
+
+function playSlingshotPull() { noiseBurst(0.12, 0.15, 'bandpass', 600, 5); }
+function playSlingshotRelease() {
+  tone(1800, 0.05, 'square', 0.2);
+  noiseBurst(0.08, 0.4, 'highpass', 1200, 1);
+  tone(180, 0.18, 'sine', 0.15, 0.005, 60);
+}
+function playEggThrow() {
+  // soft swoosh + low thump
+  noiseBurst(0.12, 0.18, 'bandpass', 800, 1.5);
+  tone(180, 0.10, 'sine', 0.10, 0.005, 90);
+}
+function playEggSplat() {
+  // wet splat
+  noiseBurst(0.18, 0.5, 'lowpass', 350, 1, 5);
+  tone(110, 0.12, 'sine', 0.18, 0.005, 50);
+}
+function playArrowRelease() {
+  // bowstring twang + arrow whoosh
+  tone(220, 0.18, 'sawtooth', 0.18, 0.005, 80);
+  noiseBurst(0.18, 0.22, 'bandpass', 1500, 2);
+}
+function playShotgunShot() {
+  tone(900, 0.06, 'square', 0.14);
+  noiseBurst(0.35, 0.95, 'lowpass', 800, 1, 4);
+  tone(70, 0.45, 'sine', 0.55, 0.005, 28);
+}
+function playGatlingShot() {
+  noiseBurst(0.04, 0.32, 'bandpass', 1700, 1);
+  tone(125, 0.06, 'sine', 0.22, 0.005, 65);
+}
+// Laser pulse — curto burst amarelado, tipo metralhadora-laser
+function playLaserPulse() {
+  tone(2400, 0.04, 'square', 0.20, 0.001, 1500);
+  noiseBurst(0.05, 0.20, 'highpass', 2200, 1);
+}
+// Laser continuous hum (não usamos mais — pulse substitui)
+let laserOsc = null, laserOscGain = null, laserNoise = null, laserNoiseGain = null;
+function startLaserHum() {
+  if (!audioCtx) return;
+  if (laserOsc) stopLaserHum();
+  laserOsc = audioCtx.createOscillator();
+  laserOsc.type = 'sawtooth';
+  laserOsc.frequency.value = 1100;
+  laserOscGain = audioCtx.createGain();
+  laserOscGain.gain.value = 0;
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = 'bandpass'; filt.frequency.value = 2200; filt.Q.value = 4;
+  laserOsc.connect(filt).connect(laserOscGain).connect(masterGain);
+  laserOsc.start();
+  laserOscGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.05);
+  // sizzle noise
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 1, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * 0.5;
+  laserNoise = audioCtx.createBufferSource();
+  laserNoise.buffer = buf; laserNoise.loop = true;
+  const filt2 = audioCtx.createBiquadFilter();
+  filt2.type = 'bandpass'; filt2.frequency.value = 3500; filt2.Q.value = 2;
+  laserNoiseGain = audioCtx.createGain(); laserNoiseGain.gain.value = 0;
+  laserNoise.connect(filt2).connect(laserNoiseGain).connect(masterGain);
+  laserNoise.start();
+  laserNoiseGain.gain.linearRampToValueAtTime(0.10, audioCtx.currentTime + 0.05);
+}
+function stopLaserHum() {
+  if (!laserOsc) return;
+  const osc = laserOsc, og = laserOscGain, no = laserNoise, ng = laserNoiseGain;
+  if (og) og.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
+  if (ng) ng.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
+  setTimeout(() => { try { osc.stop(); } catch(e){} try { no.stop(); } catch(e){} }, 120);
+  laserOsc = null; laserOscGain = null; laserNoise = null; laserNoiseGain = null;
+}
+function playUfoExplode() {
+  noiseBurst(0.5, 0.6, 'bandpass', 500, 1, 6);
+  tone(80, 0.4, 'sine', 0.4, 0.005, 30);
+  tone(250, 0.12, 'sawtooth', 0.2, 0.005, 60);
+}
+function playUfoHit() {
+  tone(900, 0.08, 'square', 0.2, 0.005, 400);
+  noiseBurst(0.1, 0.2, 'bandpass', 1500, 2);
+}
+function playBeamStart() { tone(220, 0.6, 'sine', 0.18, 0.05, 880); }
+function playChickenAbducted() {
+  tone(440, 0.15, 'square', 0.15, 0.005, 200);
+  setTimeout(() => tone(330, 0.2, 'square', 0.12, 0.005, 150), 100);
+}
+function playCluck() {
+  tone(700 + Math.random()*200, 0.05, 'square', 0.12);
+  setTimeout(() => tone(500 + Math.random()*200, 0.06, 'square', 0.08), 50);
+}
+function playRescue() {
+  tone(880, 0.15, 'sine', 0.2);
+  setTimeout(() => tone(1320, 0.2, 'sine', 0.18), 80);
+}
+function playWaveStart() {
+  tone(440, 0.4, 'square', 0.18);
+  setTimeout(() => tone(660, 0.5, 'square', 0.16), 200);
+}
+function playBossSpawn() {
+  // ominous low bell
+  tone(110, 0.6, 'sawtooth', 0.25, 0.01);
+  setTimeout(() => tone(82, 0.8, 'sawtooth', 0.22, 0.01), 200);
+  noiseBurst(0.3, 0.3, 'lowpass', 200, 1);
+}
+function playGameOver() {
+  tone(330, 0.5, 'square', 0.2, 0.005, 110);
+  setTimeout(() => tone(220, 0.7, 'sawtooth', 0.18, 0.005, 80), 300);
+}
+function playVictory() {
+  const notes = [523, 659, 784, 1047, 1319];
+  notes.forEach((f, i) => setTimeout(() => tone(f, 0.5, 'square', 0.18), i * 110));
+  setTimeout(() => { tone(1568, 0.9, 'square', 0.22); tone(1047, 0.9, 'sine', 0.18); }, 660);
+}
+function playFirework() { noiseBurst(0.4, 0.4, 'bandpass', 800 + Math.random()*1200, 2); }
+function playWeaponPickup() {
+  tone(660, 0.1, 'sine', 0.2);
+  setTimeout(() => tone(880, 0.12, 'sine', 0.2), 80);
+  setTimeout(() => tone(1320, 0.18, 'sine', 0.22), 160);
+}
+
+let ambientNoise = null, ambientGain = null;
+function startAmbient() {
+  if (!audioCtx || ambientNoise) return;
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*3, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < d.length; i++) {
+    const w = Math.random()*2 - 1;
+    last = last*0.96 + w*0.04;
+    d[i] = last * 4;
+  }
+  ambientNoise = audioCtx.createBufferSource();
+  ambientNoise.buffer = buf; ambientNoise.loop = true;
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = 'lowpass'; filt.frequency.value = 350;
+  ambientGain = audioCtx.createGain(); ambientGain.gain.value = 0.08;
+  ambientNoise.connect(filt).connect(ambientGain).connect(masterGain);
+  ambientNoise.start();
+}
+
+// =============================================================================
+// FX
+// =============================================================================
+const fireworks = [];
+function spawnFirework() {
+  const center = new THREE.Vector3(
+    (Math.random() - 0.5) * 12,
+    PORCH_LEVEL + 5 + Math.random() * 4,
+    5 + Math.random() * 8
+  );
+  const color = [0xffd040, 0xff60a0, 0x40e0ff, 0xa0ff60, 0xffffff][Math.floor(Math.random()*5)];
+  const particles = [];
+  for (let i = 0; i < 18; i++) {
+    const p = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 4), new THREE.MeshBasicMaterial({color}));
+    p.position.copy(center);
+    const phi = Math.random() * Math.PI * 2;
+    const theta = Math.random() * Math.PI;
+    const speed = 1.5 + Math.random() * 1.0;
+    p.userData.vel = new THREE.Vector3(
+      Math.sin(theta) * Math.cos(phi) * speed,
+      Math.cos(theta) * speed * 0.6,
+      Math.sin(theta) * Math.sin(phi) * speed
+    );
+    scene.add(p); particles.push(p);
+  }
+  fireworks.push({ particles, t: 0 });
+  playFirework();
+}
+
+const debris = [];
+const MAX_DEBRIS = 90;
+function spawnDebris(pos, count) {
+  if (debris.length > MAX_DEBRIS) return;
+  const boxes = Math.min(count != null ? count : 8, 10);
+  for (let i = 0; i < boxes; i++) {
+    const d = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04 + Math.random()*0.05, 0.04, 0.04),
+      new THREE.MeshLambertMaterial({color: 0xa0a0a8})
+    );
+    d.position.copy(pos);
+    d.userData.vel = new THREE.Vector3((Math.random()-0.5)*4, 0.5 + Math.random()*3, (Math.random()-0.5)*4);
+    d.userData.rot = new THREE.Vector3(Math.random()*8-4, Math.random()*8-4, Math.random()*8-4);
+    d.userData.life = 0;
+    scene.add(d); debris.push(d);
+  }
+  for (let i = 0; i < 3; i++) {
+    const s = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15 + Math.random()*0.1, 5, 4),
+      new THREE.MeshBasicMaterial({color:0x808088, transparent:true, opacity:0.7})
+    );
+    s.position.copy(pos);
+    s.userData.vel = new THREE.Vector3((Math.random()-0.5)*1.5, 0.5 + Math.random()*1, (Math.random()-0.5)*1.5);
+    s.userData.life = 0; s.userData.isSmoke = true;
+    scene.add(s); debris.push(s);
+  }
+}
+
+// Splat de OVO FRITO no chão — clara plana + gema centro + bolinhas, ~1s, alto o suficiente
+function spawnFriedEggSplat(pos) {
+  if (debris.length > MAX_DEBRIS - 8) return;
+  playEggSplat();
+  // CLARA — disco branco bem acima do polígono da terra (y=0.05) pra não z-fightar com a grama
+  const claraR = 0.18 + Math.random() * 0.10;
+  const clara = new THREE.Mesh(
+    new THREE.CircleGeometry(claraR, 12),
+    new THREE.MeshLambertMaterial({color:0xfdf8e8, side:THREE.DoubleSide})
+  );
+  clara.rotation.x = -Math.PI/2;
+  clara.rotation.z = Math.random() * Math.PI * 2;
+  clara.scale.set(0.85 + Math.random()*0.35, 1, 0.85 + Math.random()*0.35);
+  clara.position.set(pos.x, 0.05, pos.z);
+  clara.userData.staticSplat = true;
+  clara.userData.life = 0;
+  clara.userData.maxLife = 1.0;
+  scene.add(clara); debris.push(clara);
+  // GEMA — domada acima da clara
+  const yolkR = claraR * (0.36 + Math.random() * 0.08);
+  const yolk = new THREE.Mesh(
+    new THREE.SphereGeometry(yolkR, 8, 6),
+    new THREE.MeshLambertMaterial({color:0xffc628, emissive:0x402000})
+  );
+  yolk.scale.set(1, 0.5, 1);
+  const offX = (Math.random() - 0.5) * claraR * 0.35;
+  const offZ = (Math.random() - 0.5) * claraR * 0.35;
+  yolk.position.set(pos.x + offX, 0.07, pos.z + offZ);
+  yolk.userData.staticSplat = true;
+  yolk.userData.life = 0;
+  yolk.userData.maxLife = 1.0;
+  scene.add(yolk); debris.push(yolk);
+  // BOLINHAS — drops em volta, sentadas no chão
+  for (let k = 0; k < 5; k++) {
+    const isYellow = Math.random() < 0.3;
+    const r = 0.016 + Math.random() * 0.010;
+    const drop = new THREE.Mesh(
+      new THREE.SphereGeometry(r, 5, 4),
+      new THREE.MeshLambertMaterial({color: isYellow ? 0xffd048 : 0xfdf8e8})
+    );
+    drop.scale.set(1, 0.55, 1);
+    const phi = Math.random() * Math.PI * 2;
+    const dist = claraR * (0.55 + Math.random() * 0.55);
+    drop.position.set(pos.x + Math.cos(phi) * dist, 0.06, pos.z + Math.sin(phi) * dist);
+    drop.userData.staticSplat = true;
+    drop.userData.life = 0;
+    drop.userData.maxLife = 0.9;
+    scene.add(drop); debris.push(drop);
+  }
+}
+
+// Splat aéreo (UFO hit) — ovo EXPLODE: TUDO voa com gravidade. Nada parado.
+function spawnEggSplat(pos) {
+  if (debris.length > MAX_DEBRIS - 14) return;
+  playEggSplat();
+  // GEMAS — 2 voando
+  const yolkMat = new THREE.MeshLambertMaterial({color:0xffc628, emissive:0x402000});
+  for (let k = 0; k < 2; k++) {
+    const r = 0.045 + Math.random() * 0.020;
+    const yolk = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), yolkMat);
+    yolk.scale.set(1, 0.55, 1);
+    yolk.position.copy(pos);
+    const phi = Math.random() * Math.PI * 2;
+    const sp = 1.5 + Math.random() * 1.5;
+    yolk.userData.vel = new THREE.Vector3(Math.cos(phi)*sp, 0.6 + Math.random()*0.7, Math.sin(phi)*sp);
+    yolk.userData.rot = new THREE.Vector3(Math.random()*4-2, Math.random()*4-2, Math.random()*4-2);
+    yolk.userData.life = 0;
+    yolk.userData.maxLife = 1.2;
+    scene.add(yolk); debris.push(yolk);
+  }
+  // CLARA EXPLODINDO — 11 pedaços brancos voando, alguns achatados como pedaços de clara
+  const whiteMat = new THREE.MeshLambertMaterial({color: 0xfdf8e8});
+  for (let k = 0; k < 11; k++) {
+    const r = 0.018 + Math.random() * 0.014;
+    const piece = new THREE.Mesh(new THREE.SphereGeometry(r, 5, 4), whiteMat);
+    // 4 dos 11 são "splatchunks" achatados pra ler como pedaço de clara
+    if (k < 4) piece.scale.set(1.6, 0.35, 1.3);
+    piece.position.copy(pos);
+    const phi = Math.random() * Math.PI * 2;
+    const theta = Math.random() * Math.PI * 0.65;
+    const sp = 2.5 + Math.random() * 2.5;
+    piece.userData.vel = new THREE.Vector3(
+      Math.sin(theta) * Math.cos(phi) * sp,
+      Math.cos(theta) * sp * 0.85 + 0.5,
+      Math.sin(theta) * Math.sin(phi) * sp
+    );
+    piece.userData.rot = new THREE.Vector3(Math.random()*8-4, Math.random()*8-4, Math.random()*8-4);
+    piece.userData.life = 0;
+    piece.userData.maxLife = 1.2;
+    scene.add(piece); debris.push(piece);
+  }
+}
+
+function spawnHitSparks(pos) {
+  if (debris.length > MAX_DEBRIS) return;
+  for (let i = 0; i < 3; i++) {
+    const s = new THREE.Mesh(
+      new THREE.SphereGeometry(0.025, 4, 3),
+      new THREE.MeshBasicMaterial({color:0xffd040})
+    );
+    s.position.copy(pos);
+    s.userData.vel = new THREE.Vector3(
+      (Math.random()-0.5)*3, 1 + Math.random()*1.5, (Math.random()-0.5)*3
+    );
+    s.userData.life = 0;
+    s.userData.isSpark = true;
+    scene.add(s); debris.push(s);
+  }
+}
+
+// =============================================================================
+// HAPTICS
+// =============================================================================
+function pulseAll(intensity, duration) {
+  const sess = renderer.xr.getSession();
+  if (!sess) return;
+  for (const src of sess.inputSources) {
+    if (src.gamepad && src.gamepad.hapticActuators && src.gamepad.hapticActuators[0]) {
+      try { src.gamepad.hapticActuators[0].pulse(intensity, duration); } catch(e){}
+    }
+  }
+}
+function pulseController(ctrl, intensity, duration) {
+  const sess = renderer.xr.getSession();
+  if (!sess) return;
+  for (const src of sess.inputSources) {
+    const isMatch = (ctrl === leftCtrl && src.handedness === 'left') ||
+                    (ctrl === rightCtrl && src.handedness === 'right');
+    if (isMatch && src.gamepad && src.gamepad.hapticActuators && src.gamepad.hapticActuators[0]) {
+      try { src.gamepad.hapticActuators[0].pulse(intensity, duration); } catch(e){}
+    }
+  }
+}
+
+// =============================================================================
+// GAME STATE
+// =============================================================================
+let state = 'idle';
+let stateT = 0;
+// var (não let) pra hoistar — usado em pickChickenTarget que roda no spawn inicial das galinhas
+var currentWave = 0;
+let waveSpawnedCount = 0;
+let bossSpawned = false;
+let lastUfoSpawnT = 0;
+let ufosKilled = 0;
+let chickensAbducted = 0;
+let lastFireworkT = 0;
+let lastShotT = 0;
+let mouseDown = false;
+
+const instrEl = document.getElementById('instr');
+const scoreDEl = document.getElementById('score-d');
+const crosshairEl = document.getElementById('crosshair');
+const hurtEl = document.getElementById('hurt-flash');
+const goEl = document.getElementById('go');
+const winEl = document.getElementById('win');
+const waveBanner = document.getElementById('wave-banner');
+const waveBannerText = waveBanner.querySelector('.text');
+const waveBannerSub = waveBanner.querySelector('.sub');
+const waveBannerWeapon = waveBanner.querySelector('.weapon');
+const sdWave = document.getElementById('sd-wave');
+const sdWeapon = document.getElementById('sd-weapon');
+const sdChk = document.getElementById('sd-chk');
+const sdKill = document.getElementById('sd-kill');
+
+function setInstr(text) {
+  if (text) { instrEl.textContent = text; instrEl.classList.add('show'); }
+  else { instrEl.classList.remove('show'); }
+}
+function flashHurt() {
+  hurtEl.classList.add('show');
+  setTimeout(() => hurtEl.classList.remove('show'), 220);
+}
+function showWaveBanner(text, sub, weaponLabel) {
+  waveBannerText.textContent = text;
+  waveBannerSub.textContent = sub || '';
+  waveBannerWeapon.textContent = weaponLabel ? '🔫 ' + weaponLabel : '';
+  waveBanner.classList.add('show');
+  setTimeout(() => waveBanner.classList.remove('show'), 2400);
+}
+function chickensAlive() {
+  return chickens.filter(c => c.state !== 'gone').length;
+}
+function updateHUD() {
+  const showHud = !renderer.xr.isPresenting;
+  if (showHud && state !== 'idle') scoreDEl.classList.add('show');
+  else scoreDEl.classList.remove('show');
+  sdWave.textContent = (currentWave + 1) + '/' + WAVES.length;
+  sdWeapon.textContent = WAVES[currentWave]?.label || 'ESTILINGUE';
+  sdChk.textContent = chickensAlive() + '/' + TOTAL_CHICKENS;
+  sdKill.textContent = ufosKilled;
+  if (showHud && (state === 'playing' || state === 'wave_intro' || state === 'wave_complete')) {
+    crosshairEl.classList.add('show');
+  } else {
+    crosshairEl.classList.remove('show');
+  }
+}
+
+// =============================================================================
+// WAVE LOGIC
+// =============================================================================
+function startWave(idx) {
+  currentWave = idx;
+  waveSpawnedCount = 0;
+  bossSpawned = false;
+  lastUfoSpawnT = performance.now();
+  state = 'wave_intro';
+  stateT = 0;
+  const w = WAVES[idx];
+  // Wave 0: reposiciona galinhas perto do player pra UFOs descerem perto
+  if (w.weapon === 'hands') {
+    const closePositions = [
+      { x: -2.6, z: 3.0 }, { x: 2.0, z: 3.5 }, { x: 0, z: 4.0 }, { x: -1.0, z: 5.2 }, { x: 1.6, z: 4.5 }
+    ];
+    let p = 0;
+    for (const c of chickens) {
+      if (c.state === 'gone') continue;
+      if (p < closePositions.length) {
+        c.group.position.set(closePositions[p].x, 0, closePositions[p].z);
+        c.state = 'pecking';
+        c.statePhase = 1.0 + Math.random() * 1.5;
+        c.pecker = 0;
+        p++;
+      }
+    }
+  }
+  showWaveBanner('WAVE ' + (idx + 1), idx === WAVES.length - 1 ? 'WAVE FINAL' : 'PREPARE-SE', w.label);
+  playWaveStart();
+  setTimeout(() => playWeaponPickup(), 600);
+  setInstr(null);
+  equipWeapon(w.weapon);
+  updateScoreboard();
+}
+
+function spawnUfoForWave() {
+  const w = WAVES[currentWave];
+  if (waveSpawnedCount >= w.count) return;
+  const aliveChickens = chickens.filter(c => c.state !== 'gone' && c.state !== 'abducting');
+  if (aliveChickens.length === 0) return;
+  const target = aliveChickens[Math.floor(Math.random() * aliveChickens.length)];
+  const u = makeUfo(w.ufoScale || 1);
+  const baseDist = w.spawnDist != null ? w.spawnDist : 18;
+  const distRand = w.spawnDistRand != null ? w.spawnDistRand : 8;
+  const baseH    = w.spawnH    != null ? w.spawnH    : 16;
+  const hRand    = w.spawnHRand != null ? w.spawnHRand : 8;
+  const angle = w.spawnFront
+    ? -Math.PI/2 + Math.random() * Math.PI
+    : Math.random() * Math.PI * 2;
+  const dist = baseDist + Math.random() * distRand;
+  u.group.position.set(
+    target.group.position.x + Math.cos(angle) * dist,
+    baseH + Math.random() * hRand,
+    target.group.position.z + Math.sin(angle) * dist
+  );
+  scene.add(u.group);
+  ufos.push({
+    ...u,
+    isBoss: false,
+    target,
+    state: 'descending',
+    speed: w.speed,
+    beamTime: w.beamTime,
+    beamElapsed: 0,
+    bobPhase: Math.random() * Math.PI * 2,
+    deadVel: new THREE.Vector3(),
+    deadT: 0,
+    spinAxis: new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize(),
+    hp: 1, maxHp: 1,
+    descendY: w.descendY != null ? w.descendY : 4
+  });
+  waveSpawnedCount++;
+}
+
+function spawnBossUfo() {
+  const w = WAVES[currentWave];
+  if (!w.bossHp) return;
+  if (bossSpawned) return;
+  const aliveChickens = chickens.filter(c => c.state !== 'gone' && c.state !== 'abducting');
+  if (aliveChickens.length === 0) return;
+  const target = aliveChickens[Math.floor(Math.random() * aliveChickens.length)];
+  const u = makeBossUfo();
+  // Spawn from far behind/above
+  u.group.position.set(
+    target.group.position.x + (Math.random() - 0.5) * 6,
+    24,
+    target.group.position.z - 12
+  );
+  scene.add(u.group);
+  ufos.push({
+    ...u,
+    isBoss: true,
+    target,
+    state: 'descending',
+    speed: w.speed * 0.7,
+    beamTime: w.beamTime * 0.65,
+    beamElapsed: 0,
+    bobPhase: Math.random() * Math.PI * 2,
+    deadVel: new THREE.Vector3(),
+    deadT: 0,
+    spinAxis: new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize(),
+    hp: w.bossHp, maxHp: w.bossHp
+  });
+  bossSpawned = true;
+  playBossSpawn();
+  pulseAll(0.6, 200);
+}
+
+function damageUfo(u, dmg) {
+  if (u.state === 'dead') return;
+  u.hp -= dmg;
+  spawnHitSparks(u.group.position);
+  if (u.hp <= 0) {
+    killUfo(u);
+  } else {
+    if (u.isBoss) updateBossHpBar(u);
+    playUfoHit();
+    pulseAll(0.25, 40);
+  }
+}
+
+function killUfo(u) {
+  if (u.state === 'dead') return;
+  if (u.state === 'beaming' && u.target && u.target.state === 'abducting') {
+    u.target.state = 'safe';
+    u.target.fallVel = 0;
+    playRescue();
+  }
+  u.state = 'dead';
+  u.deadVel.set((Math.random()-0.5)*3, -2, (Math.random()-0.5)*3);
+  u.beam.visible = false;
+  ufosKilled++;
+  spawnDebris(u.group.position, u.isBoss ? 30 : 14);
+  if (u.isBoss) {
+    spawnExplosion(u.group.position, 3.5, 0xff8030);
+    if (u.hpBar) { scene.remove(u.hpBar); u.hpBar = null; }
+    pulseAll(0.95, 250);
+  }
+  playUfoExplode();
+  if (!u.isBoss) pulseAll(0.5, 100);
+  updateHUD();
+  updateScoreboard();
+  setTimeout(checkWaveComplete, 50);
+}
+
+function checkWaveComplete() {
+  if (state !== 'playing') return;
+  const w = WAVES[currentWave];
+  const aliveUfos = ufos.filter(u => u.state !== 'dead' && u.state !== 'escaping_done');
+  const allRegularsSpawned = waveSpawnedCount >= w.count;
+  const bossDoneOrNoBoss = !w.bossHp || (bossSpawned && !aliveUfos.some(u => u.isBoss));
+  if (allRegularsSpawned && aliveUfos.length === 0 && bossDoneOrNoBoss) {
+    state = 'wave_complete';
+    stateT = 0;
+    if (currentWave + 1 >= WAVES.length) {
+      enterVictory();
+    } else {
+      setInstr('WAVE ' + (currentWave + 1) + ' OK · próxima em 3s');
+    }
+  }
+}
+
+function abductChicken(c) {
+  c.state = 'gone';
+  c.group.visible = false;
+  chickensAbducted++;
+  playChickenAbducted();
+  flashHurt();
+  pulseAll(0.5, 200);
+  updateHUD();
+  updateScoreboard();
+  if (chickensAlive() === 0) enterGameOver();
+}
+
+function enterGameOver() {
+  state = 'game_over';
+  stateT = 0;
+  goEl.classList.add('show');
+  setInstr(null);
+  playGameOver();
+}
+
+function enterVictory() {
+  state = 'victory';
+  stateT = 0;
+  winEl.classList.add('show');
+  setInstr(null);
+  setTimeout(() => playVictory(), 200);
+}
+
+function resetGame() {
+  goEl.classList.remove('show');
+  winEl.classList.remove('show');
+  for (const u of ufos) {
+    scene.remove(u.group);
+    if (u.hpBar) scene.remove(u.hpBar);
+  }
+  ufos.length = 0;
+  for (const p of projectiles) scene.remove(p);
+  projectiles.length = 0;
+  for (const d of debris) scene.remove(d);
+  debris.length = 0;
+  for (const c of chickens) scene.remove(c.group);
+  chickens.length = 0;
+  for (const p of initialPositions) spawnChicken(p.x, p.z);
+  ufosKilled = 0;
+  chickensAbducted = 0;
+  currentWave = 0;
+  waveSpawnedCount = 0;
+  bossSpawned = false;
+  state = 'idle';
+  stateT = 0;
+  pouchGrabbed = false;
+  equipWeapon('slingshot');
+  setInstr('Aperte o trigger pra começar');
+  updateHUD();
+}
+
+// =============================================================================
+// CONTROLLER INPUT
+// =============================================================================
+controller1.addEventListener('selectstart', () => {
+  triggerHeld[controller1 === leftCtrl ? 'left' : 'right'] = true;
+  onTriggerStart(controller1);
+});
+controller2.addEventListener('selectstart', () => {
+  triggerHeld[controller2 === leftCtrl ? 'left' : 'right'] = true;
+  onTriggerStart(controller2);
+});
+controller1.addEventListener('selectend', () => {
+  triggerHeld[controller1 === leftCtrl ? 'left' : 'right'] = false;
+  onTriggerEnd(controller1);
+});
+controller2.addEventListener('selectend', () => {
+  triggerHeld[controller2 === leftCtrl ? 'left' : 'right'] = false;
+  onTriggerEnd(controller2);
+});
+
+function onTriggerStart(ctrl) {
+  if (state === 'idle') { startWave(0); return; }
+  if (state === 'wave_complete' && stateT > 0.4) {
+    if (currentWave + 1 < WAVES.length) startWave(currentWave + 1);
+    return;
+  }
+  if ((state === 'game_over' || state === 'victory') && stateT > 1) {
+    resetGame();
+    return;
+  }
+  if (state !== 'playing' && state !== 'wave_intro') return;
+
+  // HANDS: trigger não faz nada — arremesso é por movimento (detectado no main loop)
+  if (activeWeapon === 'hands') return;
+  // SLINGSHOT or CROSSBOW: left trigger grabs pouch/string
+  if ((activeWeapon === 'slingshot' || activeWeapon === 'crossbow') && ctrl === leftCtrl) {
+    const lh = new THREE.Vector3();
+    leftCtrl.getWorldPosition(lh);
+    const restW = getPouchRestWorld();
+    if (lh.distanceTo(restW) < POUCH_GRAB_DIST) {
+      pouchGrabbed = true;
+      playSlingshotPull();
+      pulseController(leftCtrl, 0.4, 50);
+    }
+    return;
+  }
+  // LASER: right trigger starts continuous beam
+  if (activeWeapon === 'laser' && ctrl === rightCtrl) {
+    startLaserBeam();
+    return;
+  }
+  // SHOTGUN / GATLING: right trigger — input buffer (queue if cooldown)
+  if (ctrl === rightCtrl) {
+    if (weaponCD <= 0) {
+      if (activeWeapon === 'shotgun') fireShotgun();
+      else if (activeWeapon === 'gatling') fireGatlingBurst();
+    } else {
+      pendingShot = true;
+    }
+  }
+}
+
+function onTriggerEnd(ctrl) {
+  if ((activeWeapon === 'slingshot' || activeWeapon === 'crossbow') && ctrl === leftCtrl && pouchGrabbed) {
+    if (activeWeapon === 'slingshot') fireSlingshotPouch();
+    else fireCrossbowArrow();
+    pouchGrabbed = false;
+  }
+  if (activeWeapon === 'laser' && ctrl === rightCtrl) {
+    stopLaserBeam();
+  }
+  // HANDS: arremesso é por movimento, não por trigger
+}
+
+// =============================================================================
+// SNAP TURN
+// =============================================================================
+let snapCD = 0;
+function vrSnap(dt) {
+  const sess = renderer.xr.getSession();
+  if (!sess) return;
+  for (const src of sess.inputSources) {
+    if (!src.gamepad) continue;
+    if (src.handedness !== 'right') continue;
+    const ax = src.gamepad.axes;
+    const sx = ax[2] !== undefined ? ax[2] : (ax[0] || 0);
+    snapCD -= dt;
+    if (Math.abs(sx) > 0.7 && snapCD <= 0) {
+      cameraRig.rotation.y -= Math.sign(sx) * Math.PI/6;
+      snapCD = 0.32;
+    }
+  }
+}
+
+// =============================================================================
+// DESKTOP FALLBACK
+// =============================================================================
+const keys = {};
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'KeyE' || e.code === 'Space') {
+    if (state === 'idle') startWave(0);
+    else if (state === 'wave_complete' && stateT > 0.4 && currentWave + 1 < WAVES.length) startWave(currentWave + 1);
+    else if ((state === 'game_over' || state === 'victory') && stateT > 1) resetGame();
+  }
+  if (e.code === 'KeyR' && (state === 'game_over' || state === 'victory')) resetGame();
+});
+addEventListener('keyup', e => keys[e.code] = false);
+
+let mouseLocked = false;
+const startEl = document.getElementById('start');
+function dismissStart() {
+  initAudio();
+  startEl.style.display = 'none';
+  setInstr(isTouch ? 'Toque pra começar' : 'Clique pra começar');
+  // Pointer lock só faz sentido em desktop (não-touch, não-VR)
+  if (!isTouch && renderer.domElement.requestPointerLock && !renderer.xr.isPresenting) {
+    try { renderer.domElement.requestPointerLock(); } catch(e){}
+  }
+}
+startEl.addEventListener('click', dismissStart);
+startEl.addEventListener('touchstart', dismissStart, {passive:true});
+
+document.addEventListener('pointerlockchange', () => {
+  mouseLocked = document.pointerLockElement === renderer.domElement;
+});
+
+addEventListener('mousedown', e => {
+  if (mouseLocked) {
+    mouseDown = true;
+    // Laser: hold mouse to fire beam
+    if ((state === 'playing' || state === 'wave_intro') && activeWeapon === 'laser') {
+      startLaserBeam();
+    }
+  }
+});
+addEventListener('mouseup', e => {
+  mouseDown = false;
+  if (activeWeapon === 'laser' && laserBeamActive) stopLaserBeam();
+});
+
+renderer.domElement.addEventListener('click', () => {
+  // Em mobile, touch handlers cuidam de tudo — ignora click pra evitar duplicidade
+  if (isTouch) return;
+  if (!renderer.xr.isPresenting && !mouseLocked) {
+    try { renderer.domElement.requestPointerLock(); } catch(e){}
+    return;
+  }
+  if (state === 'idle') { startWave(0); return; }
+  if (state === 'wave_complete' && stateT > 0.4 && currentWave + 1 < WAVES.length) {
+    startWave(currentWave + 1); return;
+  }
+  if ((state === 'game_over' || state === 'victory') && stateT > 1) {
+    resetGame(); return;
+  }
+  if ((state === 'playing' || state === 'wave_intro') && weaponCD <= 0) {
+    desktopShoot();
+  }
+});
+
+function desktopShoot() {
+  if (activeWeapon === 'hands') {
+    const camPos = new THREE.Vector3(); camera.getWorldPosition(camPos);
+    const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+    const proj = makeEggProj(1);
+    proj.position.copy(camPos).addScaledVector(dir, 0.3);
+    proj.userData.vel = dir.clone().multiplyScalar(12).addScaledVector(new THREE.Vector3(0,1,0), 1);
+    proj.userData.life = 0; proj.userData.damage = 1; proj.userData.gravity = true;
+    proj.userData.isEgg = true;
+    scene.add(proj); projectiles.push(proj);
+    playEggThrow();
+    weaponCD = 0.4;
+    return;
+  }
+  if (activeWeapon === 'slingshot') {
+    const camPos = new THREE.Vector3(); camera.getWorldPosition(camPos);
+    const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+    const proj = makePebbleMesh();
+    proj.position.copy(camPos).addScaledVector(dir, 0.3);
+    proj.userData.vel = dir.clone().multiplyScalar(MAX_SHOT_SPEED);
+    proj.userData.life = 0; proj.userData.damage = 2; proj.userData.gravity = true;
+    proj.userData.isEgg = true;
+    scene.add(proj); projectiles.push(proj);
+    playSlingshotRelease();
+    weaponCD = 0.35;
+    return;
+  }
+  if (activeWeapon === 'crossbow') {
+    const camPos = new THREE.Vector3(); camera.getWorldPosition(camPos);
+    const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+    const arrow = makeArrowMesh();
+    arrow.position.copy(camPos).addScaledVector(dir, 0.3);
+    arrow.userData.vel = dir.clone().multiplyScalar(CROSSBOW_ARROW_SPEED);
+    arrow.userData.life = 0; arrow.userData.damage = 2; arrow.userData.gravity = false;
+    arrow.userData.isArrow = true;
+    arrow.userData.isEgg = true;
+    const arrowQ = new THREE.Quaternion();
+    arrowQ.setFromUnitVectors(new THREE.Vector3(0, 0, -1), dir);
+    arrow.quaternion.copy(arrowQ);
+    scene.add(arrow); projectiles.push(arrow);
+    playArrowRelease();
+    weaponCD = 0.45;
+    return;
+  }
+  if (activeWeapon === 'shotgun') fireShotgun();
+  else if (activeWeapon === 'gatling') fireGatlingBurst();
+  // laser handled by mousedown/mouseup
+}
+
+let yaw = 0, pitch = 0;
+addEventListener('mousemove', e => {
+  if (!mouseLocked) return;
+  yaw -= e.movementX * 0.0025;
+  pitch -= e.movementY * 0.0025;
+  pitch = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, pitch));
+  cameraRig.rotation.y = yaw;
+  camera.rotation.x = pitch;
+});
+
+// =============================================================================
+// MOBILE TOUCH CONTROLS — arrastar pra mirar, tap pra atirar, hold pra contínuo
+// =============================================================================
+const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+let touchActive = false;
+let touchStartTime = 0;
+let touchMoveDist = 0;
+let lastTouchX = 0, lastTouchY = 0;
+
+function handleTouchStart(e) {
+  if (renderer.xr.isPresenting) return;
+  e.preventDefault();
+  if (e.touches.length === 0) return;
+  const t = e.touches[0];
+
+  // Game state transitions
+  if (state === 'idle') { initAudio(); startWave(0); return; }
+  if (state === 'wave_complete' && stateT > 0.4 && currentWave + 1 < WAVES.length) { startWave(currentWave + 1); return; }
+  if ((state === 'game_over' || state === 'victory') && stateT > 1) { resetGame(); return; }
+  if (state !== 'playing' && state !== 'wave_intro') return;
+
+  touchActive = true;
+  lastTouchX = t.clientX; lastTouchY = t.clientY;
+  touchStartTime = performance.now();
+  touchMoveDist = 0;
+  // Laser fires immediately on touch start (hold to keep firing)
+  if (activeWeapon === 'laser') startLaserBeam();
+}
+
+function handleTouchMove(e) {
+  if (renderer.xr.isPresenting) return;
+  e.preventDefault();
+  if (!touchActive || e.touches.length === 0) return;
+  const t = e.touches[0];
+  const dx = t.clientX - lastTouchX;
+  const dy = t.clientY - lastTouchY;
+  yaw -= dx * 0.006;
+  pitch -= dy * 0.006;
+  pitch = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, pitch));
+  cameraRig.rotation.y = yaw;
+  camera.rotation.x = pitch;
+  lastTouchX = t.clientX; lastTouchY = t.clientY;
+  touchMoveDist += Math.hypot(dx, dy);
+}
+
+function handleTouchEnd(e) {
+  if (renderer.xr.isPresenting) return;
+  e.preventDefault();
+  if (!touchActive) return;
+  touchActive = false;
+  const elapsed = performance.now() - touchStartTime;
+  const wasTap = elapsed < 220 && touchMoveDist < 14;
+  if (wasTap && (state === 'playing' || state === 'wave_intro')) {
+    if (activeWeapon !== 'laser' && weaponCD <= 0) desktopShoot();
+  }
+  if (activeWeapon === 'laser') stopLaserBeam();
+}
+
+if (isTouch) {
+  renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+  renderer.domElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+  renderer.domElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+  renderer.domElement.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+}
+
+renderer.xr.addEventListener('sessionstart', () => {
+  initAudio();
+  startEl.style.display = 'none';
+  setInstr('Aperte o trigger pra começar');
+  setTimeout(() => {
+    const sess = renderer.xr.getSession();
+    if (!sess) return;
+    let foundLeft = null, foundRight = null;
+    for (let i = 0; i < sess.inputSources.length; i++) {
+      const src = sess.inputSources[i];
+      const c = i === 0 ? controller1 : controller2;
+      if (src.handedness === 'right') foundRight = c;
+      else if (src.handedness === 'left') foundLeft = c;
+    }
+    if (foundRight) rightCtrl = foundRight;
+    if (foundLeft) leftCtrl = foundLeft;
+    // Recenter — gira cameraRig pra player olhar o yard (+Z) na hora de entrar
+    const fwd = new THREE.Vector3();
+    camera.getWorldDirection(fwd);
+    fwd.y = 0;
+    if (fwd.lengthSq() > 0.001) {
+      fwd.normalize();
+      // Quero que o player olhe pro yard (+Z). lookAngle = atan2(fwd.x, fwd.z): 0 = +Z, ±π = -Z.
+      const lookAngle = Math.atan2(fwd.x, fwd.z);
+      cameraRig.rotation.y -= lookAngle;
+    }
+  }, 350);
+});
+
+// =============================================================================
+// MAIN LOOP
+// =============================================================================
+const clock = new THREE.Clock();
+let nowMs = 0;
+
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  stateT += dt;
+  nowMs += dt * 1000;
+  if (weaponCD > 0) weaponCD = Math.max(0, weaponCD - dt);
+
+  // Cloud drift
+  for (const c of clouds) {
+    c.position.x += dt * 0.4;
+    if (c.position.x > 200) c.position.x = -200;
+  }
+
+  // Laser idle animation
+  if (activeWeapon === 'laser' && laser.userData.core) {
+    laser.userData.core.scale.setScalar(1 + Math.sin(nowMs * 0.012) * 0.3);
+    laser.userData.ring.rotation.z += dt * 5;
+    // emitter pulses bright yellow when firing
+    laser.userData.emitter.material.emissive.setHex(laserBeamActive && laserPulseOn ? 0xffd040 : 0x402010);
+  }
+  // Gatling spin
+  if (activeWeapon === 'gatling') {
+    const targetSpin = (triggerHeld.right || mouseDown) ? 30 : 0;
+    gatling.userData.spinSpeed += (targetSpin - gatling.userData.spinSpeed) * dt * 6;
+    gatling.userData.barrels.rotation.z += gatling.userData.spinSpeed * dt;
+  }
+  // Drain pending shot when cooldown clears
+  if (pendingShot && weaponCD <= 0 && (state === 'playing' || state === 'wave_intro')) {
+    pendingShot = false;
+    if (activeWeapon === 'shotgun') fireShotgun();
+    else if (activeWeapon === 'gatling') fireGatlingBurst();
+  }
+  // Cadeira segue a rotação Y da cabeça do player (em VR)
+  // Convenções:
+  //   Câmera com world rotY=θ olha em (-sin θ, 0, -cos θ)
+  //   Cadeira (frente em +Z local) com world rotY=φ aponta em (sin φ, 0, cos φ)
+  //   Pra cadeira apontar mesma direção da câmera: φ = θ + π (ou θ - π)
+  if (renderer.xr.isPresenting) {
+    const cw = new THREE.Vector3();
+    camera.getWorldDirection(cw);
+    cw.y = 0;
+    if (cw.lengthSq() > 0.001) {
+      cw.normalize();
+      // Recupera camera world rot Y:  θ = atan2(-cw.x, -cw.z)
+      const camWorldRotY = Math.atan2(-cw.x, -cw.z);
+      // Chair world rotY desejado = camera world rotY - π
+      // Chair local = world - cameraRig.rotation.y
+      wheelchair.rotation.y = camWorldRotY - Math.PI - cameraRig.rotation.y;
+    }
+  } else {
+    wheelchair.rotation.y = 0;
+  }
+
+  // Track controller velocity (for egg throwing) + histórico pro peak
+  if (renderer.xr.isPresenting && dt > 0) {
+    const lp = new THREE.Vector3(); leftCtrl.getWorldPosition(lp);
+    const rp = new THREE.Vector3(); rightCtrl.getWorldPosition(rp);
+    ctrlVel.left.copy(lp).sub(ctrlPrevPos.left).divideScalar(Math.max(dt, 0.001));
+    ctrlVel.right.copy(rp).sub(ctrlPrevPos.right).divideScalar(Math.max(dt, 0.001));
+    ctrlPrevPos.left.copy(lp);
+    ctrlPrevPos.right.copy(rp);
+    // Push no histórico (clone pra não compartilhar referência)
+    ctrlVelHistory.left.push(ctrlVel.left.clone());
+    if (ctrlVelHistory.left.length > VEL_HISTORY_SIZE) ctrlVelHistory.left.shift();
+    ctrlVelHistory.right.push(ctrlVel.right.clone());
+    if (ctrlVelHistory.right.length > VEL_HISTORY_SIZE) ctrlVelHistory.right.shift();
+  }
+
+  // HANDS: detecta arremesso por velocidade — usa PEAK do buffer (pega o pico do swing)
+  // Threshold + peak: dispara só com swing intencional, e usa a vel máxima do movimento
+  const HAND_THROW_VEL = 2.0;
+  if (activeWeapon === 'hands' && (state === 'playing' || state === 'wave_intro') && renderer.xr.isPresenting) {
+    if (eggReadyLeft && ctrlVel.left.length() > HAND_THROW_VEL) {
+      const peak = getPeakVel('left');
+      throwEgg(leftCtrl, peak);
+      ctrlVelHistory.left.length = 0; // reset pra próximo throw
+      eggReadyLeft = false;
+      eggInLeftHand.visible = false;
+      setTimeout(() => { eggReadyLeft = true; if (activeWeapon === 'hands') eggInLeftHand.visible = true; }, 380);
+    }
+    if (eggReadyRight && ctrlVel.right.length() > HAND_THROW_VEL) {
+      const peak = getPeakVel('right');
+      throwEgg(rightCtrl, peak);
+      ctrlVelHistory.right.length = 0;
+      eggReadyRight = false;
+      eggInRightHand.visible = false;
+      setTimeout(() => { eggReadyRight = true; if (activeWeapon === 'hands') eggInRightHand.visible = true; }, 380);
+    }
+  }
+
+  // HANDS: position eggs in each hand with small offset toward palm
+  if (activeWeapon === 'hands') {
+    const showHands = state === 'playing' || state === 'wave_intro' || state === 'wave_complete';
+    if (showHands && renderer.xr.isPresenting) {
+      if (eggReadyLeft) {
+        const lp = new THREE.Vector3(); leftCtrl.getWorldPosition(lp);
+        const fwd = new THREE.Vector3(0, -0.04, -0.05);
+        const q = new THREE.Quaternion(); leftCtrl.getWorldQuaternion(q);
+        fwd.applyQuaternion(q);
+        eggInLeftHand.position.copy(lp).add(fwd);
+        eggInLeftHand.visible = true;
+      } else { eggInLeftHand.visible = false; }
+      if (eggReadyRight) {
+        const rp = new THREE.Vector3(); rightCtrl.getWorldPosition(rp);
+        const fwd = new THREE.Vector3(0, -0.04, -0.05);
+        const q = new THREE.Quaternion(); rightCtrl.getWorldQuaternion(q);
+        fwd.applyQuaternion(q);
+        eggInRightHand.position.copy(rp).add(fwd);
+        eggInRightHand.visible = true;
+      } else { eggInRightHand.visible = false; }
+    } else {
+      eggInLeftHand.visible = false;
+      eggInRightHand.visible = false;
+    }
+  } else {
+    eggInLeftHand.visible = false;
+    eggInRightHand.visible = false;
+  }
+
+  // Tick laser beam (continuous)
+  if (laserBeamActive) tickLaser(dt);
+
+  // 3D scoreboard visibility — esconde durante jogo ativo, mostra em idle/game over/vitória
+  const showSb = state === 'idle' || state === 'game_over' || state === 'victory';
+  sbMesh.visible = showSb;
+  sbChainL.visible = showSb;
+  sbChainR.visible = showSb;
+
+  // 3D banner fade
+  if (bannerMesh.visible) {
+    bannerLife += dt;
+    let alpha = 1.0;
+    if (bannerDuration < 100) {
+      // Fade out at end
+      alpha = Math.min(1, bannerLife / 0.3) * Math.max(0, 1 - (bannerLife - bannerDuration + 0.5) / 0.5);
+      if (bannerLife > bannerDuration) {
+        bannerMesh.visible = false;
+      }
+    } else {
+      // Persistent (game over / victory) — pulse
+      alpha = 0.85 + Math.sin(bannerLife * 4) * 0.15;
+    }
+    bannerMesh.material.opacity = Math.max(0, Math.min(1, alpha));
+    // Always face the player
+    const camPos = new THREE.Vector3(); camera.getWorldPosition(camPos);
+    bannerMesh.lookAt(camPos);
+  }
+
+  // === WEAPON SYNC ===
+  const sActive = (state === 'playing' || state === 'wave_intro' || state === 'wave_complete');
+  const activeGroup = allWeaponGroups[activeWeapon];
+  if (sActive && renderer.xr.isPresenting) {
+    const rcwp = new THREE.Vector3();
+    const rcwq = new THREE.Quaternion();
+    rightCtrl.getWorldPosition(rcwp);
+    rightCtrl.getWorldQuaternion(rcwq);
+    activeGroup.position.copy(rcwp);
+    activeGroup.quaternion.copy(rcwq);
+    activeGroup.visible = true;
+    if (rightCtrl === controller1) ctrlVis1.visible = false; else ctrlVis2.visible = false;
+    if (leftCtrl === controller1) ctrlVis1.visible = true; else ctrlVis2.visible = true;
+
+    if (activeWeapon === 'slingshot' || activeWeapon === 'crossbow') {
+      pouchMesh.visible = true;
+      pebbleReadyMesh.visible = !pouchGrabbed;
+      elasticL.visible = true;
+      elasticR.visible = true;
+      const pp = getPouchPosWorld();
+      pouchMesh.position.copy(pp);
+      pouchMesh.lookAt(camera.getWorldPosition(new THREE.Vector3()));
+      pebbleReadyMesh.position.copy(pp);
+      // Orient pebble (arrow shape for crossbow) along firing direction
+      if (activeWeapon === 'crossbow') {
+        const restW = getPouchRestWorld();
+        const fdir = restW.clone().sub(pp);
+        if (fdir.lengthSq() > 1e-6) {
+          fdir.normalize();
+          const q = new THREE.Quaternion();
+          q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), fdir);
+          pebbleReadyMesh.quaternion.copy(q);
+        }
+      } else {
+        pebbleReadyMesh.quaternion.identity();
+      }
+      const tipLObj = activeWeapon === 'crossbow' ? cbTipL : slTipL;
+      const tipRObj = activeWeapon === 'crossbow' ? cbTipR : slTipR;
+      const tipLW = new THREE.Vector3(); tipLObj.getWorldPosition(tipLW);
+      const tipRW = new THREE.Vector3(); tipRObj.getWorldPosition(tipRW);
+      updateElasticStrand(elasticL, tipLW, pp);
+      updateElasticStrand(elasticR, tipRW, pp);
+    } else {
+      pouchMesh.visible = false;
+      pebbleReadyMesh.visible = false;
+      elasticL.visible = false;
+      elasticR.visible = false;
+    }
+
+    // Polling direto do gamepad pro hold-fire (mais confiável que selectstart/end)
+    const rightHeldPolled = (() => {
+      const sess = renderer.xr.getSession();
+      if (!sess) return triggerHeld.right;
+      for (const src of sess.inputSources) {
+        if (src.handedness === 'right' && src.gamepad?.buttons?.[0]?.pressed) return true;
+      }
+      return triggerHeld.right;
+    })();
+    // Gatling continuous fire (hold trigger)
+    if (activeWeapon === 'gatling' && rightHeldPolled && weaponCD <= 0) {
+      fireGatlingBurst();
+    }
+    // Shotgun continuous fire (hold trigger)
+    if (activeWeapon === 'shotgun' && rightHeldPolled && weaponCD <= 0) {
+      fireShotgun();
+    }
+  } else if (sActive && !renderer.xr.isPresenting) {
+    const camPos = new THREE.Vector3(); camera.getWorldPosition(camPos);
+    const camQuat = new THREE.Quaternion(); camera.getWorldQuaternion(camQuat);
+    const offset = new THREE.Vector3(0.28, -0.32, -0.5);
+    offset.applyQuaternion(camQuat);
+    activeGroup.position.copy(camPos).add(offset);
+    activeGroup.quaternion.copy(camQuat);
+    activeGroup.visible = true;
+    pouchMesh.visible = false;
+    pebbleReadyMesh.visible = false;
+    elasticL.visible = false;
+    elasticR.visible = false;
+    ctrlVis1.visible = false; ctrlVis2.visible = false;
+    // Gatling continuous fire on desktop hold
+    if (activeWeapon === 'gatling' && (mouseDown || touchActive) && weaponCD <= 0) {
+      fireGatlingBurst();
+    }
+    // Shotgun continuous fire on desktop hold
+    if (activeWeapon === 'shotgun' && (mouseDown || touchActive) && weaponCD <= 0) {
+      fireShotgun();
+    }
+  } else {
+    for (const k of Object.keys(allWeaponGroups)) allWeaponGroups[k].visible = false;
+    pouchMesh.visible = false;
+    pebbleReadyMesh.visible = false;
+    elasticL.visible = false;
+    elasticR.visible = false;
+    ctrlVis1.visible = true; ctrlVis2.visible = true;
+  }
+
+  // === CHICKENS ===
+  for (const c of chickens) {
+    if (c.state === 'gone') continue;
+    if (c.state === 'wandering') {
+      const toTarget = c.target.clone().sub(c.group.position);
+      toTarget.y = 0;
+      const dist = toTarget.length();
+      if (dist < 0.3) {
+        c.state = 'pecking';
+        c.statePhase = 1.5 + Math.random() * 2.0;
+        c.pecker = 0;
+      } else {
+        toTarget.normalize();
+        const speed = 0.6;
+        c.group.position.addScaledVector(toTarget, speed * dt);
+        c.group.lookAt(c.group.position.x + toTarget.x, c.group.position.y, c.group.position.z + toTarget.z);
+        c.walkPhase += dt * 8;
+        c.body.position.y = 0.22 + Math.abs(Math.sin(c.walkPhase)) * 0.02;
+        c.head.position.y = 0.36 + Math.abs(Math.sin(c.walkPhase)) * 0.02;
+        if (Math.random() < 0.001) playCluck();
+      }
+    } else if (c.state === 'pecking') {
+      c.pecker += dt;
+      const pk = (c.pecker * 4) % 1;
+      c.head.position.y = 0.36 - Math.max(0, Math.sin(pk * Math.PI * 2)) * 0.12;
+      c.statePhase -= dt;
+      if (c.statePhase <= 0) {
+        c.state = 'wandering';
+        c.target = pickChickenTarget();
+        if (Math.random() < 0.3) playCluck();
+      }
+    } else if (c.state === 'abducting') {
+      c.wingL.rotation.z = 0.5 + Math.sin(nowMs * 0.02) * 0.5;
+      c.wingR.rotation.z = -0.5 - Math.sin(nowMs * 0.02) * 0.5;
+      c.group.rotation.y += dt * 3;
+    } else if (c.state === 'scared') {
+      c.scaredT += dt;
+      c.scaredVel.y -= 9.8 * dt;
+      c.group.position.addScaledVector(c.scaredVel, dt);
+      if (c.group.position.y <= 0) {
+        c.group.position.y = 0;
+        c.scaredVel.y = Math.max(0, c.scaredVel.y);
+        // Atrito horizontal
+        c.scaredVel.x *= 0.85;
+        c.scaredVel.z *= 0.85;
+      }
+      // Asas batendo em pânico
+      c.wingL.rotation.z = 0.6 + Math.sin(c.scaredT * 22) * 0.6;
+      c.wingR.rotation.z = -0.6 - Math.sin(c.scaredT * 22) * 0.6;
+      // Mantém dentro do quintal
+      c.group.position.x = Math.max(-(YARD_HALF_X - 0.5), Math.min(YARD_HALF_X - 0.5, c.group.position.x));
+      c.group.position.z = Math.max(YARD_NEAR + 0.5, Math.min(YARD_FAR - 0.5, c.group.position.z));
+      if (c.scaredT > 1.4) {
+        c.state = 'wandering';
+        c.target = pickChickenTarget();
+        c.wingL.rotation.z = 0;
+        c.wingR.rotation.z = 0;
+        if (Math.random() < 0.5) playCluck();
+      }
+    } else if (c.state === 'safe') {
+      c.fallVel += 9.8 * dt;
+      c.group.position.y -= c.fallVel * dt;
+      c.group.rotation.y += dt * 4;
+      if (c.group.position.y <= 0) {
+        c.group.position.y = 0;
+        c.group.rotation.x = 0;
+        c.group.rotation.z = 0;
+        c.state = 'wandering';
+        c.target = pickChickenTarget();
+        c.wingL.rotation.z = 0;
+        c.wingR.rotation.z = 0;
+      }
+    }
+  }
+
+  // STATE
+  if (state === 'wave_intro' && stateT > 1.2) {
+    state = 'playing';
+    stateT = 0;
+    setInstr(null);
+    // spawn boss right away if applicable
+    spawnBossUfo();
+  }
+
+  if (state === 'playing') {
+    const w = WAVES[currentWave];
+    if (waveSpawnedCount < w.count && performance.now() - lastUfoSpawnT > w.interval * 1000) {
+      spawnUfoForWave();
+      lastUfoSpawnT = performance.now();
+    }
+    checkWaveComplete();
+  }
+  if (state === 'wave_complete' && stateT > 3 && currentWave + 1 < WAVES.length) {
+    startWave(currentWave + 1);
+  }
+
+  // === UFOs ===
+  for (let i = ufos.length - 1; i >= 0; i--) {
+    const u = ufos[i];
+    if (u.state === 'dead') {
+      u.deadT += dt;
+      u.deadVel.y -= 9.8 * dt;
+      u.group.position.addScaledVector(u.deadVel, dt);
+      u.group.rotation.x += u.spinAxis.x * dt * 8;
+      u.group.rotation.z += u.spinAxis.z * dt * 8;
+      if (Math.random() < 0.4) {
+        const s = new THREE.Mesh(
+          new THREE.SphereGeometry(0.12 + Math.random()*0.08, 6, 4),
+          new THREE.MeshBasicMaterial({color:0x404048, transparent:true, opacity:0.5})
+        );
+        s.position.copy(u.group.position);
+        s.userData.vel = new THREE.Vector3(0, 0.3, 0);
+        s.userData.life = 0; s.userData.isSmoke = true;
+        scene.add(s); debris.push(s);
+      }
+      if (u.group.position.y <= 0.2 || u.deadT > 4) {
+        spawnDebris(u.group.position, u.isBoss ? 24 : 12);
+        scene.remove(u.group);
+        ufos.splice(i, 1);
+      }
+      continue;
+    }
+    u.lightsGroup.rotation.y += dt * 4;
+    u.group.rotation.y = Math.sin(nowMs * 0.003 + u.bobPhase) * 0.1;
+    u.aHead.rotation.y = Math.sin(nowMs * 0.002 + u.bobPhase) * 0.4;
+
+    // Boss antenna pulse
+    if (u.isBoss && u.antennaTip) {
+      u.antennaTip.material.color.setHex(Math.floor(nowMs / 250) % 2 === 0 ? 0xff2020 : 0x801010);
+    }
+
+    // Boss HP bar follow
+    if (u.isBoss && u.hpBar) {
+      const bp = u.group.position.clone();
+      bp.y += 1.6;
+      u.hpBar.position.copy(bp);
+      u.hpBar.lookAt(camera.getWorldPosition(new THREE.Vector3()));
+      // initialize bar render once
+      if (!u.hpBar.userData.drawn) {
+        updateBossHpBar(u);
+        u.hpBar.userData.drawn = true;
+      }
+    }
+
+    if (u.state === 'descending') {
+      let target = u.target;
+      if (!target || target.state === 'gone') {
+        const alt = chickens.find(c => c.state !== 'gone' && c.state !== 'abducting');
+        if (alt) { u.target = alt; target = alt; }
+        else {
+          u.state = 'escaping_done';
+          if (u.hpBar) scene.remove(u.hpBar);
+          ufos.splice(i, 1); scene.remove(u.group); continue;
+        }
+      }
+      // descendY define altura que UFO para acima do chicken pra começar o beam
+      const descendH = u.isBoss ? 5.5 : (u.descendY != null ? u.descendY : 4);
+      const targetPos = new THREE.Vector3(target.group.position.x, descendH, target.group.position.z);
+      const dir = targetPos.clone().sub(u.group.position);
+      const dist = dir.length();
+      if (dist < 0.3) {
+        u.state = 'beaming';
+        u.beam.visible = true;
+        u.beamElapsed = 0;
+        if (target.state === 'wandering' || target.state === 'pecking') {
+          target.state = 'abducting';
+        }
+        playBeamStart();
+      } else {
+        dir.normalize();
+        u.group.position.addScaledVector(dir, u.speed * dt);
+      }
+    } else if (u.state === 'beaming') {
+      u.group.position.y += Math.sin(nowMs * 0.005 + u.bobPhase) * 0.01;
+      u.beamElapsed += dt;
+      u.beam.material.opacity = 0.3 + Math.sin(nowMs * 0.01) * 0.1;
+      const tgt = u.target;
+      if (!tgt || tgt.state === 'gone') {
+        u.state = 'escaping';
+        u.beam.visible = false;
+        continue;
+      }
+      if (tgt.state === 'abducting') {
+        const progress = u.beamElapsed / u.beamTime;
+        const targetY = u.group.position.y - 0.4;
+        tgt.group.position.y = progress * targetY;
+        const beamLen = u.group.position.y - tgt.group.position.y;
+        u.beam.scale.y = beamLen / 4;
+        u.beam.position.y = -beamLen/2;
+        u.beam.scale.x = 1 - progress * 0.4;
+        u.beam.scale.z = 1 - progress * 0.4;
+        if (progress >= 1) {
+          abductChicken(tgt);
+          u.state = 'escaping';
+          u.beam.visible = false;
+        }
+      }
+    } else if (u.state === 'escaping') {
+      u.group.position.y += dt * 6;
+      u.group.position.x += dt * 2 * Math.sign(u.group.position.x || 1);
+      if (u.group.position.y > 50) {
+        if (u.hpBar) scene.remove(u.hpBar);
+        scene.remove(u.group);
+        u.state = 'escaping_done';
+        ufos.splice(i, 1);
+      }
+    }
+  }
+
+  // === PROJECTILES ===
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const p = projectiles[i];
+    const prevPos = p.position.clone();   // pra teste swept (segmento)
+    if (p.userData.gravity) {
+      const gScale = p.userData.gravityScale != null ? p.userData.gravityScale : 1.0;
+      p.userData.vel.y -= 9.8 * gScale * dt;
+    }
+    p.position.addScaledVector(p.userData.vel, dt);
+    p.userData.life += dt;
+    let removed = false;
+    for (const u of ufos) {
+      if (u.state === 'dead' || u.state === 'escaping_done') continue;
+      const r = Math.max(0.45, UFO_HIT_RADIUS * u.group.scale.x + 0.10);
+      // Segment vs sphere: distância do trajeto do projétil ao centro do UFO
+      const c = u.group.position;
+      const seg = p.position.clone().sub(prevPos);
+      const segLen = seg.length();
+      let hitDist;
+      if (segLen < 0.001) {
+        hitDist = p.position.distanceTo(c);
+      } else {
+        const segDir = seg.clone().divideScalar(segLen);
+        const toC = c.clone().sub(prevPos);
+        const t = Math.max(0, Math.min(segLen, toC.dot(segDir)));
+        const closest = prevPos.clone().addScaledVector(segDir, t);
+        hitDist = closest.distanceTo(c);
+      }
+      if (hitDist < r) {
+        damageUfo(u, p.userData.damage);
+        if (p.userData.isEgg && debris.length < MAX_DEBRIS) {
+          spawnEggSplat(p.position);
+        }
+        scene.remove(p);
+        projectiles.splice(i, 1);
+        removed = true;
+        break;
+      }
+    }
+    // Orient arrows to fly along velocity direction
+    if (!removed && p.userData.isArrow) {
+      const v = p.userData.vel.clone();
+      if (v.lengthSq() > 1e-6) {
+        v.normalize();
+        const q = new THREE.Quaternion();
+        q.setFromUnitVectors(new THREE.Vector3(0, 0, -1), v);
+        p.quaternion.copy(q);
+      }
+    }
+    // BOUNCE — projéteis quebram no chão (splat de ovo frito) e quicam só em paredes/cercas
+    if (!removed) {
+      const v = p.userData.vel;
+      let bounced = false;
+      let surfacePos = null;
+
+      // CHÃO — ovo QUEBRA com splat de ovo frito (sem mais quicar)
+      if (p.position.y <= 0.04 && v.y < 0) {
+        // Assusta galinhas próximas
+        for (const ck of chickens) {
+          if (ck.state === 'gone' || ck.state === 'abducting' || ck.state === 'scared') continue;
+          const d = Math.hypot(ck.group.position.x - p.position.x, ck.group.position.z - p.position.z);
+          if (d < 1.6) scareChicken(ck, p.position);
+        }
+        if (p.userData.isEgg) {
+          spawnFriedEggSplat(new THREE.Vector3(p.position.x, 0, p.position.z));
+        }
+        scene.remove(p);
+        projectiles.splice(i, 1);
+        removed = true;
+      }
+      // PAREDE DA CASA (z = -3.55, dentro de x:[-4,4] y:[0,4])
+      else if (p.position.z < -3.55 && prevPos.z >= -3.55 &&
+               Math.abs(p.position.x) < 4.5 && p.position.y < 4 && p.position.y > 0) {
+        p.position.z = -3.55;
+        v.z = -v.z * 0.5;
+        v.x *= 0.8;
+        bounced = true;
+      }
+      // CERCA FRONTAL (z = 17.95, baixa, y < 1.0)
+      else if (p.position.z > 17.95 && prevPos.z <= 17.95 &&
+               Math.abs(p.position.x) < YARD_HALF_X && p.position.y < 1.0) {
+        p.position.z = 17.95;
+        v.z = -v.z * 0.5;
+        bounced = true;
+      }
+      // CERCAS LATERAIS (x = ±9, baixas, y < 1.0)
+      else if (p.position.x > YARD_HALF_X - 0.05 && prevPos.x <= YARD_HALF_X - 0.05 &&
+               p.position.z > YARD_NEAR && p.position.z < YARD_FAR && p.position.y < 1.0) {
+        p.position.x = YARD_HALF_X - 0.05;
+        v.x = -v.x * 0.5;
+        bounced = true;
+      }
+      else if (p.position.x < -YARD_HALF_X + 0.05 && prevPos.x >= -YARD_HALF_X + 0.05 &&
+               p.position.z > YARD_NEAR && p.position.z < YARD_FAR && p.position.y < 1.0) {
+        p.position.x = -YARD_HALF_X + 0.05;
+        v.x = -v.x * 0.5;
+        bounced = true;
+      }
+
+      if (bounced) {
+        p.userData.bounceCount = (p.userData.bounceCount || 0) + 1;
+        const speed = v.length();
+        if (p.userData.bounceCount > 2 || speed < 1.4) {
+          // Splat final
+          if (p.userData.isEgg && debris.length < MAX_DEBRIS) {
+            spawnEggSplat(p.position);
+          }
+          scene.remove(p);
+          projectiles.splice(i, 1);
+          removed = true;
+        } else {
+          // Som de toc no recochete
+          if (p.userData.isEgg) playEggThrow();
+        }
+      }
+    }
+    const maxLife = p.userData.maxLife != null ? p.userData.maxLife : 5;
+    if (!removed && (p.userData.life > maxLife || p.position.y < -5)) {
+      scene.remove(p);
+      projectiles.splice(i, 1);
+    }
+  }
+
+  // === MUZZLE FLASHES ===
+  for (let i = muzzleFlashes.length - 1; i >= 0; i--) {
+    const f = muzzleFlashes[i];
+    f.userData.life += dt;
+    f.material.opacity = Math.max(0, 1 - f.userData.life * 8);
+    f.scale.setScalar(1 + f.userData.life * 4);
+    f.lookAt(camera.getWorldPosition(new THREE.Vector3()));
+    if (f.userData.life > 0.15) {
+      scene.remove(f);
+      muzzleFlashes.splice(i, 1);
+    }
+  }
+
+  // === EXPLOSIONS ===
+  for (let i = explosions.length - 1; i >= 0; i--) {
+    const e = explosions[i];
+    e.userData.life += dt;
+    if (e.userData.isRing) {
+      const t = e.userData.life / 0.4;
+      e.scale.setScalar(1 + t * 5);
+      e.material.opacity = Math.max(0, 0.7 - t * 0.7);
+      e.lookAt(camera.getWorldPosition(new THREE.Vector3()));
+      if (t >= 1) {
+        scene.remove(e);
+        explosions.splice(i, 1);
+      }
+    } else {
+      const t = e.userData.life / 0.5;
+      const r = e.userData.maxRadius * Math.min(1, t * 2);
+      e.scale.setScalar(r);
+      e.material.opacity = Math.max(0, 0.9 - t * 0.9);
+      if (t >= 1) {
+        scene.remove(e);
+        explosions.splice(i, 1);
+      }
+    }
+  }
+
+  // === DEBRIS / SMOKE / SPARKS / STATIC SPLAT ===
+  for (let i = debris.length - 1; i >= 0; i--) {
+    const d = debris[i];
+    if (d.userData.staticSplat) {
+      // Splat de ovo — fica visível, fade rápido no fim
+      d.userData.life += dt;
+      const maxL = d.userData.maxLife != null ? d.userData.maxLife : 1.0;
+      if (d.userData.life > maxL) {
+        scene.remove(d); debris.splice(i, 1);
+      } else if (d.userData.life > maxL - 0.4) {
+        if (!d.material.transparent) {
+          d.material.transparent = true;
+          d.material.needsUpdate = true;
+        }
+        d.material.opacity = Math.max(0, (maxL - d.userData.life) / 0.4);
+      }
+      continue;
+    }
+    if (d.userData.isSmoke) {
+      d.userData.life += dt;
+      d.position.addScaledVector(d.userData.vel, dt);
+      d.material.opacity = Math.max(0, 0.7 - d.userData.life * 0.7);
+      d.scale.setScalar(1 + d.userData.life);
+      if (d.userData.life > 1.2) { scene.remove(d); debris.splice(i, 1); }
+    } else if (d.userData.isSpark) {
+      d.userData.vel.y -= 5 * dt;
+      d.position.addScaledVector(d.userData.vel, dt);
+      d.userData.life += dt;
+      d.material.color.multiplyScalar(0.985);
+      if (d.userData.life > 0.6) { scene.remove(d); debris.splice(i, 1); }
+    } else {
+      d.userData.vel.y -= 9.8 * dt;
+      d.position.addScaledVector(d.userData.vel, dt);
+      d.rotation.x += d.userData.rot.x * dt;
+      d.rotation.y += d.userData.rot.y * dt;
+      d.rotation.z += d.userData.rot.z * dt;
+      d.userData.life += dt;
+      const maxL = d.userData.maxLife != null ? d.userData.maxLife : 2.5;
+      if (d.position.y <= 0 || d.userData.life > maxL) { scene.remove(d); debris.splice(i, 1); }
+    }
+  }
+
+  // === FIREWORKS ===
+  if (state === 'victory') {
+    if (performance.now() - lastFireworkT > 350) {
+      spawnFirework();
+      lastFireworkT = performance.now();
+    }
+  }
+  for (let i = fireworks.length - 1; i >= 0; i--) {
+    const fw = fireworks[i];
+    fw.t += dt;
+    for (const p of fw.particles) {
+      p.userData.vel.y -= 2.5 * dt;
+      p.position.addScaledVector(p.userData.vel, dt);
+      p.material.opacity = Math.max(0, 1 - fw.t / 1.5);
+      p.material.transparent = true;
+    }
+    if (fw.t > 1.6) {
+      for (const p of fw.particles) scene.remove(p);
+      fireworks.splice(i, 1);
+    }
+  }
+
+  vrSnap(dt);
+  renderer.render(scene, camera);
+});
+
+const hudEl = document.getElementById('hud');
+setInterval(() => {
+  if (!hudEl) return;
+  hudEl.textContent = `${state} · w${currentWave+1}/${WAVES.length} · spawn ${waveSpawnedCount}/${WAVES[currentWave]?.count} · ufos:${ufos.filter(u=>u.state!=='dead').length} · chk:${chickensAlive()}/${TOTAL_CHICKENS} · kills:${ufosKilled} · wpn:${activeWeapon}`;
+  updateHUD();
+}, 250);
+
+// =============================================================================
+// 3D SCOREBOARD — placa de rancho flutuando, visível em VR
+// =============================================================================
+const sbCanvas = document.createElement('canvas');
+sbCanvas.width = 1024; sbCanvas.height = 384;
+const sbCtx = sbCanvas.getContext('2d');
+const sbTex = new THREE.CanvasTexture(sbCanvas);
+const sbMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.0, 0.75),
+  new THREE.MeshBasicMaterial({map: sbTex, transparent: true, fog: false, side: THREE.DoubleSide})
+);
+sbMesh.position.set(0, 2.4, 1.4);
+sbMesh.lookAt(0, 1.6, 0);
+scene.add(sbMesh);
+
+// Wood-frame scoreboard with a hanging chain look
+const sbChainL = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 6), new THREE.MeshLambertMaterial({color:0x303030}));
+sbChainL.position.set(-0.85, 2.7, 1.4); scene.add(sbChainL);
+const sbChainR = sbChainL.clone(); sbChainR.position.x = 0.85; scene.add(sbChainR);
+
+function updateScoreboard() {
+  const w = WAVES[currentWave] || WAVES[0];
+  const ctx = sbCtx;
+  // Wooden background
+  ctx.fillStyle = '#5a3818'; ctx.fillRect(0, 0, 1024, 384);
+  // Wood grain
+  ctx.strokeStyle = 'rgba(40,20,8,0.4)'; ctx.lineWidth = 2;
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, i * 50);
+    ctx.bezierCurveTo(300, i*50 + 8, 700, i*50 - 8, 1024, i*50);
+    ctx.stroke();
+  }
+  // Inner border
+  ctx.strokeStyle = '#8a6a40'; ctx.lineWidth = 8;
+  ctx.strokeRect(20, 20, 984, 344);
+  ctx.strokeStyle = '#3a2010'; ctx.lineWidth = 2;
+  ctx.strokeRect(20, 20, 984, 344);
+
+  // Title
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = '#ffd040';
+  ctx.font = 'bold 56px Impact, sans-serif';
+  ctx.fillText('🐔 RANCH DEFENSE 🛸', 512, 36);
+
+  // Wave + weapon
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 64px Impact, sans-serif';
+  ctx.fillText('WAVE ' + (currentWave + 1) + ' / ' + WAVES.length, 512, 100);
+  ctx.fillStyle = '#80ff40';
+  ctx.font = 'bold 44px Impact, sans-serif';
+  ctx.fillText('🔫 ' + w.label, 512, 175);
+
+  // Chickens row
+  ctx.font = '60px sans-serif';
+  let chickStr = '';
+  const alive = chickensAlive();
+  for (let i = 0; i < TOTAL_CHICKENS; i++) chickStr += i < alive ? '🐔' : '💀';
+  ctx.fillText(chickStr, 512, 235);
+
+  // Kills
+  ctx.fillStyle = '#ff8060';
+  ctx.font = 'bold 36px Impact, sans-serif';
+  ctx.fillText('🛸 ABATIDOS: ' + ufosKilled, 512, 318);
+
+  sbTex.needsUpdate = true;
+}
+updateScoreboard();
+
+// =============================================================================
+// 3D BANNER (wave / game over / victory) — visível em VR também
+// =============================================================================
+const bannerCanvas = document.createElement('canvas');
+bannerCanvas.width = 1024; bannerCanvas.height = 320;
+const bannerCtx = bannerCanvas.getContext('2d');
+const bannerTex = new THREE.CanvasTexture(bannerCanvas);
+const bannerMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.4, 0.75),
+  new THREE.MeshBasicMaterial({map: bannerTex, transparent: true, fog: false, depthTest: false, side: THREE.DoubleSide})
+);
+bannerMesh.renderOrder = 998;
+bannerMesh.visible = false;
+scene.add(bannerMesh);
+let bannerLife = 0;
+let bannerDuration = 2.4;
+
+function drawBanner(title, subtitle, weaponLabel, color) {
+  const ctx = bannerCtx;
+  ctx.clearRect(0, 0, 1024, 320);
+  // semi-transparent dark
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, 1024, 320);
+  ctx.strokeStyle = color || '#ffd040';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(8, 8, 1008, 304);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = color || '#ffd040';
+  ctx.shadowBlur = 24;
+  ctx.fillStyle = color || '#ffd040';
+  ctx.font = 'bold 130px Impact, sans-serif';
+  ctx.fillText(title, 512, 100);
+  ctx.shadowBlur = 0;
+  if (subtitle) {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 38px sans-serif';
+    ctx.fillText(subtitle, 512, 200);
+  }
+  if (weaponLabel) {
+    ctx.fillStyle = '#80ff40';
+    ctx.font = 'bold 48px Impact, sans-serif';
+    ctx.fillText('🔫 ' + weaponLabel, 512, 265);
+  }
+  bannerTex.needsUpdate = true;
+}
+
+function showBanner3D(title, subtitle, weaponLabel, color, duration) {
+  drawBanner(title, subtitle, weaponLabel, color);
+  bannerMesh.visible = true;
+  bannerLife = 0;
+  bannerDuration = duration || 2.4;
+  // Position in front of camera at fire time
+  const camPos = new THREE.Vector3(); camera.getWorldPosition(camPos);
+  const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir);
+  bannerMesh.position.copy(camPos).addScaledVector(camDir, 3.0);
+  bannerMesh.position.y = camPos.y + 0.4;
+  bannerMesh.lookAt(camPos);
+}
+
+// Hook into existing wave/game state functions
+const _origStartWave = startWave;
+startWave = function(idx) {
+  _origStartWave(idx);
+  const w = WAVES[idx];
+  showBanner3D('WAVE ' + (idx + 1), idx === WAVES.length - 1 ? 'WAVE FINAL' : 'PREPARE-SE', w.label, '#ffd040', 2.6);
+};
+const _origEnterGameOver = enterGameOver;
+enterGameOver = function() {
+  _origEnterGameOver();
+  showBanner3D('GAME OVER', 'aperte trigger pra recomeçar', null, '#ff4040', 999);
+};
+const _origEnterVictory = enterVictory;
+enterVictory = function() {
+  _origEnterVictory();
+  showBanner3D('VITÓRIA!', 'aperte trigger pra jogar de novo', null, '#ffd040', 999);
+};
+const _origResetGame = resetGame;
+resetGame = function() {
+  _origResetGame();
+  bannerMesh.visible = false;
+};
+
+// initial weapon
+equipWeapon('slingshot');
+</script>
+</body>
+</html>
