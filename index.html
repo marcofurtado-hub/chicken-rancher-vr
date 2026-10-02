@@ -2252,6 +2252,7 @@ const POWERS = {
   chicken: { label: '+1 GALINHA',   sub: '',              color: 0xffffff, css: '#ffffff', icon: '🐔', dur: 0 },
 };
 const CRATE_GEO = new THREE.BoxGeometry(0.42, 0.42, 0.42);
+const CRATE_CY = 0.5, CRATE_RX = 0.8, CRATE_RY = 1.0;
 const CANOPY_GEO = new THREE.SphereGeometry(0.62, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2.2);
 const STRING_MAT = lam(0x302010);
 for (const key of Object.keys(POWERS)) {
@@ -2288,7 +2289,7 @@ function spawnCrate(type, pos) {
   const halo = new THREE.Sprite(Pw.haloMat); halo.scale.setScalar(1.3); g.add(halo);
   g.position.set(clamp(pos.x, -8, 8), Math.max(3.5, pos.y), clamp(pos.z, 2.5, 16));
   scene.add(g);
-  crates.push({ group: g, type, landed: false, landT: 0, phase: rand(0, 6), c: new THREE.Vector3() });
+  crates.push({ group: g, type, landed: false, landT: 0, phase: rand(0, 6), c: g.position.clone().setY(g.position.y + CRATE_CY) });
   playCrateSpawn();
 }
 function removeCrate(cr) {
@@ -2310,7 +2311,7 @@ function updateCrates(dt, edt) {
       if (cr.landT > 3.5) g.visible = Math.floor(cr.landT * 8) % 2 === 0;
       if (cr.landT > 5.5) { smoke(g.position, 4, 0xcccccc, 0.3, 0.8); removeCrate(cr); continue; }
     }
-    cr.c.copy(g.position); cr.c.y += 0.25;
+    cr.c.copy(g.position); cr.c.y += CRATE_CY;
   }
 }
 
@@ -2480,7 +2481,7 @@ laserBeamMesh.visible = laserBeamCore.visible = false;
 scene.add(laserBeamMesh); scene.add(laserBeamCore);
 const BOLT_MAT = new THREE.MeshBasicMaterial({ color: 0xa8ecff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
 const boltPool = [];
-for (let i = 0; i < 64; i++) { const m = new THREE.Mesh(UNIT_CYL, BOLT_MAT); m.visible = false; scene.add(m); boltPool.push(m); }
+for (let i = 0; i < 140; i++) { const m = new THREE.Mesh(UNIT_CYL, BOLT_MAT); m.visible = false; scene.add(m); boltPool.push(m); }
 let boltUsed = 0, boltLife = 0;
 function hideBolts() { for (let i = 0; i < boltUsed; i++) boltPool[i].visible = false; boltUsed = 0; }
 function drawBolt(a, b, jag = 0.3) {
@@ -2631,19 +2632,24 @@ function fireLauncher() {
 }
 function acquireTarget(origin, dir) {
   let best = null, bestScore = -Infinity;
+  const consider = (c, bonus, valid) => {
+    const to = TV[3].copy(c).sub(origin);
+    const d = to.length();
+    if (d < 0.01) return;
+    const cosA = to.dot(dir) / d;
+    if (cosA < 0.75) return;
+    const s = cosA * 2 - d * 0.02 + bonus;
+    if (s > bestScore) { bestScore = s; best = { c, valid }; }
+  };
   for (const u of ufos) {
     if (!isAlive(u)) continue;
     for (const p of u.parts) {
       if (!p.active || p.kind === 'armor') continue;
-      const to = TV[3].copy(p.c).sub(origin);
-      const d = to.length();
-      if (d < 0.01) continue;
-      const cosA = to.dot(dir) / d;
-      if (cosA < 0.75) continue;
-      const s = cosA * 2 - d * 0.02 + (p.kind === 'crit' || p.kind === 'pod' || p.kind === 'core' ? 0.3 : 0);
-      if (s > bestScore) { bestScore = s; best = { u, part: p }; }
+      consider(p.c, p.kind === 'crit' || p.kind === 'pod' || p.kind === 'core' ? 0.3 : 0, () => isAlive(u) && p.active);
     }
   }
+  for (const cr of crates) consider(cr.c, 0.25, () => crates.includes(cr));
+  for (const g of goos) consider(g.c, 0.2, () => goos.includes(g));
   if (best) return best;
   let bd = Infinity;
   for (const u of ufos) {
@@ -2651,7 +2657,7 @@ function acquireTarget(origin, dir) {
     for (const p of u.parts) {
       if (!p.active || p.kind === 'armor') continue;
       const d = p.c.distanceTo(origin);
-      if (d < bd) { bd = d; best = { u, part: p }; }
+      if (d < bd) { bd = d; best = { c: p.c, valid: () => isAlive(u) && p.active }; }
     }
   }
   return best;
@@ -2673,12 +2679,12 @@ function fireHoming() {
 }
 function steerHoming(p, dt) {
   const ud = p.userData, h = ud.homing;
-  if (!h.target || !isAlive(h.target.u) || !h.target.part.active) {
+  if (!h.target || !h.target.valid()) {
     h.target = acquireTarget(p.position, TV[4].copy(ud.vel).normalize());
   }
   const sp = Math.min(24, ud.vel.length() + dt * 30);
   if (h.target && ud.life > 0.12) {
-    const des = TV[5].copy(h.target.part.c).sub(p.position).normalize().multiplyScalar(sp);
+    const des = TV[5].copy(h.target.c).sub(p.position).normalize().multiplyScalar(sp);
     ud.vel.lerp(des, Math.min(1, dt * 5));
   }
   ud.vel.setLength(sp);
@@ -2716,40 +2722,55 @@ function fireLaserPulse() {
     if (power.boom > 0 && Math.random() < 0.3) explodeAt(end, { boomR: 1.8, boomDmg: 1, golden: power.golden > 0 });
   }
 }
+const TESLA_R = 7;
 function fireTesla() {
   const origin = muzzleWorld('tesla', TV[0]).clone();
   const dir = shotDir(origin, rightCtrl, TV[1]).clone();
   hideBolts();
-  const dmg = 3 * up.dmg * (power.golden > 0 ? 3 : 1);
-  const hit = castSegment(origin, dir, 45, 0.35);
+  const base = 3 * up.dmg * (power.golden > 0 ? 3 : 1);
+  const hit = castSegment(origin, dir, 45, 0.5);
   if (!hit) {
     drawBolt(origin, origin.clone().addScaledVector(dir, 10), 0.4);
   } else {
     const hp = origin.clone().addScaledVector(dir, hit.t);
     drawBolt(origin, hp, 0.3);
-    sparks(hp, 0xa8ecff, 6, 3, 0.06, 0.4);
-    if (hit.kind === 'ufo') {
-      const chain = [hit.u];
-      let from = hp, cur = hit.u;
-      applyHit(hit, dmg, hp, null);
-      for (let k = 0; k < 4; k++) {
-        let nb = null, nd = 6.5;
+    sparks(hp, 0xa8ecff, 8, 3, 0.06, 0.4);
+    const zapped = new Set();
+    if (hit.kind === 'ufo') zapped.add(hit.u);
+    applyHit(hit, base, hp);
+    // Cascata: cada geração salta pros vizinhos com menos força (100% -> 55% -> 30% -> 17%)
+    let frontier = [hp];
+    let dmg = base, total = 0;
+    for (let gen = 0; gen < 3 && frontier.length && total < 10; gen++) {
+      dmg *= 0.55;
+      const next = [];
+      for (const from of frontier) {
+        const cands = [];
         for (const u of ufos) {
-          if (!isAlive(u) || chain.includes(u) || u.kind === 'mother') continue;
-          const d = u.group.position.distanceTo(cur.group.position);
-          if (d < nd) { nd = d; nb = u; }
+          if (!isAlive(u) || zapped.has(u)) continue;
+          const part = u.parts.find(p => p.active && p.kind !== 'armor');
+          if (!part) continue;
+          const d = part.c.distanceTo(from);
+          if (d < TESLA_R) cands.push({ u, part, d });
         }
-        if (!nb) break;
-        const part = nb.parts.find(p => p.active && p.kind !== 'armor');
-        if (!part) { chain.push(nb); continue; }
-        const to = part.c.clone();
-        drawBolt(from, to, 0.45);
-        sparks(to, 0xa8ecff, 5, 3, 0.06, 0.4);
-        hitPart(nb, part, dmg * 0.8, to);
-        chain.push(nb); from = to; cur = nb;
+        cands.sort((a, b) => a.d - b.d);
+        for (const c of cands.slice(0, 3)) {
+          if (total >= 10) break;
+          zapped.add(c.u); total++;
+          const to = c.part.c.clone();
+          drawBolt(from, to, 0.45);
+          sparks(to, 0xa8ecff, 5, 3, 0.06, 0.4);
+          hitPart(c.u, c.part, dmg, to);
+          next.push(to);
+        }
+        for (const g of goos.slice()) {
+          if (g.c.distanceTo(from) < TESLA_R * 0.7) { drawBolt(from, g.c.clone(), 0.4); destroyGoo(g, true); }
+        }
       }
-      if (power.boom > 0) explodeAt(hp, { boomR: 2, boomDmg: 2, golden: power.golden > 0 });
-    } else applyHit(hit, dmg, hp, null);
+      frontier = next;
+    }
+    if (total >= 2) popup('CHOQUE x' + (total + 1) + '!', hp.clone().setY(hp.y + 0.5), '#a8ecff', 0.9, 0.9);
+    if (power.boom > 0) explodeAt(hp, { boomR: 2, boomDmg: 2, golden: power.golden > 0 });
   }
   playTesla(); pulseController(rightCtrl, 0.55, 50);
   weaponCD = 0.28 / up.rate;
@@ -2828,7 +2849,7 @@ function castSegment(o, d, maxT, extraR = 0, skip = null) {
     if (t >= 0 && t < bt) { bt = t; best = { kind: 'goo', g, t }; }
   }
   for (const cr of crates) {
-    const r = 0.62 + extraR, t = rayEllipsoidT(o, d, cr.c, r, r, r, maxT);
+    const rx = CRATE_RX + extraR, ry = CRATE_RY + extraR, t = rayEllipsoidT(o, d, cr.c, rx, ry, rx, maxT);
     if (t >= 0 && t < bt) { bt = t; best = { kind: 'crate', cr, t }; }
   }
   if (state === 'upgrade') for (const cd of cards) {
@@ -2878,6 +2899,7 @@ function explodeAt(posIn, ud) {
     if (bestP) hitPart(u, bestP, dmg, bestP.c.clone());
   }
   for (let i = goos.length - 1; i >= 0; i--) if (goos[i] && goos[i].c.distanceTo(pos) < R) destroyGoo(goos[i], true);
+  for (const cr of crates.slice()) if (cr.c.distanceTo(pos) < R + CRATE_RX) { const cp = cr.c.clone(); removeCrate(cr); activatePower(cr.type, cp); }
   for (const ck of chickens) if (Math.hypot(ck.group.position.x - pos.x, ck.group.position.z - pos.z) < R && pos.y < 2) scareChicken(ck, pos);
 }
 
@@ -3925,11 +3947,11 @@ spawnInitialFlock();
 equipWeapon('hands');
 drawSign();
 updateStartBest();
-window.__cr = { get state() { return state; }, startWave, ufos, chickens, power, up, get score() { return score; }, selectWeapon, unlocked, spawnUfo, killAll: () => { for (const u of ufos.slice()) if (isAlive(u)) killUfo(u, u.group.position); },
+window.__cr = { get state() { return state; }, startWave, ufos, chickens, up, get score() { return score; }, selectWeapon, unlocked, spawnUfo, killAll: () => { for (const u of ufos.slice()) if (isAlive(u)) killUfo(u, u.group.position); },
   setHold: v => { mouseDown = v; },
   aimAt: p => { const d = new THREE.Vector3().copy(p).sub(camPos).normalize(); yaw = Math.atan2(-d.x, -d.z); pitch = Math.asin(clamp(d.y, -1, 1)); cameraRig.rotation.y = yaw; camera.rotation.x = pitch; },
   get crates() { return crates; }, get cards() { return cards; }, get projectiles() { return projectiles.length; }, get goos() { return goos.length; },
-  hitCard: i => chooseUpgrade(cards[i]), activatePower, advance: handleMenuAdvance, shoot: () => { if (weaponCD <= 0) desktopShoot(); },
+  hitCard: i => chooseUpgrade(cards[i]), activatePower, spawnCrate, get power() { return power; }, advance: handleMenuAdvance, shoot: () => { if (weaponCD <= 0) desktopShoot(); },
   get stateT() { return stateT; },
   step: (n, dt = 1 / 30, render = false) => { skipRender = !render; for (let i = 0; i < n; i++) gameLoop(0, null, dt); skipRender = false; } };
 </script>
