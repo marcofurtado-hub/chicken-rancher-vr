@@ -217,7 +217,9 @@ let musicOn = true;
 let activeWeapon = 'hands';
 const unlocked = new Set(['hands']);
 const power = { golden: 0, boom: 0, slow: 0 };
-const up = { dmg: 1, rate: 1, big: 1, magnet: 0, coop: 1, luck: 1, combo: 0, power: 1, pierce: 0, counts: {} };
+const UP_DEFAULTS = { dmg: 1, rate: 1, big: 1, magnet: 0, coop: 1, luck: 1, combo: 0, power: 1, pierce: 0,
+  front: 0, diag: 0, ricochet: 0, fire: 0, ice: 0, shock: 0, crit: 0, rage: 0, feather: 0, buddy: 0 };
+const up = Object.assign({ counts: {} }, UP_DEFAULTS);
 let yaw = Math.PI, pitch = -0.08;
 let mouseDown = false, mouseLocked = false, touchActive = false;
 const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -820,14 +822,19 @@ cameraRig.add(wheelchair);
   wheelchair.add(bakeStatic(W, BAKE_SMOOTH));
 }
 const lapCanvas = document.createElement('canvas');
-lapCanvas.width = 1024; lapCanvas.height = 420;
+lapCanvas.width = 768; lapCanvas.height = 400;
 const lapCtx = lapCanvas.getContext('2d');
 const lapTex = new THREE.CanvasTexture(lapCanvas);
 lapTex.colorSpace = THREE.SRGBColorSpace;
-const lapPanel = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.205), new THREE.MeshBasicMaterial({ map: lapTex, transparent: true, fog: false }));
-lapPanel.position.set(0, 0.86, 0.36);
-lapPanel.rotation.set(0.95, Math.PI, 0);
+const lapPanel = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.156), new THREE.MeshBasicMaterial({ map: lapTex, transparent: true, fog: false }));
+const LAP_DEFAULT = [-0.24, 0.86, 0.3];
+{
+  let lp = LAP_DEFAULT;
+  try { const v = JSON.parse(localStorage.getItem('cr2_lap') || 'null'); if (Array.isArray(v) && v.length === 3 && v.every(Number.isFinite)) lp = v; } catch (e) {}
+  lapPanel.position.set(lp[0], lp[1], lp[2]);
+}
 lapPanel.visible = false;
+let lapGrab = null, lapHintT = 25;
 wheelchair.add(lapPanel);
 
 // =============================================================================
@@ -1880,7 +1887,21 @@ function spawnMothership() {
   return u;
 }
 
+const FEATHER_MAT = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+function setChickenShield(c, on) {
+  c.shield = on;
+  if (on && !c.shieldMesh) { c.shieldMesh = new THREE.Mesh(BUBBLE_GEO, FEATHER_MAT); c.shieldMesh.scale.setScalar(0.42); c.shieldMesh.position.y = 0.28; c.group.add(c.shieldMesh); }
+  if (c.shieldMesh) c.shieldMesh.visible = on;
+}
 function startBeam(u, tgt) {
+  if (tgt.shield) {
+    setChickenShield(tgt, false);
+    u.stunT = 1.6; u.target = null;
+    u.group.position.y += 1.2;
+    feathers(tgt.group.position, 12); playShieldDown(); pulseAll(0.3, 60);
+    popup('ESCUDO DE PENAS!', tgt.group.position.clone().setY(1.3), '#ffffff', 0.9);
+    return;
+  }
   u.state = 'beaming'; u.beamElapsed = 0;
   u.beamDur = u.beamTime * CHICKEN_KINDS[tgt.kind].beamMul;
   u.beam.visible = true; u.gring.visible = true;
@@ -1914,6 +1935,11 @@ function updateAbductor(u, dt, edt) {
     u.belly.visible = u.extras.visible;
     u.parts[0].active = !u.cloaked;
     u.shadow.visible = !u.cloaked;
+  }
+  if (u.stunT > 0) {
+    u.stunT -= edt;
+    g.rotation.z = u.stunT > 0 ? Math.sin(u.age * 25) * 0.25 : 0;
+    if (u.state === 'descending') return;
   }
   if (u.state === 'descending') {
     let tgt = u.target;
@@ -2164,14 +2190,26 @@ function updateUfos(dt, edt) {
       }
       continue;
     }
-    if (u.kind === 'mother') updateMother(u, dt, edt);
-    else if (u.kind === 'boss') updateBoss(u, dt, edt);
+    let uedt = edt;
+    if (u.slowT > 0) { u.slowT -= dt; uedt = edt * u.slowMul; if (Math.random() < 0.3) { _c.setHex(0xa0e0ff); fxAdd.spawn(gp.x + rand(-0.4, 0.4), gp.y, gp.z + rand(-0.4, 0.4), 0, -0.4, 0, _c, 0.06, 0.5); } }
+    if (u.burnT > 0) {
+      u.burnT -= dt; u.burnAcc = (u.burnAcc || 0) + dt;
+      if (Math.random() < 0.6) { _c.setHex(Math.random() < 0.5 ? 0xff7020 : 0xffc040); fxAdd.spawn(gp.x + rand(-0.3, 0.3), gp.y + 0.1, gp.z + rand(-0.3, 0.3), 0, 1.2, 0, _c, rand(0.08, 0.16), 0.4, -1, 0, 0.5); }
+      if (u.burnAcc >= 0.5) {
+        u.burnAcc = 0;
+        const bp = u.parts.find(q => q.active && q.kind !== 'armor');
+        if (bp) hitPart(u, bp, u.burnDps * 0.5, bp.c, false);
+        if (!isAlive(u)) continue;
+      }
+    } else u.burnDps = 0;
+    if (u.kind === 'mother') updateMother(u, dt, uedt);
+    else if (u.kind === 'boss') updateBoss(u, dt, uedt);
     else {
       const role = UFO_TYPES[u.typeKey].role;
-      if (role === 'gunner') updateGunner(u, dt, edt);
-      else if (role === 'dive') updateKamikaze(u, dt, edt);
-      else if (role === 'support') updateShielder(u, dt, edt);
-      else updateAbductor(u, dt, edt);
+      if (role === 'gunner') updateGunner(u, dt, uedt);
+      else if (role === 'dive') updateKamikaze(u, dt, uedt);
+      else if (role === 'support') updateShielder(u, dt, uedt);
+      else updateAbductor(u, dt, uedt);
     }
     if (u.removed) continue;
     if (u.kind !== 'mother') {
@@ -2180,6 +2218,8 @@ function updateUfos(dt, edt) {
       if (u.alien) u.alien.rotation.y = Math.atan2(camPos.x - gp.x, camPos.z - gp.z) - g.rotation.y;
       if (u.hullMat && u.state !== 'windup') {
         if (u.flashT > 0) u.hullMat.emissive.setScalar(0.9);
+        else if (u.slowT > 0) u.hullMat.emissive.setHex(0x3070c0).multiplyScalar(0.7);
+        else if (u.burnT > 0) u.hullMat.emissive.setHex(0xff5010).multiplyScalar(0.3 + Math.random() * 0.25);
         else u.hullMat.emissive.setHex(UFO_TYPES[u.typeKey].color).multiplyScalar(0.32 * nightGlow.value);
       }
     } else if (u.hullMat) {
@@ -2475,26 +2515,37 @@ const WEAPON_MUZZLE = {
 
 // Laser beam + raios do tesla
 const UNIT_CYL = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true);
-const laserBeamMesh = new THREE.Mesh(UNIT_CYL, new THREE.MeshBasicMaterial({ color: 0xffd040, transparent: true, opacity: 0.85, fog: false, depthWrite: false, blending: THREE.AdditiveBlending }));
-const laserBeamCore = new THREE.Mesh(UNIT_CYL, new THREE.MeshBasicMaterial({ color: 0xffffe0, transparent: true, opacity: 1, fog: false, depthWrite: false }));
-laserBeamMesh.visible = laserBeamCore.visible = false;
-scene.add(laserBeamMesh); scene.add(laserBeamCore);
+const LASER_OUT_MAT = new THREE.MeshBasicMaterial({ color: 0xffd040, transparent: true, opacity: 0.85, fog: false, depthWrite: false, blending: THREE.AdditiveBlending });
+const LASER_CORE_MAT = new THREE.MeshBasicMaterial({ color: 0xffffe0, transparent: true, opacity: 1, fog: false, depthWrite: false });
+const laserBeams = [];
+for (let i = 0; i < 7; i++) {
+  const o = new THREE.Mesh(UNIT_CYL, LASER_OUT_MAT), c = new THREE.Mesh(UNIT_CYL, LASER_CORE_MAT);
+  o.visible = c.visible = false; scene.add(o); scene.add(c);
+  laserBeams.push({ o, c });
+}
+function hideLaserBeams() { for (const b of laserBeams) b.o.visible = b.c.visible = false; }
 const BOLT_MAT = new THREE.MeshBasicMaterial({ color: 0xa8ecff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
 const boltPool = [];
 for (let i = 0; i < 140; i++) { const m = new THREE.Mesh(UNIT_CYL, BOLT_MAT); m.visible = false; scene.add(m); boltPool.push(m); }
-let boltUsed = 0, boltLife = 0;
-function hideBolts() { for (let i = 0; i < boltUsed; i++) boltPool[i].visible = false; boltUsed = 0; }
-function drawBolt(a, b, jag = 0.3) {
+let boltIdx = 0;
+for (const m of boltPool) m.userData.life = 0;
+function hideBolts() { for (const m of boltPool) { m.visible = false; m.userData.life = 0; } }
+function drawBolt(a, b, jag = 0.15, life = 0.09) {
   const dist = a.distanceTo(b);
   const segs = Math.max(3, Math.min(8, Math.round(dist / 1.0)));
   const prev = TV[10].copy(a);
-  for (let k = 1; k <= segs && boltUsed < boltPool.length; k++) {
+  for (let k = 1; k <= segs; k++) {
     const p = TV[11].copy(a).lerp(b, k / segs);
     if (k < segs) { const j = jag * dist / segs; p.x += rand(-j, j); p.y += rand(-j, j); p.z += rand(-j, j); }
-    placeSegment(boltPool[boltUsed++], prev, p, 0.014 + Math.random() * 0.01);
+    const m = boltPool[boltIdx];
+    boltIdx = (boltIdx + 1) % boltPool.length;
+    placeSegment(m, prev, p, 0.014 + Math.random() * 0.01);
+    m.userData.life = life;
     prev.copy(p);
   }
-  boltLife = 0.09;
+}
+function updateBolts(dt) {
+  for (const m of boltPool) if (m.userData.life > 0) { m.userData.life -= dt; if (m.userData.life <= 0) m.visible = false; }
 }
 
 // Ovos nas mãos (wave 1)
@@ -2554,7 +2605,29 @@ function equipWeapon(name) {
 // PROJÉTEIS (tudo é ovo)
 // =============================================================================
 const projectiles = [];
+function volleyCount() { return 1 + up.front + 2 * up.diag; }
+function volleyDirs(dir) {
+  const r = new THREE.Vector3().crossVectors(dir, UP);
+  if (r.lengthSq() < 1e-6) r.set(1, 0, 0);
+  r.normalize();
+  const upv = new THREE.Vector3().crossVectors(r, dir).normalize();
+  const out = [];
+  const n = 1 + up.front;
+  for (let k = 0; k < n; k++) out.push({ d: dir.clone(), off: r.clone().multiplyScalar((k - (n - 1) / 2) * 0.16) });
+  for (let k = 1; k <= up.diag; k++) for (const sg of [-1, 1]) out.push({ d: dir.clone().applyAxisAngle(upv, sg * k * 0.24), off: new THREE.Vector3() });
+  return out;
+}
 function spawnEgg(pos, vel, o = {}) {
+  if (o.volley && (up.front || up.diag)) {
+    const sp = vel.length() || 1;
+    const dir = vel.clone().divideScalar(sp);
+    let first = null;
+    for (const v of volleyDirs(dir)) {
+      const m = spawnEgg(pos.clone().add(v.off), v.d.multiplyScalar(sp), Object.assign({}, o, { volley: false }));
+      if (!first) first = m;
+    }
+    return first;
+  }
   if (projectiles.length >= MAX_PROJECTILES) return null;
   const golden = power.golden > 0, boom = power.boom > 0 || !!o.boom;
   const mat = golden ? GOLD_EGG_MAT : (boom ? BOOM_EGG_MAT : EGG_MAT);
@@ -2574,7 +2647,7 @@ function spawnEgg(pos, vel, o = {}) {
     vel: vel.clone(), life: 0, damage: (o.damage || 1) * up.dmg * (golden ? 3 : 1),
     gravity: !!o.gravity, gScale: o.gScale != null ? o.gScale : 1, arrow: !!o.arrow, rocket: !!o.rocket,
     maxLife: o.maxLife || 5, magnet: (o.magnet || 0) + (o.noMagnet ? 0 : up.magnet * 2.5),
-    golden, boom, boomR: o.boomR || 2.8, boomDmg: o.boomDmg || 2, pierce: up.pierce + (o.pierce || 0),
+    golden, boom, boomR: o.boomR || 2.8, boomDmg: o.boomDmg || 2, pierce: up.pierce + (o.pierce || 0), ricochet: o.noRicochet ? 0 : up.ricochet,
     hitSet: null, homing: o.homing ? { target: null } : null, extraR: (up.big - 1) * 0.35 + (o.extraR || 0),
   };
   scene.add(m);
@@ -2595,10 +2668,10 @@ function spreadDir(dir, s) {
   dir.x += (Math.random() - 0.5) * s; dir.y += (Math.random() - 0.5) * s; dir.z += (Math.random() - 0.5) * s;
   return dir.normalize();
 }
-function fireBullet(speed, damage, spread, scale, flashHex, ctrl = rightCtrl, grp = null, name = activeWeapon) {
+function fireBullet(speed, damage, spread, scale, flashHex, ctrl = rightCtrl, grp = null, name = activeWeapon, life = 2) {
   const origin = muzzleWorld(name, TV[0], grp);
   const dir = spreadDir(shotDir(origin, ctrl, TV[1]), spread);
-  spawnEgg(origin, dir.multiplyScalar(speed), { damage, scale, maxLife: 2 });
+  spawnEgg(origin, dir.multiplyScalar(speed), { damage, scale, maxLife: life, volley: true });
   muzzle(origin, flashHex, 0.16 * scale + 0.06);
 }
 function firePistol(left) {
@@ -2610,13 +2683,14 @@ function firePistol(left) {
   grp.userData.kick = 1;
 }
 function fireShotgun() {
-  for (let i = 0; i < 14; i++) fireBullet(62, 1, 0.26, 0.85, 0xffe860);
+  const pellets = Math.round(14 / Math.sqrt(volleyCount()));
+  for (let i = 0; i < pellets; i++) fireBullet(62, 1, 0.26, 0.85, 0xffe860);
   playShotgunShot(); pulseController(rightCtrl, 0.95, 130);
   weaponCD = 0.40 / up.rate;
   shotgun.userData.kick = 1;
 }
 function fireGatling() {
-  fireBullet(75, 2, 0.03, 0.95, 0xff8030);
+  fireBullet(75, 2, 0.03, 0.95, 0xff8030, rightCtrl, null, 'gatling', 1.2);
   playGatlingShot(); pulseController(rightCtrl, 0.35, 30);
   weaponCD = 0.05 / up.rate;
 }
@@ -2624,7 +2698,7 @@ function fireLauncher() {
   const origin = muzzleWorld('launcher', TV[0]);
   const dir = shotDir(origin, rightCtrl, TV[1]);
   if (!renderer.xr.isPresenting) dir.y += 0.06;
-  spawnEgg(origin, dir.normalize().multiplyScalar(26), { damage: 2, scale: 1.7, gravity: true, gScale: 0.9, boom: true, boomR: 3.0, boomDmg: 4, maxLife: 4, magnet: 1 });
+  spawnEgg(origin, dir.normalize().multiplyScalar(26), { damage: 2, scale: 1.7, gravity: true, gScale: 0.9, boom: true, boomR: 3.0, boomDmg: 4, maxLife: 4, magnet: 1, volley: true });
   muzzle(origin, 0xff8040, 0.35); smoke(origin, 3, 0x909090, 0.2, 0.6);
   playLauncher(); pulseController(rightCtrl, 0.8, 90);
   weaponCD = 0.7 / up.rate;
@@ -2670,7 +2744,7 @@ function fireHoming() {
     const v = TV[2].copy(dir);
     v.x += rand(-0.25, 0.25); v.y += rand(0, 0.3); v.z += rand(-0.25, 0.25);
     v.normalize().multiplyScalar(12);
-    const p = spawnEgg(origin, v, { damage: 3, rocket: true, homing: true, maxLife: 4, noMagnet: true, scale: 1.1 });
+    const p = spawnEgg(origin, v, { damage: 3, rocket: true, homing: true, maxLife: 4, noMagnet: true, scale: 1.1, volley: k === 0 });
     if (p) p.userData.homing.target = tgt;
   }
   playRocket(); pulseController(rightCtrl, 0.6, 70); muzzle(origin, 0xffa040, 0.3);
@@ -2692,14 +2766,14 @@ function steerHoming(p, dt) {
 function setLaser(on) {
   if (on === laserActive) return;
   laserActive = on; laserPulseOn = false; laserPulseT = LASER_OFF;
-  if (!on) laserBeamMesh.visible = laserBeamCore.visible = false;
+  if (!on) hideLaserBeams();
 }
 function tickLaser(dt) {
   if (!laserActive) return;
   laserPulseT += dt;
   if (laserPulseOn && laserPulseT >= LASER_ON) {
     laserPulseOn = false; laserPulseT = 0;
-    laserBeamMesh.visible = laserBeamCore.visible = false;
+    hideLaserBeams();
   } else if (!laserPulseOn && laserPulseT >= LASER_OFF / up.rate) {
     laserPulseOn = true; laserPulseT = 0;
     playLaserPulse(); pulseController(rightCtrl, 0.25, 25);
@@ -2710,38 +2784,65 @@ function fireLaserPulse() {
   const origin = muzzleWorld('laser', TV[0]).clone();
   const fwd = shotDir(origin, rightCtrl, TV[1]).clone();
   fwd.x += rand(-0.012, 0.012); fwd.y += rand(-0.012, 0.012); fwd.z += rand(-0.012, 0.012); fwd.normalize();
-  const hit = castSegment(origin, fwd, 40, 0.15);
-  const len = hit ? hit.t : 40;
-  const end = origin.clone().addScaledVector(fwd, len);
-  placeSegment(laserBeamMesh, origin, end, 0.03);
-  placeSegment(laserBeamCore, origin, end, 0.01);
-  laserBeamMesh.material.opacity = 0.7 + Math.random() * 0.3;
-  if (hit) {
-    applyHit(hit, 2 * up.dmg * (power.golden > 0 ? 3 : 1), end, null);
+  const dmg = 2 * up.dmg * (power.golden > 0 ? 3 : 1);
+  hideLaserBeams();
+  volleyDirs(fwd).slice(0, laserBeams.length).forEach((v, k) => {
+    const o = origin.clone().add(v.off);
+    const hit = castSegment(o, v.d, 40, 0.15);
+    const end = o.clone().addScaledVector(v.d, hit ? hit.t : 40);
+    placeSegment(laserBeams[k].o, o, end, 0.03);
+    placeSegment(laserBeams[k].c, o, end, 0.01);
+    if (!hit) return;
+    applyHit(hit, dmg, end);
     sparks(end, 0xffd040, 3, 2.5, 0.05, 0.35);
+    if (hit.kind === 'ufo' && up.ricochet) bounceChain(hit.u, end, dmg, up.ricochet, 0xffd040);
     if (power.boom > 0 && Math.random() < 0.3) explodeAt(end, { boomR: 1.8, boomDmg: 1, golden: power.golden > 0 });
+  });
+  LASER_OUT_MAT.opacity = 0.7 + Math.random() * 0.3;
+}
+// Ricochete instantâneo (laser): salta pra nave mais próxima com 70% a cada pulo
+function bounceChain(fromU, pos, dmg, n, hex) {
+  const done = new Set([fromU]);
+  let from = pos.clone(), d = dmg;
+  for (let k = 0; k < n; k++) {
+    let best = null, bd = 9;
+    for (const u of ufos) {
+      if (!isAlive(u) || done.has(u)) continue;
+      const p = u.parts.find(q => q.active && q.kind !== 'armor');
+      if (!p) continue;
+      const dd = p.c.distanceTo(from);
+      if (dd < bd) { bd = dd; best = { u, p }; }
+    }
+    if (!best) return;
+    d *= 0.7;
+    const to = best.p.c.clone();
+    drawBolt(from, to, 0.06, 0.1);
+    sparks(to, hex, 4, 2.5, 0.05, 0.35);
+    hitPart(best.u, best.p, d, to, false);
+    done.add(best.u); from = to;
   }
 }
 const TESLA_R = 7;
 function fireTesla() {
   const origin = muzzleWorld('tesla', TV[0]).clone();
-  const dir = shotDir(origin, rightCtrl, TV[1]).clone();
-  hideBolts();
+  const aim = shotDir(origin, rightCtrl, TV[1]).clone();
   const base = 3 * up.dmg * (power.golden > 0 ? 3 : 1);
-  const hit = castSegment(origin, dir, 45, 0.5);
-  if (!hit) {
-    drawBolt(origin, origin.clone().addScaledVector(dir, 10), 0.4);
-  } else {
-    const hp = origin.clone().addScaledVector(dir, hit.t);
-    drawBolt(origin, hp, 0.3);
+  const zapped = new Set();
+  let total = 0, popAt = null;
+  for (const v of volleyDirs(aim).slice(0, 5)) {
+    const o = origin.clone().add(v.off);
+    const hit = castSegment(o, v.d, 45, 0.5);
+    if (!hit) { drawBolt(o, o.clone().addScaledVector(v.d, 10), 0.2); continue; }
+    const hp = o.clone().addScaledVector(v.d, hit.t);
+    drawBolt(o, hp, 0.15);
     sparks(hp, 0xa8ecff, 8, 3, 0.06, 0.4);
-    const zapped = new Set();
-    if (hit.kind === 'ufo') zapped.add(hit.u);
+    if (hit.kind === 'ufo') { if (zapped.has(hit.u)) continue; zapped.add(hit.u); }
     applyHit(hit, base, hp);
+    if (!popAt) popAt = hp;
     // Cascata: cada geração salta pros vizinhos com menos força (100% -> 55% -> 30% -> 17%)
-    let frontier = [hp];
-    let dmg = base, total = 0;
-    for (let gen = 0; gen < 3 && frontier.length && total < 10; gen++) {
+    let frontier = [hp], dmg = base;
+    const gens = 3 + up.ricochet;
+    for (let gen = 0; gen < gens && frontier.length && total < 10 + up.ricochet * 3; gen++) {
       dmg *= 0.55;
       const next = [];
       for (const from of frontier) {
@@ -2755,23 +2856,22 @@ function fireTesla() {
         }
         cands.sort((a, b) => a.d - b.d);
         for (const c of cands.slice(0, 3)) {
-          if (total >= 10) break;
           zapped.add(c.u); total++;
           const to = c.part.c.clone();
-          drawBolt(from, to, 0.45);
+          drawBolt(from, to, 0.22);
           sparks(to, 0xa8ecff, 5, 3, 0.06, 0.4);
-          hitPart(c.u, c.part, dmg, to);
+          hitPart(c.u, c.part, dmg, to, false);
           next.push(to);
         }
         for (const g of goos.slice()) {
-          if (g.c.distanceTo(from) < TESLA_R * 0.7) { drawBolt(from, g.c.clone(), 0.4); destroyGoo(g, true); }
+          if (g.c.distanceTo(from) < TESLA_R * 0.7) { drawBolt(from, g.c.clone(), 0.2); destroyGoo(g, true); }
         }
       }
       frontier = next;
     }
-    if (total >= 2) popup('CHOQUE x' + (total + 1) + '!', hp.clone().setY(hp.y + 0.5), '#a8ecff', 0.9, 0.9);
     if (power.boom > 0) explodeAt(hp, { boomR: 2, boomDmg: 2, golden: power.golden > 0 });
   }
+  if (popAt && total >= 2) popup('CHOQUE x' + (total + 1) + '!', popAt.clone().setY(popAt.y + 0.5), '#a8ecff', 0.9, 0.9);
   playTesla(); pulseController(rightCtrl, 0.55, 50);
   weaponCD = 0.28 / up.rate;
   tesla.userData.kick = 1;
@@ -2780,7 +2880,7 @@ function throwEgg(ctrl, vel) {
   const origin = ctrl.getWorldPosition(TV[0]);
   const sm = vel.length();
   const factor = Math.min(3.0 + sm * 0.6, 9.5);
-  spawnEgg(origin, TV[1].copy(vel).multiplyScalar(factor), { damage: 1, gravity: true, gScale: 0.35, magnet: 4 });
+  spawnEgg(origin, TV[1].copy(vel).multiplyScalar(factor), { damage: 1, gravity: true, gScale: 0.35, magnet: 4, volley: true });
   playEggThrow();
   pulseController(ctrl, Math.min(0.95, 0.25 + sm * 0.1), 80);
 }
@@ -2790,14 +2890,14 @@ function fireSlingshotPouch() {
   const dist = pull.length();
   if (dist < SLINGSHOT_MIN_PULL) return;
   const speed = Math.min(dist * SHOT_SPEED_FACTOR, MAX_SHOT_SPEED);
-  spawnEgg(pouchMesh.position, pull.normalize().multiplyScalar(speed), { damage: 2, gravity: true, magnet: 3 });
+  spawnEgg(pouchMesh.position, pull.normalize().multiplyScalar(speed), { damage: 2, gravity: true, magnet: 3, volley: true });
   playSlingshotRelease(); pulseController(leftCtrl, 0.7, 90); pulseController(rightCtrl, 0.4, 60);
 }
 function fireCrossbowArrow() {
   const rest = getPouchRestWorld(TV[0]);
   const pull = TV[1].copy(rest).sub(pouchMesh.position);
   if (pull.length() < 0.04) return;
-  spawnEgg(pouchMesh.position, pull.normalize().multiplyScalar(CROSSBOW_ARROW_SPEED), { damage: 2, arrow: true, magnet: 1.5 });
+  spawnEgg(pouchMesh.position, pull.normalize().multiplyScalar(CROSSBOW_ARROW_SPEED), { damage: 2, arrow: true, magnet: 1.5, volley: true });
   playArrowRelease(); pulseController(leftCtrl, 0.85, 100); pulseController(rightCtrl, 0.5, 70);
 }
 function desktopShoot() {
@@ -2805,13 +2905,13 @@ function desktopShoot() {
   const o = TV[0].copy(camPos).addScaledVector(dir, 0.35);
   o.y -= 0.12;
   if (activeWeapon === 'hands') {
-    spawnEgg(o, TV[2].copy(dir).multiplyScalar(13).add(TV[3].set(0, 1.2, 0)), { damage: 1, gravity: true, gScale: 0.6, magnet: 4 });
+    spawnEgg(o, TV[2].copy(dir).multiplyScalar(13).add(TV[3].set(0, 1.2, 0)), { damage: 1, gravity: true, gScale: 0.6, magnet: 4, volley: true });
     playEggThrow(); weaponCD = 0.32 / up.rate;
   } else if (activeWeapon === 'slingshot') {
-    spawnEgg(o, TV[2].copy(dir).multiplyScalar(MAX_SHOT_SPEED).add(TV[3].set(0, 0.8, 0)), { damage: 2, gravity: true, magnet: 3 });
+    spawnEgg(o, TV[2].copy(dir).multiplyScalar(MAX_SHOT_SPEED).add(TV[3].set(0, 0.8, 0)), { damage: 2, gravity: true, magnet: 3, volley: true });
     playSlingshotRelease(); weaponCD = 0.35 / up.rate;
   } else if (activeWeapon === 'crossbow') {
-    spawnEgg(o, TV[2].copy(dir).multiplyScalar(CROSSBOW_ARROW_SPEED), { damage: 2, arrow: true, magnet: 1.5 });
+    spawnEgg(o, TV[2].copy(dir).multiplyScalar(CROSSBOW_ARROW_SPEED), { damage: 2, arrow: true, magnet: 1.5, volley: true });
     playArrowRelease(); weaponCD = 0.42 / up.rate;
   }
 }
@@ -2896,7 +2996,7 @@ function explodeAt(posIn, ud) {
       const d = p.c.distanceTo(pos) - (p.ellip ? p.ellip[1] : p.r);
       if (d < R && d < bd) { bd = d; bestP = p; }
     }
-    if (bestP) hitPart(u, bestP, dmg, bestP.c.clone());
+    if (bestP) hitPart(u, bestP, dmg, bestP.c.clone(), false);
   }
   for (let i = goos.length - 1; i >= 0; i--) if (goos[i] && goos[i].c.distanceTo(pos) < R) destroyGoo(goos[i], true);
   for (const cr of crates.slice()) if (cr.c.distanceTo(pos) < R + CRATE_RX) { const cp = cr.c.clone(); removeCrate(cr); activatePower(cr.type, cp); }
@@ -2924,6 +3024,27 @@ function updateProjectiles(dt) {
       if (hit.kind === 'ufo') {
         spawnEggSplat(hp, ud.golden);
         if (ud.boom) explodeAt(hp, ud);
+        if (ud.ricochet > 0) {
+          let best = null, bd = 9;
+          for (const u of ufos) {
+            if (!isAlive(u) || u === hit.u || (ud.hitSet && ud.hitSet.has(u))) continue;
+            const pt = u.parts.find(q => q.active && q.kind !== 'armor');
+            if (!pt) continue;
+            const dd = pt.c.distanceTo(hp);
+            if (dd < bd) { bd = dd; best = pt; }
+          }
+          if (best) {
+            ud.ricochet--;
+            if (!ud.hitSet) ud.hitSet = new Set();
+            ud.hitSet.add(hit.u);
+            ud.damage *= 0.7; ud.gravity = false; ud.homing = null; ud.magnet = 0;
+            p.position.copy(hp);
+            ud.vel.copy(best.c).sub(hp).normalize().multiplyScalar(Math.max(30, ud.vel.length()));
+            ud.life = Math.min(ud.life, ud.maxLife - 1);
+            sparks(hp, 0xffffff, 5, 3, 0.05, 0.3);
+            continue;
+          }
+        }
         if (ud.pierce > 0) {
           ud.pierce--;
           if (!ud.hitSet) ud.hitSet = new Set();
@@ -2958,7 +3079,22 @@ function updateProjectiles(dt) {
 // =============================================================================
 // DANO + PONTOS
 // =============================================================================
-function hitPart(u, part, dmg, pos) {
+function applyStatus(u, dmg, pos) {
+  if (up.fire) { u.burnT = 3; u.burnDps = Math.max(u.burnDps || 0, dmg * 0.2 * up.fire); }
+  if (up.ice && u.kind !== 'mother') { u.slowT = 2.5; u.slowMul = up.ice >= 2 ? 0.4 : 0.6; }
+  if (up.shock && totalTime - (u.shockT || -9) > 0.3) {
+    u.shockT = totalTime;
+    const near = [];
+    for (const o of ufos) {
+      if (o === u || !isAlive(o)) continue;
+      const p = o.parts.find(q => q.active && q.kind !== 'armor');
+      if (p && p.c.distanceTo(pos) < 6) near.push({ o, p, d: p.c.distanceTo(pos) });
+    }
+    near.sort((a, b) => a.d - b.d);
+    for (const x of near.slice(0, 1 + up.shock)) { const to = x.p.c.clone(); drawBolt(pos, to, 0.12, 0.12); hitPart(x.o, x.p, dmg * 0.35, to, false); }
+  }
+}
+function hitPart(u, part, dmg, pos, fx = true) {
   if (!isAlive(u)) return;
   if (u.shieldedBy && isAlive(u.shieldedBy)) {
     sparks(pos, 0x70b0ff, 5, 3); playTink();
@@ -2970,8 +3106,16 @@ function hitPart(u, part, dmg, pos) {
     if (totalTime - u.lastPop > 1.6) { popup('BLINDADO!', pos, '#cccccc', 0.9, 0.8); u.lastPop = totalTime; }
     return;
   }
+  if (fx) {
+    if (up.rage) dmg *= 1 + up.rage * 0.10 * Math.max(0, INITIAL_FLOCK.length - chickensAlive());
+    if (up.crit && Math.random() < up.crit * 0.15) {
+      dmg *= 2; playCritical();
+      if (totalTime - u.lastPop > 0.6) { popup('CRÍTICO!', pos, '#ff6040', 0.9, 0.8); u.lastPop = totalTime; }
+    }
+  }
   if (part.kind === 'pod') {
     part.hp -= dmg; part.flashT = 0.08;
+    if (fx && part.hp > 0) applyStatus(u, dmg, pos);
     sparks(pos, 0xff4060, 4, 3); playUfoHit(); drawHpBar(u);
     if (part.hp <= 0) {
       part.active = false; part.obj.visible = false;
@@ -2988,6 +3132,7 @@ function hitPart(u, part, dmg, pos) {
     if (totalTime - u.lastPop > 0.6) { popup('CRÍTICO!', pos, '#ff6040', 0.9, 0.8); u.lastPop = totalTime; }
   }
   if (u.hp <= 0) { killUfo(u, pos); return; }
+  if (fx) applyStatus(u, dmg, pos);
   playUfoHit(); pulseAll(0.2, 30);
   sparks(pos, 0xffd040, 3, 3, 0.05, 0.4);
   if (u.hpBar) drawHpBar(u);
@@ -3102,7 +3247,9 @@ function abductChicken(c, u) {
   waveLost++;
   resetCombo();
   playChickenAbducted(); ov.hurt = 0.45; pulseAll(0.6, 220);
-  popup(c.kind === 'golden' ? 'LEVARAM A GALINHA DE OURO!' : '-1 ' + CHICKEN_KINDS[c.kind].label.toUpperCase(), u.group.position, '#ff4040', 1.2, 1.4);
+  const left = chickensAlive();
+  popupStack([[c.kind === 'golden' ? 'LEVARAM A GALINHA DE OURO!' : '-1 ' + CHICKEN_KINDS[c.kind].label.toUpperCase(), '#ff4040', 1.2, 1.6],
+    ['restam ' + left + (left === 1 ? ' galinha' : ' galinhas'), left <= 2 ? '#ff6060' : '#ffffff', 0.9, 1.6]], u.group.position);
   if (chickensAlive() === 0) enterGameOver();
 }
 function popupAhead(text, color, size = 1.2) {
@@ -3129,19 +3276,72 @@ function kamikazeHit(u) {
 // =============================================================================
 // UPGRADES (atire no card)
 // =============================================================================
+// cat: atk = ATAQUE · egg = OVO (efeitos) · def = DEFESA/UTILIDADE
+// rar: comum · raro · epico — cada oferta traz 1 card de cada categoria (escolha com trade-off),
+// chefões dão uma escolha ÉPICA extra e o primeiro card do jogo já muda seu estilo de tiro.
 const UPGRADES = [
-  { id: 'dmg',    icon: '💪', title: 'OVO TURBINADO',  desc: '+25% de dano',             max: 6,   apply: () => { up.dmg += 0.25; } },
-  { id: 'rate',   icon: '⚡', title: 'DEDO LIGEIRO',   desc: '+20% de cadência',         max: 4,   apply: () => { up.rate += 0.2; } },
-  { id: 'big',    icon: '🥚', title: 'OVO GIGANTE',    desc: 'ovos maiores, acertam mais fácil', max: 3, apply: () => { up.big += 0.3; } },
-  { id: 'magnet', icon: '🧲', title: 'ÍMÃ DE OVO',     desc: 'ovos curvam até as naves', max: 3,   apply: () => { up.magnet += 1; } },
-  { id: 'coop',   icon: '🛡', title: 'GALINHA PESADA', desc: 'abdução 25% mais lenta',   max: 3,   apply: () => { up.coop += 0.25; } },
-  { id: 'brood',  icon: '🐣', title: 'NINHADA',        desc: '+2 pintinhos agora',       max: 99,  cond: () => chickensAlive() < MAX_CHICKENS - 1, apply: () => { respawnChicken('chick'); respawnChicken('chick'); } },
-  { id: 'luck',   icon: '🍀', title: 'SORTE GRANDE',   desc: 'cai mais power-up',        max: 3,   apply: () => { up.luck += 0.5; } },
-  { id: 'combo',  icon: '🔥', title: 'COMBO MESTRE',   desc: '+1s pra manter o combo',   max: 3,   apply: () => { up.combo += 1; } },
-  { id: 'power',  icon: '⏳', title: 'POWER-UP LONGO', desc: 'power-ups duram +50%',     max: 2,   apply: () => { up.power += 0.5; } },
-  { id: 'pierce', icon: '🎯', title: 'OVO PERFURANTE', desc: 'atravessa +1 nave',        max: 2,   apply: () => { up.pierce += 1; } },
-  { id: 'cash',   icon: '💰', title: 'BOLADA',         desc: '+1500 pontos',             max: 999, apply: () => { score += 1500; } },
+  { id: 'dmg',      cat: 'atk', rar: 'comum', icon: '💪', title: 'OVO TURBINADO',   desc: '+25% de dano em tudo',                   max: 5, apply: () => { up.dmg += 0.25; } },
+  { id: 'rate',     cat: 'atk', rar: 'comum', icon: '⚡', title: 'DEDO LIGEIRO',    desc: '+20% de cadência',                       max: 4, apply: () => { up.rate += 0.2; } },
+  { id: 'crit',     cat: 'atk', rar: 'raro',  icon: '🎯', title: 'OLHO DE ÁGUIA',   desc: '+15% de chance de crítico (dano x2)',     max: 3, apply: () => { up.crit += 1; } },
+  { id: 'rage',     cat: 'atk', rar: 'raro',  icon: '😤', title: 'FÚRIA DO GALO',   desc: '+10% de dano por galinha perdida',       max: 2, apply: () => { up.rage += 1; } },
+  { id: 'front',    cat: 'atk', rar: 'epico', icon: '➕', title: 'OVO DUPLO',       desc: '+1 ovo lado a lado em todo tiro',        max: 2, apply: () => { up.front += 1; } },
+  { id: 'diag',     cat: 'atk', rar: 'epico', icon: '🔱', title: 'OVO LEQUE',       desc: '+2 ovos em diagonal em todo tiro',       max: 2, apply: () => { up.diag += 1; } },
+  { id: 'pierce',   cat: 'egg', rar: 'raro',  icon: '🗡', title: 'OVO PERFURANTE',  desc: 'atravessa +1 nave',                      max: 2, apply: () => { up.pierce += 1; } },
+  { id: 'ricochet', cat: 'egg', rar: 'raro',  icon: '🔁', title: 'RICOCHETE',       desc: 'o ovo quica pra +1 nave (70% do dano)',  max: 3, apply: () => { up.ricochet += 1; } },
+  { id: 'fire',     cat: 'egg', rar: 'raro',  icon: '🔥', title: 'OVO FLAMEJANTE',  desc: 'queima a nave: +60% de dano em 3s',      max: 2, apply: () => { up.fire += 1; } },
+  { id: 'ice',      cat: 'egg', rar: 'raro',  icon: '❄️', title: 'OVO CONGELANTE',  desc: 'nave e feixe 40% mais lentos',           max: 2, apply: () => { up.ice += 1; } },
+  { id: 'shock',    cat: 'egg', rar: 'raro',  icon: '🌩', title: 'OVO ELÉTRICO',    desc: 'choque pula pra 2 naves perto',          max: 2, apply: () => { up.shock += 1; } },
+  { id: 'big',      cat: 'egg', rar: 'comum', icon: '🥚', title: 'OVO GIGANTE',     desc: 'ovos maiores, acertam mais fácil',       max: 3, apply: () => { up.big += 0.3; } },
+  { id: 'magnet',   cat: 'egg', rar: 'comum', icon: '🧲', title: 'ÍMÃ DE OVO',      desc: 'ovos curvam até as naves',               max: 3, apply: () => { up.magnet += 1; } },
+  { id: 'buddy',    cat: 'def', rar: 'epico', icon: '🐤', title: 'PINTINHO ATIRADOR', desc: 'um ajudante que atira sozinho',       max: 2, apply: () => { up.buddy += 1; } },
+  { id: 'feather',  cat: 'def', rar: 'raro',  icon: '🪶', title: 'ESCUDO DE PENAS', desc: 'cada galinha bloqueia 1 abdução por wave', max: 1, apply: () => { up.feather = 1; } },
+  { id: 'angel',    cat: 'def', rar: 'raro',  icon: '👼', title: 'ANJO DA GRANJA',  desc: '+2 galinhas agora',                      max: 99, cond: () => chickensAlive() < MAX_CHICKENS - 1, apply: () => { respawnChicken('hen'); respawnChicken('hen'); } },
+  { id: 'coop',     cat: 'def', rar: 'comum', icon: '🏋', title: 'GALINHA PESADA',  desc: 'abdução 25% mais lenta',                 max: 3, apply: () => { up.coop += 0.25; } },
+  { id: 'luck',     cat: 'def', rar: 'comum', icon: '🍀', title: 'SORTE GRANDE',    desc: 'cai mais power-up',                      max: 3, apply: () => { up.luck += 0.5; } },
+  { id: 'combo',    cat: 'def', rar: 'comum', icon: '⏱', title: 'COMBO MESTRE',    desc: '+1s pra manter o combo',                 max: 3, apply: () => { up.combo += 1; } },
+  { id: 'power',    cat: 'def', rar: 'comum', icon: '⏳', title: 'POWER-UP LONGO',  desc: 'power-ups duram +50%',                   max: 2, apply: () => { up.power += 0.5; } },
+  { id: 'cash',     cat: 'def', rar: 'comum', icon: '💰', title: 'BOLADA',          desc: '+1500 pontos',                           max: 999, apply: () => { score += 1500; } },
 ];
+const RARITY = {
+  comum: { label: 'COMUM', col: '#9fd090', bg: ['#1f4a1a', '#0a1f0a'], hex: 0x8dff4a },
+  raro:  { label: 'RARO',  col: '#60b0ff', bg: ['#16305a', '#08142a'], hex: 0x60b0ff },
+  epico: { label: 'ÉPICO', col: '#e080ff', bg: ['#4a1670', '#180828'], hex: 0xd070ff },
+};
+const CAT_LABEL = { atk: 'ATAQUE', egg: 'OVO', def: 'DEFESA' };
+let pendingPicks = 0;
+const upAvail = x => x.id !== 'cash' && (up.counts[x.id] || 0) < x.max && (!x.cond || x.cond());
+function rollRarity() {
+  const r = Math.random();
+  const [c, ra] = currentWave < 3 ? [0.62, 0.30] : currentWave < 6 ? [0.50, 0.36] : [0.40, 0.40];
+  return r < c ? 'comum' : r < c + ra ? 'raro' : 'epico';
+}
+function buildOffer(kind) {
+  let epicCat = null;
+  if (kind === 'first') epicCat = 'atk';
+  else if (kind === 'boss') epicCat = pick(['atk', 'def', 'atk']);
+  const taken = new Set(), out = [];
+  for (const cat of ['atk', 'egg', 'def']) {
+    let pool = UPGRADES.filter(x => x.cat === cat && upAvail(x) && !taken.has(x.id));
+    if (!pool.length) pool = UPGRADES.filter(x => upAvail(x) && !taken.has(x.id));
+    if (!pool.length) { out.push(UPGRADES.find(x => x.id === 'cash')); continue; }
+    const rar = cat === epicCat ? 'epico' : rollRarity();
+    const order = rar === 'epico' ? ['epico', 'raro', 'comum'] : rar === 'raro' ? ['raro', 'comum', 'epico'] : ['comum', 'raro', 'epico'];
+    let cand = [];
+    for (const rr of order) { cand = pool.filter(x => x.rar === rr); if (cand.length) break; }
+    const owned = cand.filter(x => up.counts[x.id]);
+    const choice = owned.length && Math.random() < 0.35 ? pick(owned) : pick(cand);
+    taken.add(choice.id);
+    out.push(choice);
+  }
+  if (waveLost >= 2) {
+    const a = UPGRADES.find(x => x.id === 'angel');
+    if (upAvail(a) && !taken.has('angel')) out[2] = a;
+  }
+  return out;
+}
+function skillList() {
+  return UPGRADES.filter(x => up.counts[x.id] && x.id !== 'cash' && x.id !== 'angel').map(x => ({ icon: x.icon, lv: up.counts[x.id], rar: x.rar }));
+}
 const CARD_GEO = new THREE.PlaneGeometry(1.15, 1.44);
 const cards = [];
 let upgradeChosen = false, upgradeLeaveT = 0;
@@ -3156,30 +3356,38 @@ function wrapText(ctx, text, x, y, maxW, lh) {
   if (line) ctx.fillText(line, x, yy);
 }
 function drawCard(x, w, h, upg) {
+  const R = RARITY[upg.rar] || RARITY.comum;
   const g = x.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, '#1f4a1a'); g.addColorStop(1, '#0a1f0a');
-  x.fillStyle = g;
-  x.beginPath(); x.roundRect ? x.roundRect(8, 8, w - 16, h - 16, 40) : x.rect(8, 8, w - 16, h - 16); x.fill();
-  x.lineWidth = 12; x.strokeStyle = '#8dff4a'; x.stroke();
-  x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.font = '170px sans-serif'; x.fillText(upg.icon, w / 2, 190);
-  x.fillStyle = '#ffd040'; x.font = 'bold 58px Impact, "Arial Black", sans-serif';
-  wrapText(x, upg.title, w / 2, 360, w - 70, 64);
-  x.fillStyle = '#ffffff'; x.font = 'bold 36px "Helvetica Neue", Arial, sans-serif';
-  wrapText(x, upg.desc, w / 2, 470, w - 80, 44);
+  g.addColorStop(0, R.bg[0]); g.addColorStop(1, R.bg[1]);
+  roundRect(x, 8, 8, w - 16, h - 16, 40);
+  x.fillStyle = g; x.fill();
+  if (upg.rar === 'epico') { x.shadowColor = R.col; x.shadowBlur = 30; }
+  x.lineWidth = upg.rar === 'comum' ? 10 : 16; x.strokeStyle = R.col; x.stroke();
+  x.shadowBlur = 0;
+  x.textBaseline = 'middle';
+  x.font = 'bold 30px "Helvetica Neue", Arial, sans-serif';
+  x.textAlign = 'left'; x.fillStyle = '#ffffff'; x.fillText(CAT_LABEL[upg.cat] || '', 44, 58);
+  x.textAlign = 'right'; x.fillStyle = R.col; x.fillText(R.label, w - 44, 58);
+  x.textAlign = 'center';
+  x.font = '160px sans-serif'; x.fillText(upg.icon, w / 2, 215);
+  x.fillStyle = '#ffd040'; x.font = 'bold 56px Impact, "Arial Black", sans-serif';
+  wrapText(x, upg.title, w / 2, 375, w - 70, 62);
+  x.fillStyle = '#ffffff'; x.font = 'bold 34px "Helvetica Neue", Arial, sans-serif';
+  wrapText(x, upg.desc, w / 2, 478, w - 80, 42);
   const lvl = (up.counts[upg.id] || 0);
-  if (upg.max < 99) { x.fillStyle = '#9fd090'; x.font = 'bold 28px sans-serif'; x.fillText('NÍVEL ' + (lvl + 1) + ' / ' + upg.max, w / 2, 585); }
+  if (upg.max < 99) {
+    x.fillStyle = R.col; x.font = 'bold 30px sans-serif';
+    x.fillText(lvl ? 'NÍVEL ' + lvl + ' → ' + (lvl + 1) + '  (máx ' + upg.max + ')' : 'NOVA HABILIDADE', w / 2, 590);
+  }
 }
 function clearCards() {
   for (const c of cards) { scene.remove(c.mesh); c.mesh.material.map.dispose(); c.mesh.material.dispose(); }
   cards.length = 0;
 }
-function showUpgradeCards() {
+function showUpgradeCards(kind = 'normal') {
   clearCards();
   upgradeChosen = false; upgradeLeaveT = 0;
-  let pool = UPGRADES.filter(x => x.id !== 'cash' && (up.counts[x.id] || 0) < x.max && (!x.cond || x.cond()));
-  shuffle(pool); pool = pool.slice(0, 3);
-  while (pool.length < 3) pool.push(UPGRADES[UPGRADES.length - 1]);
+  const pool = buildOffer(kind);
   const fwd = camera.getWorldDirection(new THREE.Vector3()); fwd.y = 0;
   if (fwd.lengthSq() < 1e-3) fwd.set(0, 0, 1);
   fwd.normalize();
@@ -3196,7 +3404,9 @@ function showUpgradeCards() {
   });
   state = 'upgrade'; stateT = 0;
   music.intensity = 0;
-  showBanner3D('ESCOLHA UM UPGRADE', 'atire no card que você quer', '', '#8dff4a', 3.5, 1.15);
+  if (kind === 'boss') showBanner3D('RECOMPENSA DO CHEFÃO', 'uma habilidade ÉPICA te espera', 'atire no card', '#e080ff', 3.5, 1.15);
+  else if (kind === 'first') showBanner3D('PRIMEIRA HABILIDADE!', 'escolha seu estilo de tiro', 'ATAQUE · OVO · DEFESA', '#8dff4a', 3.5, 1.15);
+  else showBanner3D('ESCOLHA UMA HABILIDADE', 'atire no card', 'ATAQUE · OVO · DEFESA', '#8dff4a', 3.5, 1.15);
   playWeaponPickup();
 }
 function chooseUpgrade(card) {
@@ -3206,9 +3416,11 @@ function chooseUpgrade(card) {
   up.counts[card.upg.id] = (up.counts[card.upg.id] || 0) + 1;
   for (const c of cards) c.done = true;
   card.chosen = true;
-  playUpgrade(); flashScreen(0x8dff4a, 0.5);
-  sparks(card.c, 0x8dff4a, 30, 5, 0.08, 0.9); pulseAll(0.6, 150);
-  popup(card.upg.title + '!', card.c.clone().setY(card.c.y + 0.9), '#8dff4a', 1.3, 1.5);
+  const R = RARITY[card.upg.rar] || RARITY.comum;
+  playUpgrade(); flashScreen(R.hex, 0.5);
+  sparks(card.c, R.hex, card.upg.rar === 'epico' ? 50 : 30, 5, 0.08, 0.9); pulseAll(0.6, 150);
+  const lv = up.counts[card.upg.id];
+  popup(card.upg.title + (card.upg.max < 99 && lv > 1 ? ' NV ' + lv : '') + '!', card.c.clone().setY(card.c.y + 0.9), R.col, 1.3, 1.5);
   upgradeLeaveT = 1.2;
 }
 function updateCards(dt) {
@@ -3227,8 +3439,53 @@ function updateCards(dt) {
   }
   if (upgradeChosen && state === 'upgrade') {
     upgradeLeaveT -= dt;
-    if (upgradeLeaveT <= 0) { clearCards(); startWave(currentWave + 1); }
+    if (upgradeLeaveT <= 0) {
+      clearCards();
+      if (pendingPicks > 0) { pendingPicks--; showUpgradeCards('boss'); }
+      else startWave(currentWave + 1);
+    }
   }
+}
+
+const buddies = [];
+const BUDDY_GEO = bakeGeo(g => {
+  sph(g, 0.09, 10, 8, 0xffe060, 0, 0, 0);
+  const bk = cone(g, 0.025, 0.06, 6, 0xff9a20, 0, -0.01, 0.09); bk.rotation.x = Math.PI / 2;
+  for (const sx of [-1, 1]) { sph(g, 0.016, 6, 5, 0x000000, sx * 0.04, 0.03, 0.075); const w = box(g, 0.02, 0.05, 0.07, 0xf0c840, sx * 0.09, -0.01, 0); w.rotation.z = sx * 0.5; }
+});
+const BUDDY_HALO = new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0xffd040, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
+function updateBuddies(dt) {
+  while (buddies.length < up.buddy) {
+    const m = new THREE.Mesh(BUDDY_GEO, BAKE_SMOOTH);
+    const h = new THREE.Sprite(BUDDY_HALO); h.scale.setScalar(0.4); m.add(h);
+    m.position.copy(camPos);
+    scene.add(m);
+    buddies.push({ mesh: m, cd: rand(0.3, 1), phase: rand(0, 6) });
+  }
+  if (!buddies.length) return;
+  const fwd = camera.getWorldDirection(TV[12]); fwd.y = 0;
+  if (fwd.lengthSq() < 1e-3) fwd.set(0, 0, 1);
+  fwd.normalize();
+  const right = TV[13].crossVectors(fwd, UP);
+  const active = state === 'playing' || state === 'wave_intro';
+  buddies.forEach((b, i) => {
+    const side = i === 0 ? -1 : 1;
+    const xr = renderer.xr.isPresenting;
+    const tgtPos = TV[14].copy(camPos).addScaledVector(right, side * (xr ? 0.55 : 1.1)).addScaledVector(fwd, xr ? 0.35 : 1.4);
+    tgtPos.y += (xr ? 0.22 : 0.55) + Math.sin(totalTime * 2 + b.phase) * 0.05;
+    b.mesh.position.lerp(tgtPos, Math.min(1, dt * 6));
+    b.mesh.visible = state !== 'idle';
+    if (!active) return;
+    b.cd -= dt;
+    if (b.cd > 0) return;
+    const t = acquireTarget(b.mesh.position, fwd);
+    if (!t) { b.cd = 0.3; return; }
+    const dir = t.c.clone().sub(b.mesh.position).normalize();
+    b.mesh.lookAt(t.c);
+    spawnEgg(b.mesh.position, dir.multiplyScalar(30), { damage: 2, maxLife: 2.5, magnet: 2, scale: 0.8, noRicochet: true });
+    muzzle(b.mesh.position, 0xffd040, 0.15); playChirp();
+    b.cd = 1.1 / up.rate;
+  });
 }
 
 function refreshUfoParts(u) {
@@ -3334,7 +3591,6 @@ const hudEl = document.getElementById('hud'), hScore = document.getElementById('
 const hCombo = document.getElementById('h-combo'), hWave = document.getElementById('h-wave'), hChk = document.getElementById('h-chk'), hPower = document.getElementById('h-power');
 const wbarEl = document.getElementById('wbar'), crossEl = document.getElementById('crosshair'), mSwitch = document.getElementById('m-switch');
 const CHICK_EMOJI = { hen: '🐔', rooster: '🐓', chick: '🐥', golden: '🌟' };
-const flockString = () => chickens.filter(c => c.state !== 'gone').map(c => CHICK_EMOJI[c.kind]).join('');
 const waveLabel = () => currentWave < WAVES.length ? (currentWave + 1) + '/' + WAVES.length : '∞ ' + (currentWave - WAVES.length + 1);
 function powerList() {
   const out = [];
@@ -3356,37 +3612,67 @@ function updateHtmlHud() {
   hCombo.textContent = 'COMBO ' + combo + ' · x' + comboMult();
   hCombo.classList.toggle('on', combo >= 2);
   hWave.textContent = 'WAVE ' + waveLabel() + ' · ' + WEAPONS[activeWeapon].icon + ' ' + WEAPONS[activeWeapon].label;
-  hChk.textContent = flockString();
-  hPower.innerHTML = powerList().map(p => '<div style="color:' + p[1] + '">' + p[0] + '</div>').join('');
+  const alive = chickensAlive();
+  hChk.innerHTML = '🐔 <b style="color:' + (alive <= 2 ? '#ff5050' : alive <= 4 ? '#ffb040' : '#fff') + ';font-size:22px">' + alive + '</b>/' + MAX_CHICKENS + ' <span style="font-size:12px;color:#ccc">' + flockDetail() + '</span>';
+  const sk = skillList().map(k => k.icon + '<sub>' + k.lv + '</sub>').join(' ');
+  hPower.innerHTML = powerList().map(p => '<div style="color:' + p[1] + '">' + p[0] + '</div>').join('') + (sk ? '<div style="color:#ddd;font-size:16px">' + sk + '</div>' : '');
+}
+function flockCounts() {
+  const k = { hen: 0, rooster: 0, chick: 0, golden: 0 };
+  for (const c of chickens) if (c.state !== 'gone') k[c.kind]++;
+  return k;
+}
+function flockDetail() {
+  const k = flockCounts();
+  return ['hen', 'rooster', 'chick', 'golden'].filter(t => k[t]).map(t => CHICK_EMOJI[t] + k[t]).join('  ');
 }
 function drawLap() {
-  const x = lapCtx;
-  x.clearRect(0, 0, 1024, 420);
-  roundRect(x, 6, 6, 1012, 408, 34);
-  x.fillStyle = 'rgba(6,18,6,0.85)'; x.fill();
-  x.strokeStyle = '#8dff4a'; x.lineWidth = 6; x.stroke();
+  const x = lapCtx, W = 768, H = 400;
+  x.clearRect(0, 0, W, H);
+  roundRect(x, 6, 6, W - 12, H - 12, 30);
+  x.fillStyle = 'rgba(6,18,6,0.86)'; x.fill();
+  x.strokeStyle = '#8dff4a'; x.lineWidth = 5; x.stroke();
   x.textBaseline = 'middle';
+  // Galinhas em destaque: número grande + detalhe por tipo
+  const alive = chickensAlive();
+  const cc = alive <= 2 ? '#ff5050' : alive <= 4 ? '#ffb040' : '#ffffff';
   x.textAlign = 'left';
-  fitText(x, fmt(score), 300, 80, 560, 100, IMPACT, '#ffd040');
-  x.textAlign = 'left';
-  x.font = 'bold 26px ' + SANS; x.fillStyle = '#b8c8b0';
-  x.fillText('RECORDE ' + fmt(Math.max(best, score)), 40, 145);
+  x.font = '62px sans-serif'; x.fillStyle = '#fff'; x.fillText('🐔', 26, 74);
+  x.font = 'bold 86px ' + IMPACT; x.fillStyle = cc; x.fillText(String(alive), 106, 76);
+  const nw = x.measureText(String(alive)).width;
+  x.font = 'bold 34px ' + SANS; x.fillStyle = '#90a088'; x.fillText('/' + MAX_CHICKENS, 112 + nw, 90);
+  x.font = 'bold 28px ' + SANS; x.fillStyle = '#c8d4c0'; x.fillText(flockDetail(), 30, 140);
+  // Pontos + combo
   x.textAlign = 'right';
+  fitText(x, fmt(score), 738, 70, 380, 72, IMPACT, '#ffd040');
   if (combo >= 2) {
-    fitText(x, 'COMBO x' + comboMult(), 980, 70, 380, 64, IMPACT, '#8dff4a');
-    x.fillStyle = 'rgba(141,255,74,0.25)'; x.fillRect(620, 112, 360, 16);
-    x.fillStyle = '#8dff4a'; x.fillRect(620, 112, 360 * clamp(comboT / comboWindow(), 0, 1), 16);
+    fitText(x, 'COMBO x' + comboMult(), 738, 135, 300, 40, IMPACT, '#8dff4a');
+    x.fillStyle = 'rgba(141,255,74,0.25)'; x.fillRect(478, 160, 260, 10);
+    x.fillStyle = '#8dff4a'; x.fillRect(478, 160, 260 * clamp(comboT / comboWindow(), 0, 1), 10);
   }
+  // Wave + arma
+  x.fillStyle = 'rgba(255,255,255,0.12)'; x.fillRect(24, 184, W - 48, 2);
   x.textAlign = 'left';
-  fitText(x, 'WAVE ' + waveLabel(), 40, 205, 360, 44, IMPACT, '#ffffff');
+  fitText(x, 'WAVE ' + waveLabel(), 30, 222, 300, 38, IMPACT, '#ffffff');
   x.textAlign = 'right';
-  fitText(x, WEAPONS[activeWeapon].icon + ' ' + WEAPONS[activeWeapon].label, 980, 205, 560, 44, IMPACT, '#8dff4a');
+  fitText(x, WEAPONS[activeWeapon].icon + ' ' + WEAPONS[activeWeapon].label, 738, 222, 420, 38, IMPACT, '#8dff4a');
+  // Power-ups ativos
   x.textAlign = 'left';
-  fitText(x, flockString() || '—', 40, 275, 940, 46, SANS, '#ffffff');
   const pl = powerList();
-  x.textAlign = 'left';
-  pl.forEach((p, i) => fitText(x, p[0], 40 + i * 320, 350, 310, 32, SANS, p[1]));
-  if (!pl.length && unlocked.size > 1) { x.font = 'bold 26px ' + SANS; x.fillStyle = '#7a8a70'; x.fillText('A/B/X/Y = trocar arma', 40, 350); }
+  pl.forEach((p, i) => fitText(x, p[0], 30 + i * 245, 282, 235, 28, SANS, p[1]));
+  // Habilidades (estilo Archero)
+  const sk = skillList();
+  if (sk.length) {
+    let xx = 30;
+    for (const k of sk) {
+      if (xx > W - 70) break;
+      x.font = '38px sans-serif'; x.fillStyle = '#fff'; x.fillText(k.icon, xx, 345);
+      x.font = 'bold 22px ' + SANS; x.fillStyle = (RARITY[k.rar] || RARITY.comum).col; x.fillText(String(k.lv), xx + 42, 360);
+      xx += 74;
+    }
+  } else if (lapHintT > 0) {
+    x.font = 'bold 22px ' + SANS; x.fillStyle = '#7a8a70'; x.fillText('segure o GRIP perto deste painel pra mover', 30, 345);
+  }
   lapTex.needsUpdate = true;
 }
 function updateStartBest() { const el = document.getElementById('best-score'); if (el) el.textContent = fmt(best); }
@@ -3428,6 +3714,7 @@ function startWave(idx) {
     for (const c of chickens) { const p = pos[k++ % pos.length]; c.group.position.set(p[0], 0, p[1]); c.state = 'pecking'; c.statePhase = rand(1, 2.5); }
   }
   todTarget = w.tod;
+  if (up.feather) for (const c of chickens) if (c.state !== 'gone') setChickenShield(c, true);
   state = 'wave_intro'; stateT = 0;
   music.intensity = 1;
   const title = w.endless ? 'INFINITO ' + (w.n + 1) : 'WAVE ' + (idx + 1) + '/' + WAVES.length;
@@ -3452,7 +3739,7 @@ function waveComplete() {
   music.intensity = 0;
   setLaser(false);
   const alive = chickensAlive();
-  const lines = ['🐔 x' + alive + ' +' + fmt(alive * 150)];
+  const lines = ['GALINHAS ' + alive + '/' + MAX_CHICKENS + ' +' + fmt(alive * 150)];
   let bonus = alive * 150;
   if (waveLost === 0) { bonus += 1000; lines.push('PERFEITA +1000'); }
   if (chickens.some(c => c.kind === 'golden' && c.state !== 'gone')) { bonus += 500; lines.push('🌟 OURO +500'); }
@@ -3467,8 +3754,9 @@ function waveComplete() {
   playRescue();
 }
 function advanceFromComplete() {
-  if (currentWave === WAVES.length - 1) enterVictory();
-  else showUpgradeCards();
+  if (currentWave === WAVES.length - 1) { enterVictory(); return; }
+  pendingPicks = waveDef.boss ? 1 : 0;
+  showUpgradeCards(currentWave === 0 ? 'first' : 'normal');
 }
 function finalizeScore() {
   lastScore = score;
@@ -3486,7 +3774,7 @@ function enterVictory() {
 function startEndless() {
   bannerMesh.visible = false;
   while (chickensAlive() < INITIAL_FLOCK.length) respawnChicken('hen');
-  showUpgradeCards();
+  showUpgradeCards('boss');
 }
 function enterGameOver() {
   if (state === 'game_over') return;
@@ -3514,7 +3802,10 @@ function resetGame() {
   for (const c of chickens.slice()) removeChicken(c);
   score = 0; resetCombo(); multiN = 0; killsSinceDrop = 0; ufosKilled = 0; waveLost = 0;
   power.golden = power.boom = power.slow = 0;
-  Object.assign(up, { dmg: 1, rate: 1, big: 1, magnet: 0, coop: 1, luck: 1, combo: 0, power: 1, pierce: 0, counts: {} });
+  Object.assign(up, UP_DEFAULTS, { counts: {} });
+  for (const b of buddies) scene.remove(b.mesh);
+  buddies.length = 0;
+  pendingPicks = 0;
   unlocked.clear(); unlocked.add('hands');
   currentWave = 0; waveDef = WAVES[0]; queue = []; bossSpawned = false;
   todTarget = 0;
@@ -3585,6 +3876,17 @@ function onTriggerEnd(ctrl) {
   }
 }
 for (const c of [controller1, controller2]) {
+  c.addEventListener('squeezestart', () => {
+    if (!lapPanel.visible) return;
+    if (c.getWorldPosition(TV[0]).distanceTo(lapPanel.getWorldPosition(TV[1])) < 0.3) { lapGrab = c; pulseController(c, 0.4, 40); }
+  });
+  c.addEventListener('squeezeend', () => {
+    if (lapGrab !== c) return;
+    lapGrab = null;
+    const p = lapPanel.position;
+    try { localStorage.setItem('cr2_lap', JSON.stringify([p.x, p.y, p.z])); } catch (e) {}
+    pulseController(c, 0.2, 30);
+  });
   c.addEventListener('selectstart', () => { c.userData.held = true; onTriggerStart(c); });
   c.addEventListener('selectend', () => { c.userData.held = false; onTriggerEnd(c); });
 }
@@ -3907,7 +4209,7 @@ function gameLoop(time, frame, forcedDt) {
     }
   } else setLaser(false);
   tickLaser(dt);
-  if (boltLife > 0) { boltLife -= dt; if (boltLife <= 0) hideBolts(); }
+  updateBolts(dt);
 
   updateWaveLogic(edt);
   updateChickens(dt);
@@ -3917,6 +4219,7 @@ function gameLoop(time, frame, forcedDt) {
   updateCrates(dt, edt);
   updateProjectiles(dt);
   updateCards(dt);
+  updateBuddies(dt);
 
   updatePointScale();
   fxAdd.update(dt); fxAlpha.update(dt);
@@ -3932,6 +4235,11 @@ function gameLoop(time, frame, forcedDt) {
   if (hudTimer <= 0) { hudTimer = 0.1; updateHtmlHud(); }
   if (xr) {
     lapPanel.visible = state !== 'idle';
+    if (lapPanel.visible) {
+      if (lapGrab) { const hp = lapGrab.getWorldPosition(TV[0]); wheelchair.worldToLocal(hp); lapPanel.position.copy(hp); }
+      lapPanel.lookAt(camPos);
+      lapHintT -= dt;
+    }
     lapTimer -= dt;
     if (lapTimer <= 0 && lapPanel.visible) { lapTimer = 0.125; drawLap(); }
   } else lapPanel.visible = false;
@@ -3952,6 +4260,7 @@ window.__cr = { get state() { return state; }, startWave, ufos, chickens, up, ge
   aimAt: p => { const d = new THREE.Vector3().copy(p).sub(camPos).normalize(); yaw = Math.atan2(-d.x, -d.z); pitch = Math.asin(clamp(d.y, -1, 1)); cameraRig.rotation.y = yaw; camera.rotation.x = pitch; },
   get crates() { return crates; }, get cards() { return cards; }, get projectiles() { return projectiles.length; }, get goos() { return goos.length; },
   hitCard: i => chooseUpgrade(cards[i]), activatePower, spawnCrate, get power() { return power; }, advance: handleMenuAdvance, shoot: () => { if (weaponCD <= 0) desktopShoot(); },
+  drawLap, lapCanvas, get cardsOffer() { return cards.map(c => c.upg.id + ':' + c.upg.rar); }, get pendingPicks() { return pendingPicks; }, buildOffer,
   get stateT() { return stateT; },
   step: (n, dt = 1 / 30, render = false) => { skipRender = !render; for (let i = 0; i < n; i++) gameLoop(0, null, dt); skipRender = false; } };
 </script>

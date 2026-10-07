@@ -45,9 +45,11 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 | Girar | thumbstick direito (snap de 30°) | mouse | arrastar |
 | Música | n/a | M | n/a |
 
-**HUD:** no VR, um painel no colo da cadeira mostra pontos, combo com barra de tempo, wave, arma,
-galinhas e power-ups. Basta olhar para baixo. A cadeira gira junto com a cabeça. No desktop o HUD
-é HTML no canto e há uma barra de armas embaixo.
+**HUD:** no VR, um painel pequeno (30 × 16 cm) fica no colo, à esquerda, e sempre vira para você.
+Ele mostra a **contagem de galinhas** em destaque (🐔 7/12, laranja com 4 ou menos, vermelho com 2 ou menos),
+o detalhe por tipo, pontos, combo, wave, arma, power-ups e os ícones das habilidades com o nível.
+**Segure o GRIP perto dele para mover.** A posição fica salva. No desktop o HUD é HTML no canto e há
+uma barra de armas embaixo. Ao perder uma galinha aparece "-1 GALINHA · restam N".
 
 ---
 
@@ -149,7 +151,8 @@ o alvo sem acertar. O acerto escolhido é o de menor `t` (a primeira coisa que o
 - **Cascata:** de cada ponto atingido, salta para os **3 vizinhos mais próximos** num raio de **7 m**.
   São até **3 gerações** com dano **55% → 30% → 17%**, no máximo 10 alvos extras por disparo.
   Também estoura gosma no caminho e mostra o popup "CHOQUE xN!".
-- Os raios são polilinhas zigue-zague feitas com um pool de 140 cilindros aditivos e duram 0.09 s.
+- Os raios são polilinhas em zigue-zague **suave** (desvio de 0.15 no principal e 0.22 na cascata) feitas com
+  um pool de 140 cilindros aditivos. Cada segmento tem vida própria de 0.09 s.
 
 ```js
 // Núcleo da cascata
@@ -174,11 +177,15 @@ for (let gen = 0; gen < 3 && frontier.length && total < 10; gen++) {
 | Power-up **Ovo de Ouro** (10 s) | dano ×3, ovo dourado com rastro brilhante |
 | Power-up **Ovo-Bomba** (10 s) | todo ovo explode em área (2.8 m, dano 2) |
 | Power-up **Câmera Lenta** (7 s) | inimigos e gosma a 35% de velocidade, seus tiros normais |
-| Upgrade Ovo Turbinado | +25% de dano por nível (máx 6) |
-| Upgrade Dedo Ligeiro | +20% de cadência por nível (máx 4) |
-| Upgrade Ovo Gigante | ovo +18% visual, +0.105 m de área de acerto por nível (máx 3) |
-| Upgrade Ímã de Ovo | +2.5 de ímã em todo projétil por nível (máx 3) |
-| Upgrade Ovo Perfurante | atravessa +1 nave por nível (máx 2) |
+| Habilidades (seção 6.3) | Ovo Duplo e Leque multiplicam os tiros de **todas** as armas. Ricochete, fogo, gelo, choque, crítico e fúria valem para ovos, laser e tesla |
+
+**Como os tiros múltiplos funcionam em cada arma** (`volleyDirs`):
+- **Ovo Duplo** = +1 cópia paralela por nível (afastadas 16 cm).
+- **Ovo Leque** = +2 cópias por nível, a ±14° (e ±28° no nível 2).
+- Todo ovo nasce com `spawnEgg(..., { volley: true })` e é replicado ali dentro.
+- A escopeta reduz os chumbos por cópia (14/√n) e a gatling tem vida de 1.2 s, para não estourar o limite de 240 projéteis.
+- O teleguiado só replica o 1º míssil da rajada.
+- O laser ganha um feixe por direção (até 7) e o tesla um raio principal por direção (até 5), compartilhando a cascata.
 
 ### 3.5 Assistência de mira (ímã)
 
@@ -328,22 +335,58 @@ vem em 3º, para o jogador conhecer o inimigo novo. O chefão aparece com 45% da
 `min(5, 1 + floor((combo − 1) / 3))`, ou seja x2 a partir de 4 abates, x3 a partir de 7, até x5.
 Zera ao perder galinha, levar gosma ou levar um kamikaze. O recorde fica salvo em `localStorage`.
 
-### 6.3 Upgrades (entre as waves, atirando no card)
-Aparecem 3 cards a 4.2 m na frente do jogador e ele escolhe atirando com a arma atual.
+### 6.3 Habilidades entre as waves (sistema estilo Archero)
 
-| Card | Efeito | Máx. |
-|---|---|---|
-| 💪 Ovo Turbinado | +25% dano | 6 |
-| ⚡ Dedo Ligeiro | +20% cadência | 4 |
-| 🥚 Ovo Gigante | ovos maiores e mais fáceis de acertar | 3 |
-| 🧲 Ímã de Ovo | ovos curvam até as naves | 3 |
-| 🛡 Galinha Pesada | abdução 25% mais lenta | 3 |
-| 🐣 Ninhada | +2 pintinhos | ∞ (se couber) |
-| 🍀 Sorte Grande | +50% chance de power-up | 3 |
-| 🔥 Combo Mestre | +1 s de janela de combo | 3 |
-| ⏳ Power-up Longo | +50% duração | 2 |
-| 🎯 Ovo Perfurante | atravessa +1 nave | 2 |
-| 💰 Bolada | +1500 pontos (reserva quando acabam as opções) | ∞ |
+Inspirado em **Archero 1 e 2**: as habilidades mudam o seu tiro de forma **visível** e se combinam numa
+"build" ao longo da partida.
+
+**Cada oferta = 3 cards, 1 de cada categoria**, então toda escolha é um trade-off de verdade:
+- 🔴 **ATAQUE:** quanto e como você atira
+- 🔵 **OVO:** efeitos no impacto
+- 🟢 **DEFESA:** galinhas, ajudantes e utilidades
+
+**Raridade:** COMUM (moldura verde), RARO (azul) e ÉPICO (roxo brilhante).
+A chance de raro e épico sobe com as waves:
+- até a wave 3: 62% comum, 30% raro, 8% épico
+- waves 4 a 6: 50%, 36%, 14%
+- da wave 7 em diante: 40%, 40%, 20%
+
+**Regras de progressão:**
+1. **Primeira habilidade** (depois da wave 1): o card de ATAQUE é sempre **ÉPICO** (Ovo Duplo ou Ovo Leque).
+   Logo no início você sente os tiros dobrarem.
+2. **Recompensa do Chefão** (waves 3, 6, 9, chefões do infinito e o começo do infinito): **2 escolhas**, e a segunda
+   tem um card **ÉPICO** garantido.
+3. **Sinergia:** 35% de chance de o card oferecido ser uma habilidade que você **já tem**, para subir de nível.
+   O card mostra "NÍVEL 1 → 2".
+4. **Socorro:** se você perdeu 2 ou mais galinhas na wave, o card de DEFESA vira **Anjo da Granja** (+2 galinhas).
+
+| Card | Cat. | Raridade | Efeito | Máx. |
+|---|---|---|---|---|
+| 💪 Ovo Turbinado | Ataque | comum | +25% de dano | 5 |
+| ⚡ Dedo Ligeiro | Ataque | comum | +20% de cadência | 4 |
+| 🎯 Olho de Águia | Ataque | raro | +15% de chance de crítico (×2) por nível | 3 |
+| 😤 Fúria do Galo | Ataque | raro | +10% de dano por galinha perdida (abaixo de 7) | 2 |
+| ➕ **Ovo Duplo** | Ataque | **épico** | +1 ovo lado a lado em todo tiro | 2 |
+| 🔱 **Ovo Leque** | Ataque | **épico** | +2 ovos em diagonal em todo tiro | 2 |
+| 🗡 Ovo Perfurante | Ovo | raro | atravessa +1 nave | 2 |
+| 🔁 Ricochete | Ovo | raro | o ovo quica para a nave mais próxima (9 m) com 70% do dano. Laser: salto instantâneo. Tesla: +1 geração de cascata | 3 |
+| 🔥 Ovo Flamejante | Ovo | raro | queima por 3 s (+60% do dano por nível) | 2 |
+| ❄️ Ovo Congelante | Ovo | raro | nave **e feixe de abdução** 40% mais lentos (60% no nível 2) por 2.5 s | 2 |
+| 🌩 Ovo Elétrico | Ovo | raro | choque pula para 2 naves (3 no nível 2) a 6 m, com 35% do dano | 2 |
+| 🥚 Ovo Gigante | Ovo | comum | ovos maiores, acertam mais fácil | 3 |
+| 🧲 Ímã de Ovo | Ovo | comum | ovos curvam até as naves | 3 |
+| 🐤 **Pintinho Atirador** | Defesa | **épico** | ajudante que flutua do seu lado e atira sozinho a cada 1.1 s (2 no nível 2) | 2 |
+| 🪶 Escudo de Penas | Defesa | raro | cada galinha bloqueia 1 abdução por wave (a nave fica atordoada 1.6 s) | 1 |
+| 👼 Anjo da Granja | Defesa | raro | +2 galinhas | ∞ |
+| 🏋 Galinha Pesada | Defesa | comum | abdução 25% mais lenta | 3 |
+| 🍀 Sorte Grande | Defesa | comum | +50% de chance de power-up | 3 |
+| ⏱ Combo Mestre | Defesa | comum | +1 s de janela de combo | 3 |
+| ⏳ Power-up Longo | Defesa | comum | +50% de duração dos power-ups | 2 |
+| 💰 Bolada | n/a | n/a | +1500 pontos (reserva quando as opções acabam) | ∞ |
+
+**Feedback visual dos efeitos:** nave queimando solta faíscas laranja e pisca, nave congelada fica azul e solta
+cristais, o choque desenha mini-raios entre as naves, o crítico mostra "CRÍTICO!" e o Escudo de Penas é uma bolha
+branca em volta da galinha que estoura em penas.
 
 ### 6.4 Power-ups (caixas de paraquedas)
 - Caem de naves abatidas com a chance do tipo × Sorte, mais uma garantia a cada 22 abates sem
