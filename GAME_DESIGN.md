@@ -7,7 +7,7 @@
 - **Jogar:** https://marcofurtado-hub.github.io/chicken-rancher-vr/
 - **Versão 1.0 original:** https://marcofurtado-hub.github.io/chicken-rancher-vr/v1/
 - **Repo:** https://github.com/marcofurtado-hub/chicken-rancher-vr
-- **Plataformas:** Meta Quest (WebXR), desktop (mouse + pointer lock) e mobile (touch)
+- **Plataformas:** Meta Quest (WebXR), **PC** (mouse + teclado, com movimento e zoom) e mobile (touch)
 
 ---
 
@@ -20,9 +20,10 @@ do arremesso com a mão até o raio tesla. As galinhas funcionam como vidas. Se 
 
 **Pilares**
 1. **Waves com escalada clara:** cada wave traz uma arma nova e uma ameaça nova.
-2. **Tudo é ovo:** a identidade cômica vem do splat de ovo frito no chão e da explosão de clara e gema no ar.
-3. **VR sentado e sem enjoo:** o jogador não anda, só gira em passos (snap turn).
-4. **Feedback exagerado:** popups de pontos, combo, vibração, sons sintetizados e ciclo dia/noite.
+2. **Duas formas de perder:** se a sua vida ❤️ chegar a 0 ou se levarem todas as galinhas.
+3. **Tudo é ovo:** a identidade cômica vem do splat de ovo frito no chão e da explosão de clara e gema no ar.
+4. **VR sentado e sem enjoo:** o jogador não anda, só gira em passos (snap turn).
+5. **Feedback exagerado:** popups de pontos, combo, vibração, sons sintetizados e ciclo dia/noite.
 
 **Loop principal**
 ```
@@ -34,16 +35,29 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 
 ## 2. Controles
 
-| Ação | VR (Quest) | Desktop | Mobile |
+| Ação | VR (Quest) | PC | Mobile |
 |---|---|---|---|
 | Começar / avançar | gatilho | clique / Espaço | toque |
-| Atirar | gatilho direito (segurar = automático) | clique (segurar) | toque / segurar |
-| Arremessar ovo (mão) | balançar o controle | clique | toque |
+| Atirar | gatilho direito (segurar = automático) | clique esquerdo (segurar) | toque / segurar |
+| Arremessar ovo (mão) | balançar o controle | clique (mira balística) | toque |
 | Estilingue / besta | gatilho esquerdo pega a corda, puxa e solta | clique | toque |
 | Pistolas duplas | um gatilho para cada mão | clique (alterna as mãos) | segurar |
 | Trocar arma | A/X = anterior, B/Y = próxima | 1-9, 0, Q/E, roda | botão 🔄 |
-| Girar | thumbstick direito (snap de 30°) | mouse | arrastar |
+| Girar / mirar | thumbstick direito (snap de 30°) | mouse | arrastar |
+| **Desviar** | inclinar o corpo | **WASD / setas** (a cadeira anda na varanda) | n/a |
+| Zoom | n/a | **botão direito** (FOV 80 → 42, sensibilidade cai junto) | n/a |
+| Pausa | n/a | **Esc** (tela de pausa com os controles) | n/a |
+| Mover o painel do colo | GRIP perto do painel | n/a | n/a |
 | Música | n/a | M | n/a |
+
+**Modo PC:**
+- **Mira exata:** a cada frame um raio sai do centro da tela (`pcAim`) e todas as armas convergem para o ponto
+  sob a mira, mesmo saindo do canto da tela.
+- **Arremesso e estilingue** usam uma solução balística (`ballistic`): o ovo faz o arco certo para cair no ponto mirado.
+  Isso dá 85% de acerto a 12 m.
+- **Marcador de acerto:** a mira fica vermelha e cresce por um instante a cada acerto.
+- A cadeira anda a 2.6 m/s dentro dos limites da varanda.
+- Ao perder o foco do mouse o jogo **pausa sozinho**.
 
 **HUD:** no VR, um painel pequeno (30 × 16 cm) fica no colo, à esquerda, e sempre vira para você.
 Ele mostra a **contagem de galinhas** em destaque (🐔 7/12, laranja com 4 ou menos, vermelho com 2 ou menos),
@@ -277,7 +291,28 @@ O HP real é `HP base × hpMult da wave` (de 1 a 3 na campanha, crescendo no inf
 
 ---
 
-## 5. GALINHAS (as vidas)
+## 5. VIDA DO JOGADOR
+
+| Item | Valor |
+|---|---|
+| Vida inicial | 100 |
+| Gosma (atiradora, chefão, nave-mãe) | −12 (pode ser abatida no ar) |
+| Kamikaze | −25 |
+| Invencibilidade depois de levar dano | 0.6 s (uma rajada não mata de uma vez) |
+| Cura no fim de cada wave | +20 |
+| Power-up ❤️ **Cura** | +40 (cai mais quando a vida está abaixo de 60% e de 35%) |
+| Vida baixa (30% ou menos) | batimento cardíaco + vinheta vermelha pulsando |
+
+**Habilidades de defesa ligadas à vida:**
+- ❤️ **Coração de Galo** (comum, máx 4): +25 de vida máxima e cura 25
+- 🧥 **Colete de Palha** (raro, máx 2): −20% de dano recebido por nível
+- 🍲 **Canja da Vovó** (comum): cura tudo. Aparece quando a vida está abaixo de 70%, e é garantida no slot de
+  DEFESA se você terminar a wave com menos de 45%
+
+**Derrota:** "VOCÊ FOI DERROTADO" (vida 0) ou "LEVARAM TODAS AS GALINHAS". A barra de vida aparece no painel do
+colo (VR) e no HUD (PC).
+
+## 5b. GALINHAS (as vidas do rancho)
 
 | Tipo | Escala | Andar | Fuga | Tempo de abdução | Observação |
 |---|---|---|---|---|---|

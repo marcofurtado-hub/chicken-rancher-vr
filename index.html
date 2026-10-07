@@ -50,6 +50,15 @@ canvas{display:block}
 #wbar .slot i{font:bold 9px sans-serif;font-style:normal;color:#ccc;margin-top:2px}
 #crosshair{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border:2px solid rgba(255,255,255,.75);border-radius:50%;z-index:6;pointer-events:none;display:none;box-shadow:0 0 4px rgba(0,0,0,.6)}
 #crosshair.show{display:block}
+#crosshair.hit{border-color:#ff4040;width:26px;height:26px;box-shadow:0 0 10px #ff4040}
+#pause{position:fixed;inset:0;z-index:28;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.62);color:#fff;text-align:center;cursor:pointer}
+#pause.show{display:flex}
+#pause h2{font-family:Impact,'Arial Black',sans-serif;font-size:64px;letter-spacing:6px;color:var(--y)}
+#pause p{margin-top:8px;font-size:16px;letter-spacing:2px}
+#pause .keys{margin-top:18px;font-size:13px;color:#cfd8e0;line-height:1.8}
+#pause .keys b{display:inline-block;min-width:26px;padding:1px 6px;margin:0 2px;border:1px solid #9ab;border-radius:5px;color:#fff;background:rgba(255,255,255,.08)}
+.hpbar{display:inline-block;width:120px;height:11px;background:rgba(255,255,255,.2);border-radius:6px;overflow:hidden;vertical-align:middle;margin:0 6px}
+.hpbar i{display:block;height:100%;background:#ff5878}
 #crosshair::after{content:'';position:absolute;left:50%;top:50%;width:3px;height:3px;background:#fff;border-radius:50%;transform:translate(-50%,-50%)}
 #m-switch{position:fixed;right:16px;bottom:84px;width:62px;height:62px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.5);color:#fff;font-size:26px;z-index:8;display:none}
 #m-switch.show{display:block}
@@ -89,22 +98,25 @@ canvas{display:block}
       <li><b>8 tipos de nave</b>: comum, veloz, blindada, atiradora, kamikaze, divisora, escudeira e fantasma</li>
       <li><b>Chefões</b> com ponto fraco e a <b>NAVE-MÃE</b> no final</li>
       <li><b>Galo, pintinhos e a Galinha de Ouro</b>. Wave perfeita faz nascer pintinho</li>
-      <li><b>Upgrades</b> entre as waves: atire no card que quiser</li>
+      <li><b>Habilidades estilo Archero</b> entre as waves: atire no card que quiser</li>
+      <li><b>Você tem vida ❤️</b>: gosma e kamikaze machucam. Você perde se morrer <b>ou</b> se levarem todas as galinhas</li>
+      <li><b>Modo PC</b>: ande pela varanda com WASD pra desviar da gosma</li>
       <li><b>Power-ups de paraquedas</b>, pontos, combo e recorde</li>
     </ul></div>
     <div class="card"><h3>🎮 COMO JOGAR</h3>
       Você está na cadeira de rodas da varanda e as galinhas estão no quintal. Os aliens querem levar todas. <b>Sua munição é ovo.</b><br><br>
       <b>VR:</b> na wave 1, arremesse os ovos com as mãos. Estilingue e besta: a mão esquerda pega a corda com o gatilho, puxa e solta. Pistolas: um gatilho para cada mão. As outras armas usam o gatilho direito (segure). <b>A/B/X/Y</b> trocam de arma e o thumbstick direito gira.<br>
-      <b>Desktop:</b> o mouse mira e o clique atira (segure). <b>1-9, 0</b> ou a roda do mouse trocam de arma. <b>M</b> liga e desliga a música.<br>
+      <b>PC:</b> <b>WASD</b> anda na varanda (desvie da gosma!), o mouse mira, o <b>clique esquerdo</b> atira (segure), o <b>botão direito</b> dá zoom, <b>1-9, 0</b> ou a roda do mouse trocam de arma, <b>Esc</b> pausa e <b>M</b> liga e desliga a música.<br>
       <b>Mobile:</b> arraste para mirar, toque para atirar e use 🔄 para trocar de arma.
     </div>
   </div>
-  <div class="cta">▶ JOGAR</div>
+  <div class="cta" id="cta">🖥️ JOGAR NO PC</div>
   <div class="hint">No Quest: aperte <b>ENTER VR</b> lá embaixo<br><a href="v1/" id="v1link">jogar a versão 1.0 original</a></div>
 </div>
 
-<div id="hud"><div id="h-score">0</div><small>PONTOS · RECORDE <span id="h-best">0</span></small><div id="h-combo">COMBO x2</div><div class="row">🌊 <span id="h-wave">1/10</span></div><div class="row" id="h-chk"></div><div id="h-power"></div></div>
+<div id="hud"><div id="h-score">0</div><small>PONTOS · RECORDE <span id="h-best">0</span></small><div id="h-combo">COMBO x2</div><div class="row">🌊 <span id="h-wave">1/10</span></div><div class="row" id="h-chk"></div><div class="row" id="h-hp"></div><div id="h-power"></div></div>
 <div id="wbar"></div>
+<div id="pause"><h2>PAUSADO</h2><p>clique pra continuar</p><div class="keys"><b>W</b><b>A</b><b>S</b><b>D</b> andar · <b>mouse</b> mirar · <b>clique</b> atirar · <b>botão direito</b> zoom<br><b>1</b>…<b>0</b> / roda trocar arma · <b>M</b> música · <b>Esc</b> pausa</div></div>
 <div id="crosshair"></div>
 <button id="m-switch">🔄</button>
 
@@ -218,9 +230,12 @@ let activeWeapon = 'hands';
 const unlocked = new Set(['hands']);
 const power = { golden: 0, boom: 0, slow: 0 };
 const UP_DEFAULTS = { dmg: 1, rate: 1, big: 1, magnet: 0, coop: 1, luck: 1, combo: 0, power: 1, pierce: 0,
-  front: 0, diag: 0, ricochet: 0, fire: 0, ice: 0, shock: 0, crit: 0, rage: 0, feather: 0, buddy: 0 };
+  front: 0, diag: 0, ricochet: 0, fire: 0, ice: 0, shock: 0, crit: 0, rage: 0, feather: 0, buddy: 0, armor: 0 };
 const up = Object.assign({ counts: {} }, UP_DEFAULTS);
 let yaw = Math.PI, pitch = -0.08;
+let hp = 100, hpMax = 100, invulnT = 0, beatT = 0, hitMarkT = 0, paused = false, zoomHeld = false;
+const keys = {};
+const pcAim = new THREE.Vector3();
 let mouseDown = false, mouseLocked = false, touchActive = false;
 const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 const comboWindow = () => BASE_COMBO_WINDOW + up.combo;
@@ -230,7 +245,7 @@ const comboMult = () => Math.min(5, 1 + Math.floor(Math.max(0, combo - 1) / 3));
 // RENDERER + SCENE
 // =============================================================================
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setPixelRatio(Math.min(devicePixelRatio, isTouch ? 1.5 : 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.xr.enabled = true;
 try { renderer.xr.setReferenceSpaceType('local-floor'); } catch (e) {}
@@ -1257,6 +1272,9 @@ function playSiren() { tone(600, 0.9, 'square', 0.07, 0.02, 1600); }
 function playDiveHit() { playGooSplat(); noise(0.5, 0.6, 'lowpass', 500, 1); }
 function playUpgrade() { [523, 784, 1047, 1568].forEach((f, i) => tone(f, 0.25, 'triangle', 0.16, 0.005, undefined, i * 0.07)); }
 function playTally() { tone(1200, 0.05, 'square', 0.08); }
+function playHurt() { noise(0.25, 0.6, 'lowpass', 600, 1); tone(180, 0.25, 'sawtooth', 0.18, 0.005, 70); }
+function playHeal() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.2, 'sine', 0.13, 0.01, undefined, i * 0.06)); }
+function playHeartbeat() { tone(62, 0.12, 'sine', 0.38, 0.005, 40); tone(56, 0.12, 'sine', 0.3, 0.005, 38, 0.18); }
 function playHatch() { tone(2600, 0.07, 'sine', 0.1, 0.002, 3200); tone(2900, 0.08, 'sine', 0.1, 0.002, 3400, 0.1); tone(3200, 0.1, 'sine', 0.1, 0.002, 3600, 0.2); }
 
 let ambientStarted = false;
@@ -2290,6 +2308,7 @@ const POWERS = {
   boom:    { label: 'OVO-BOMBA',    sub: 'EXPLODE TUDO',  color: 0xff6020, css: '#ff8040', icon: '💣', dur: 10 },
   slow:    { label: 'CÂMERA LENTA', sub: 'ALIENS LERDOS', color: 0x40c0ff, css: '#60d0ff', icon: '⏳', dur: 7 },
   chicken: { label: '+1 GALINHA',   sub: '',              color: 0xffffff, css: '#ffffff', icon: '🐔', dur: 0 },
+  heal:    { label: 'CURA',         sub: '+40 DE VIDA',   color: 0xff5070, css: '#ff6080', icon: '❤️', dur: 0 },
 };
 const CRATE_GEO = new THREE.BoxGeometry(0.42, 0.42, 0.42);
 const CRATE_CY = 0.5, CRATE_RX = 0.8, CRATE_RY = 1.0;
@@ -2660,8 +2679,7 @@ function muzzleWorld(name, out, grp) {
 }
 function shotDir(origin, ctrl, out) {
   if (renderer.xr.isPresenting) { ctrl.getWorldQuaternion(_q); return out.set(0, 0, -1).applyQuaternion(_q); }
-  camera.getWorldDirection(TV[12]);
-  return out.copy(camPos).addScaledVector(TV[12], 25).sub(origin).normalize();
+  return out.copy(pcAim).sub(origin).normalize();
 }
 function spreadDir(dir, s) {
   if (s <= 0) return dir;
@@ -2900,18 +2918,26 @@ function fireCrossbowArrow() {
   spawnEgg(pouchMesh.position, pull.normalize().multiplyScalar(CROSSBOW_ARROW_SPEED), { damage: 2, arrow: true, magnet: 1.5, volley: true });
   playArrowRelease(); pulseController(leftCtrl, 0.85, 100); pulseController(rightCtrl, 0.5, 70);
 }
+// Velocidade que faz o ovo (com gravidade) cair exatamente no ponto mirado
+function ballistic(o, target, speed, g, out) {
+  const d = TV[4].copy(target).sub(o);
+  const t = Math.max(0.05, d.length() / speed);
+  out.copy(d).divideScalar(t);
+  out.y += 0.5 * g * t;
+  return out;
+}
 function desktopShoot() {
   const dir = camera.getWorldDirection(TV[1]);
   const o = TV[0].copy(camPos).addScaledVector(dir, 0.35);
   o.y -= 0.12;
   if (activeWeapon === 'hands') {
-    spawnEgg(o, TV[2].copy(dir).multiplyScalar(13).add(TV[3].set(0, 1.2, 0)), { damage: 1, gravity: true, gScale: 0.6, magnet: 4, volley: true });
+    spawnEgg(o, ballistic(o, pcAim, 16, 9.8 * 0.6, TV[2]), { damage: 1, gravity: true, gScale: 0.6, magnet: 4, volley: true });
     playEggThrow(); weaponCD = 0.32 / up.rate;
   } else if (activeWeapon === 'slingshot') {
-    spawnEgg(o, TV[2].copy(dir).multiplyScalar(MAX_SHOT_SPEED).add(TV[3].set(0, 0.8, 0)), { damage: 2, gravity: true, magnet: 3, volley: true });
+    spawnEgg(o, ballistic(o, pcAim, MAX_SHOT_SPEED, 9.8, TV[2]), { damage: 2, gravity: true, magnet: 3, volley: true });
     playSlingshotRelease(); weaponCD = 0.35 / up.rate;
   } else if (activeWeapon === 'crossbow') {
-    spawnEgg(o, TV[2].copy(dir).multiplyScalar(CROSSBOW_ARROW_SPEED), { damage: 2, arrow: true, magnet: 1.5, volley: true });
+    spawnEgg(o, TV[2].copy(pcAim).sub(o).normalize().multiplyScalar(CROSSBOW_ARROW_SPEED), { damage: 2, arrow: true, magnet: 1.5, volley: true });
     playArrowRelease(); weaponCD = 0.42 / up.rate;
   }
 }
@@ -3113,6 +3139,7 @@ function hitPart(u, part, dmg, pos, fx = true) {
       if (totalTime - u.lastPop > 0.6) { popup('CRÍTICO!', pos, '#ff6040', 0.9, 0.8); u.lastPop = totalTime; }
     }
   }
+  if (fx) hitMarkT = 0.12;
   if (part.kind === 'pod') {
     part.hp -= dmg; part.flashT = 0.08;
     if (fx && part.hp > 0) applyStatus(u, dmg, pos);
@@ -3210,6 +3237,8 @@ function pickPowerType() {
   const pool = ['golden', 'golden', 'boom', 'boom', 'slow', 'slow'];
   if (chickensAlive() < 5) pool.push('chicken', 'chicken', 'chicken');
   else if (chickensAlive() < MAX_CHICKENS) pool.push('chicken');
+  if (hp < hpMax * 0.6) pool.push('heal', 'heal');
+  if (hp < hpMax * 0.35) pool.push('heal', 'heal', 'heal');
   return pick(pool);
 }
 function maybeDropCrate(u, pos) {
@@ -3223,7 +3252,8 @@ function activatePower(type, pos) {
   const Pw = POWERS[type];
   if (type === 'chicken') {
     if (chickensAlive() < MAX_CHICKENS) respawnChicken('hen'); else score += 500;
-  } else power[type] = Pw.dur * up.power;
+  } else if (type === 'heal') healPlayer(40);
+  else power[type] = Pw.dur * up.power;
   const lines = [[Pw.label, Pw.css, 1.4, 1.6]];
   if (Pw.sub) lines.push([Pw.sub, '#ffffff', 0.9, 1.6]);
   popupStack(lines, pos);
@@ -3250,17 +3280,34 @@ function abductChicken(c, u) {
   const left = chickensAlive();
   popupStack([[c.kind === 'golden' ? 'LEVARAM A GALINHA DE OURO!' : '-1 ' + CHICKEN_KINDS[c.kind].label.toUpperCase(), '#ff4040', 1.2, 1.6],
     ['restam ' + left + (left === 1 ? ' galinha' : ' galinhas'), left <= 2 ? '#ff6060' : '#ffffff', 0.9, 1.6]], u.group.position);
-  if (chickensAlive() === 0) enterGameOver();
+  if (chickensAlive() === 0) enterGameOver('chickens');
 }
 function popupAhead(text, color, size = 1.2) {
   const d = camera.getWorldDirection(TV[8]);
   popup(text, TV[9].copy(camPos).addScaledVector(d, 1.6), color, size, 1.2);
 }
+function damagePlayer(amount, label, color) {
+  if (!(state === 'playing' || state === 'wave_intro')) return;
+  if (invulnT > 0) return;
+  const dmg = Math.max(1, Math.round(amount * (1 - 0.2 * up.armor)));
+  hp = Math.max(0, hp - dmg);
+  invulnT = 0.6;
+  ov.hurt = 0.7; playHurt(); pulseAll(0.9, 200);
+  popupAhead('-' + dmg + ' ❤️ ' + label, color, 1.1);
+  if (hp <= 0) enterGameOver('player');
+}
+function healPlayer(n, pos) {
+  const before = hp;
+  hp = Math.min(hpMax, hp + n);
+  const got = Math.round(hp - before);
+  if (got > 0) { playHeal(); if (pos) popup('+' + got + ' ❤️', pos, '#ff7090', 1); }
+  return got;
+}
 function gooHitPlayer() {
   resetCombo();
   ov.slime = 2.6;
-  playGooSplat(); pulseAll(0.9, 220);
-  popupAhead('ECA! GOSMA!', '#8aff3a');
+  playGooSplat();
+  damagePlayer(12, 'GOSMA!', '#8aff3a');
 }
 function kamikazeHit(u) {
   const pos = u.group.position.clone();
@@ -3268,8 +3315,8 @@ function kamikazeHit(u) {
   fireball(pos, 0.8);
   resetCombo();
   ov.slime = 3; ov.hurt = 0.4;
-  playDiveHit(); pulseAll(1, 300);
-  popupAhead('KAMIKAZE!', '#ff8030', 1.3);
+  playDiveHit();
+  damagePlayer(25, 'KAMIKAZE!', '#ff8030');
   for (const ck of chickens) scareChicken(ck, TV[8].set(0, 0, 0));
 }
 
@@ -3300,6 +3347,9 @@ const UPGRADES = [
   { id: 'luck',     cat: 'def', rar: 'comum', icon: '🍀', title: 'SORTE GRANDE',    desc: 'cai mais power-up',                      max: 3, apply: () => { up.luck += 0.5; } },
   { id: 'combo',    cat: 'def', rar: 'comum', icon: '⏱', title: 'COMBO MESTRE',    desc: '+1s pra manter o combo',                 max: 3, apply: () => { up.combo += 1; } },
   { id: 'power',    cat: 'def', rar: 'comum', icon: '⏳', title: 'POWER-UP LONGO',  desc: 'power-ups duram +50%',                   max: 2, apply: () => { up.power += 0.5; } },
+  { id: 'vida',     cat: 'def', rar: 'comum', icon: '❤️', title: 'CORAÇÃO DE GALO', desc: '+25 de vida máxima e cura 25',          max: 4, apply: () => { hpMax += 25; healPlayer(25); } },
+  { id: 'armor',    cat: 'def', rar: 'raro',  icon: '🧥', title: 'COLETE DE PALHA', desc: '-20% de dano recebido',                  max: 2, apply: () => { up.armor += 1; } },
+  { id: 'canja',    cat: 'def', rar: 'comum', icon: '🍲', title: 'CANJA DA VOVÓ',   desc: 'recupera toda a sua vida',               max: 99, cond: () => hp < hpMax * 0.7, apply: () => { healPlayer(hpMax); } },
   { id: 'cash',     cat: 'def', rar: 'comum', icon: '💰', title: 'BOLADA',          desc: '+1500 pontos',                           max: 999, apply: () => { score += 1500; } },
 ];
 const RARITY = {
@@ -3336,11 +3386,14 @@ function buildOffer(kind) {
   if (waveLost >= 2) {
     const a = UPGRADES.find(x => x.id === 'angel');
     if (upAvail(a) && !taken.has('angel')) out[2] = a;
+  } else if (hp < hpMax * 0.45) {
+    const c = UPGRADES.find(x => x.id === 'canja');
+    if (upAvail(c) && !taken.has('canja')) out[2] = c;
   }
   return out;
 }
 function skillList() {
-  return UPGRADES.filter(x => up.counts[x.id] && x.id !== 'cash' && x.id !== 'angel').map(x => ({ icon: x.icon, lv: up.counts[x.id], rar: x.rar }));
+  return UPGRADES.filter(x => up.counts[x.id] && x.id !== 'cash' && x.id !== 'angel' && x.id !== 'canja').map(x => ({ icon: x.icon, lv: up.counts[x.id], rar: x.rar }));
 }
 const CARD_GEO = new THREE.PlaneGeometry(1.15, 1.44);
 const cards = [];
@@ -3613,6 +3666,8 @@ function updateHtmlHud() {
   hCombo.classList.toggle('on', combo >= 2);
   hWave.textContent = 'WAVE ' + waveLabel() + ' · ' + WEAPONS[activeWeapon].icon + ' ' + WEAPONS[activeWeapon].label;
   const alive = chickensAlive();
+  const hpPct = clamp(hp / hpMax, 0, 1);
+  document.getElementById('h-hp').innerHTML = '❤️<span class="hpbar"><i style="width:' + (hpPct * 100).toFixed(0) + '%;background:' + (hpPct <= 0.3 ? '#ff3040' : hpPct <= 0.6 ? '#ff9040' : '#ff5878') + '"></i></span>' + Math.ceil(hp) + '/' + hpMax;
   hChk.innerHTML = '🐔 <b style="color:' + (alive <= 2 ? '#ff5050' : alive <= 4 ? '#ffb040' : '#fff') + ';font-size:22px">' + alive + '</b>/' + MAX_CHICKENS + ' <span style="font-size:12px;color:#ccc">' + flockDetail() + '</span>';
   const sk = skillList().map(k => k.icon + '<sub>' + k.lv + '</sub>').join(' ');
   hPower.innerHTML = powerList().map(p => '<div style="color:' + p[1] + '">' + p[0] + '</div>').join('') + (sk ? '<div style="color:#ddd;font-size:16px">' + sk + '</div>' : '');
@@ -3658,8 +3713,13 @@ function drawLap() {
   fitText(x, WEAPONS[activeWeapon].icon + ' ' + WEAPONS[activeWeapon].label, 738, 222, 420, 38, IMPACT, '#8dff4a');
   // Power-ups ativos
   x.textAlign = 'left';
+  const hpPct = clamp(hp / hpMax, 0, 1);
+  x.font = '30px sans-serif'; x.fillStyle = '#fff'; x.fillText('❤️', 26, 282);
+  x.fillStyle = 'rgba(255,255,255,0.15)'; x.fillRect(72, 270, 210, 24);
+  x.fillStyle = hpPct <= 0.3 ? '#ff3040' : hpPct <= 0.6 ? '#ff9040' : '#ff5878'; x.fillRect(72, 270, 210 * hpPct, 24);
+  x.font = 'bold 26px ' + SANS; x.fillStyle = hpPct <= 0.3 ? '#ff6060' : '#ffffff'; x.fillText(Math.ceil(hp) + '/' + hpMax, 294, 283);
   const pl = powerList();
-  pl.forEach((p, i) => fitText(x, p[0], 30 + i * 245, 282, 235, 28, SANS, p[1]));
+  if (pl.length) fitText(x, pl.map(q => q[0].split(' ')[0] + ' ' + q[0].split(' ').pop()).join('  '), 430, 282, 310, 30, SANS, pl[0][1]);
   // Habilidades (estilo Archero)
   const sk = skillList();
   if (sk.length) {
@@ -3749,6 +3809,8 @@ function waveComplete() {
     if (c.kind === 'chick' && (c.state === 'wandering' || c.state === 'pecking')) { c.waves++; if (c.waves >= 2) { growChick(c); extra.push('o pintinho cresceu!'); } }
   }
   if (waveLost === 0 && chickensAlive() < MAX_CHICKENS) { respawnChicken('chick'); extra.push('🐣 NASCEU UM PINTINHO!'); playHatch(); }
+  const healed = healPlayer(20);
+  if (healed > 0) extra.push('❤️ +' + healed);
   const last = currentWave === WAVES.length - 1;
   showBanner3D(last ? 'VOCÊ VENCEU!' : 'WAVE COMPLETA!', lines.join(' · '), extra.join(' · '), '#8dff4a', 3.2);
   playRescue();
@@ -3776,13 +3838,15 @@ function startEndless() {
   while (chickensAlive() < INITIAL_FLOCK.length) respawnChicken('hen');
   showUpgradeCards('boss');
 }
-function enterGameOver() {
+function enterGameOver(reason = 'chickens') {
   if (state === 'game_over') return;
   state = 'game_over'; stateT = 0; music.intensity = -1;
   setLaser(false);
   finalizeScore();
   const reached = currentWave < WAVES.length ? 'chegou na wave ' + (currentWave + 1) : 'infinito ' + (currentWave - WAVES.length + 1);
-  showBanner3D('GAME OVER', 'PONTOS: ' + fmt(score) + ' · ' + reached, newRecord ? '🏆 NOVO RECORDE!' : 'recorde: ' + fmt(best), '#ff4040', 999, 0, 'aperte o gatilho pra recomeçar');
+  const why = reason === 'player' ? 'VOCÊ FOI DERROTADO! ❤️ 0' : 'LEVARAM TODAS AS GALINHAS!';
+  const again = renderer.xr.isPresenting ? 'aperte o gatilho pra recomeçar' : (isTouch ? 'toque pra recomeçar' : 'clique pra recomeçar');
+  showBanner3D('GAME OVER', why, (newRecord ? '🏆 NOVO RECORDE! ' : '') + 'PONTOS: ' + fmt(score), '#ff4040', 999, 0, reached + ' · ' + again);
   playGameOver();
 }
 function resetGame() {
@@ -3814,6 +3878,8 @@ function resetGame() {
   equipWeapon('hands');
   bannerMesh.visible = false;
   ov.hurt = ov.slime = ov.flash = 0;
+  hp = hpMax = 100; invulnT = 0;
+  cameraRig.position.set(0, PLAYER_Y, 0);
   drawSign();
 }
 function spawnFirework() {
@@ -3938,6 +4004,9 @@ function vrSnap(dt) {
 renderer.xr.addEventListener('sessionstart', () => {
   initAudio();
   startEl.style.display = 'none';
+  setPaused(false);
+  cameraRig.position.set(0, PLAYER_Y, 0);
+  camera.fov = 80;
   setTimeout(() => {
     const fwd = camera.getWorldDirection(new THREE.Vector3());
     fwd.y = 0;
@@ -3962,8 +4031,23 @@ function dismissStart(e) {
   if (!isTouch && !renderer.xr.isPresenting) { try { renderer.domElement.requestPointerLock(); } catch (err) {} }
 }
 startEl.addEventListener('click', dismissStart);
-document.addEventListener('pointerlockchange', () => { mouseLocked = document.pointerLockElement === renderer.domElement; if (!mouseLocked) mouseDown = false; });
+const pauseEl = document.getElementById('pause');
+const pausable = () => !renderer.xr.isPresenting && !isTouch && startEl.style.display === 'none' && (canShoot() || state === 'wave_complete');
+function setPaused(on) {
+  paused = on;
+  pauseEl.classList.toggle('show', on);
+  if (on) { mouseDown = false; zoomHeld = false; for (const k in keys) keys[k] = false; }
+}
+document.addEventListener('pointerlockchange', () => {
+  mouseLocked = document.pointerLockElement === renderer.domElement;
+  if (!mouseLocked) { mouseDown = false; zoomHeld = false; if (pausable()) setPaused(true); }
+  else if (paused) setPaused(false);
+});
+pauseEl.addEventListener('click', () => { try { renderer.domElement.requestPointerLock(); } catch (e) {} });
+addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('contextmenu', e => { if (!isTouch) e.preventDefault(); });
 addEventListener('keydown', e => {
+  keys[e.code] = true;
   if (e.code === 'Space' || e.code === 'Enter') { initAudio(); handleMenuAdvance(); }
   if (e.code === 'KeyR' && (state === 'game_over' || state === 'victory')) resetGame();
   if (e.code === 'KeyM') setMusic(!musicOn);
@@ -3979,8 +4063,15 @@ addEventListener('wheel', e => {
   wheelT = n;
   cycleWeapon(e.deltaY > 0 ? 1 : -1);
 }, { passive: true });
-addEventListener('mousedown', e => { if (e.button === 0 && mouseLocked && !renderer.xr.isPresenting) mouseDown = true; });
-addEventListener('mouseup', () => { mouseDown = false; });
+addEventListener('mousedown', e => {
+  if (!mouseLocked || renderer.xr.isPresenting) return;
+  if (e.button === 0) mouseDown = true;
+  if (e.button === 2) zoomHeld = true;
+});
+addEventListener('mouseup', e => {
+  if (e.button === 0) mouseDown = false;
+  if (e.button === 2) zoomHeld = false;
+});
 const isTapWeapon = () => activeWeapon === 'hands' || activeWeapon === 'slingshot' || activeWeapon === 'crossbow';
 renderer.domElement.addEventListener('click', () => {
   if (isTouch || renderer.xr.isPresenting) return;
@@ -3991,8 +4082,9 @@ renderer.domElement.addEventListener('click', () => {
 });
 addEventListener('mousemove', e => {
   if (!mouseLocked || renderer.xr.isPresenting) return;
-  yaw -= e.movementX * 0.0025;
-  pitch = clamp(pitch - e.movementY * 0.0025, -Math.PI / 2 + 0.1, Math.PI / 2 - 0.1);
+  const sens = 0.0025 * (camera.fov / 80);
+  yaw -= e.movementX * sens;
+  pitch = clamp(pitch - e.movementY * sens, -Math.PI / 2 + 0.1, Math.PI / 2 - 0.1);
   cameraRig.rotation.y = yaw;
   camera.rotation.x = pitch;
 });
@@ -4152,12 +4244,45 @@ function animateWeapons(dt, held) {
 // =============================================================================
 const clock = new THREE.Clock();
 let hudTimer = 0, lapTimer = 0;
+function updatePcControls(dt) {
+  // Andar na varanda (WASD / setas): a cadeira rola, dá pra desviar da gosma e do kamikaze
+  if (state !== 'idle') {
+    const mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
+    const mz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0);
+    if (mx || mz) {
+      const sp = 2.6 * dt / (mx && mz ? Math.SQRT2 : 1);
+      const sn = Math.sin(yaw), cs = Math.cos(yaw);
+      cameraRig.position.x = clamp(cameraRig.position.x + (mx * cs + mz * sn) * sp, -3.4, 3.4);
+      cameraRig.position.z = clamp(cameraRig.position.z + (-mx * sn + mz * cs) * sp, -3.0, 0.15);
+      camera.getWorldPosition(camPos);
+    }
+  }
+  // Zoom no botão direito
+  const fov = zoomHeld ? 42 : 80;
+  if (Math.abs(camera.fov - fov) > 0.05) {
+    camera.fov += (fov - camera.fov) * Math.min(1, dt * 12);
+    camera.updateProjectionMatrix();
+  }
+  // Ponto exato sob a mira (as armas convergem pra ele)
+  const dir = camera.getWorldDirection(TV[12]);
+  const hit = castSegment(camPos, dir, 80, 0);
+  pcAim.copy(camPos).addScaledVector(dir, hit ? Math.max(hit.t, 1.5) : 40);
+  // Marcador de acerto
+  if (hitMarkT > 0) { hitMarkT -= dt; crossEl.classList.toggle('hit', hitMarkT > 0); }
+}
 let skipRender = false;
 function gameLoop(time, frame, forcedDt) {
+  if (paused && forcedDt == null) { clock.getDelta(); renderer.render(scene, camera); return; }
   const dt = forcedDt != null ? forcedDt : Math.min(clock.getDelta(), 0.05);
   totalTime += dt; stateT += dt;
   camera.getWorldPosition(camPos);
   const xr = renderer.xr.isPresenting;
+  if (!xr) updatePcControls(dt);
+  invulnT = Math.max(0, invulnT - dt);
+  if (state === 'playing' && hp > 0 && hp <= hpMax * 0.3) {
+    beatT -= dt;
+    if (beatT <= 0) { beatT = 0.85; playHeartbeat(); ov.hurt = Math.max(ov.hurt, 0.3); }
+  }
 
   weaponCD = Math.max(0, weaponCD - dt); cdL = Math.max(0, cdL - dt); cdR = Math.max(0, cdR - dt);
   for (const k of ['golden', 'boom', 'slow']) if (power[k] > 0) power[k] = Math.max(0, power[k] - dt);
@@ -4253,6 +4378,7 @@ renderer.setAnimationLoop(gameLoop);
 // =============================================================================
 spawnInitialFlock();
 equipWeapon('hands');
+if (isTouch) document.getElementById('cta').textContent = '📱 JOGAR';
 drawSign();
 updateStartBest();
 window.__cr = { get state() { return state; }, startWave, ufos, chickens, up, get score() { return score; }, selectWeapon, unlocked, spawnUfo, killAll: () => { for (const u of ufos.slice()) if (isAlive(u)) killUfo(u, u.group.position); },
@@ -4260,6 +4386,7 @@ window.__cr = { get state() { return state; }, startWave, ufos, chickens, up, ge
   aimAt: p => { const d = new THREE.Vector3().copy(p).sub(camPos).normalize(); yaw = Math.atan2(-d.x, -d.z); pitch = Math.asin(clamp(d.y, -1, 1)); cameraRig.rotation.y = yaw; camera.rotation.x = pitch; },
   get crates() { return crates; }, get cards() { return cards; }, get projectiles() { return projectiles.length; }, get goos() { return goos.length; },
   hitCard: i => chooseUpgrade(cards[i]), activatePower, spawnCrate, get power() { return power; }, advance: handleMenuAdvance, shoot: () => { if (weaponCD <= 0) desktopShoot(); },
+  get hp() { return hp; }, get rig() { return cameraRig.position; }, get aim() { return pcAim; }, get paused() { return paused; }, setPaused,
   drawLap, lapCanvas, get cardsOffer() { return cards.map(c => c.upg.id + ':' + c.upg.rar); }, get pendingPicks() { return pendingPicks; }, buildOffer,
   get stateT() { return stateT; },
   step: (n, dt = 1 / 30, render = false) => { skipRender = !render; for (let i = 0; i < n; i++) gameLoop(0, null, dt); skipRender = false; } };
