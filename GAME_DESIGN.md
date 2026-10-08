@@ -9,6 +9,11 @@
 - **Repo:** https://github.com/marcofurtado-hub/chicken-rancher-vr
 - **Plataformas:** Meta Quest (WebXR), **PC** (mouse + teclado, com movimento e zoom) e mobile (touch)
 
+> **Vai usar em outro jogo? Comece pela [seção 12, Sistemas reaproveitáveis](#12-sistemas-reaproveitáveis-receitas-para-outros-jogos):**
+> habilidades estilo Archero, multi-tiro universal, efeitos de impacto, ricochete, companheiro,
+> escudo, vida do jogador, modo PC a partir do VR, HUD móvel no VR e teste por script.
+> As armas estão na **seção 3** (com o guia de portar na 3.6).
+
 ---
 
 ## 1. Conceito
@@ -478,7 +483,7 @@ o casco brilha de leve. Cada nave tem sombra no chão que muda de tamanho com a 
    XR, porque o `PointsMaterial` padrão erra o tamanho no VR.
 4. **Geometrias e materiais compartilhados.** Nada de `new SphereGeometry` por partícula
    (a v1 fazia isso e engasgava).
-5. Antialias ligado, pixel ratio no máximo 1.5, foveation 1 e no máximo 240 projéteis.
+5. Antialias ligado, pixel ratio no máximo 1.5 no VR e no mobile (2 no PC), foveation 1 e no máximo 240 projéteis.
 
 ## 10. ESTRUTURA DO CÓDIGO (`index.html`)
 
@@ -495,14 +500,19 @@ o casco brilha de leve. Cada nave tem sombra no chão que muda de tamanho com a 
 | Armas | `weaponGroup`, `equipWeapon`, `spawnEgg`, `fire*`, `throwEgg`, `fireSlingshotPouch`, `tickLaser`, `fireTesla`, `drawBolt` |
 | Colisão e dano | `rayEllipsoidT`, `castSegment`, `applyHit`, `applyMagnet`, `explodeAt`, `hitPart`, `killUfo` |
 | Pontuação | `registerKill`, `comboMult`, `maybeDropCrate`, `activatePower` |
-| Upgrades | `UPGRADES`, `showUpgradeCards`, `chooseUpgrade` |
-| Fluxo | `startWave`, `updateWaveLogic`, `waveComplete`, `enterVictory`, `enterGameOver`, `resetGame` |
-| Entrada | `onTriggerStart/End`, `pollButtons`, `vrSnap`, `trackHands`, `syncWeapons`, mouse e touch |
+| Habilidades (Archero) | `UPGRADES`, `RARITY`, `buildOffer`, `rollRarity`, `showUpgradeCards(kind)`, `chooseUpgrade`, `skillList`, `pendingPicks` |
+| Multi-tiro e efeitos | `volleyDirs`, `volleyCount`, `spawnEgg({volley})`, `applyStatus`, `bounceChain`, `hitPart(..., fx)` |
+| Companheiro e escudo | `updateBuddies`, `setChickenShield` |
+| Vida do jogador | `damagePlayer`, `healPlayer`, `hp/hpMax/invulnT` |
+| Modo PC | `updatePcControls` (WASD, zoom, `pcAim`, marcador de acerto), `ballistic`, `setPaused` |
+| Fluxo | `startWave`, `updateWaveLogic`, `waveComplete`, `enterVictory`, `enterGameOver(reason)`, `resetGame` |
+| Entrada | `onTriggerStart/End`, `pollButtons`, `vrSnap`, `trackHands`, `syncWeapons`, mouse, teclado, touch e grip |
+| HUD | `drawLap` (painel do colo), `updateHtmlHud`, `flockDetail` |
 | Loop | `gameLoop` (cada etapa do frame em ordem) |
 
 **Ganchos de teste:** `window.__cr` traz `startWave`, `step(n)` (avança n frames sem renderizar),
-`aimAt`, `setHold`, `shoot`, `killAll`, `spawnUfo`, `spawnCrate` e outros. Com eles dá para rodar
-a campanha inteira por script.
+`aimAt`, `setHold`, `shoot`, `killAll`, `spawnUfo`, `spawnCrate`, `hitCard`, `hp`, `rig` e outros.
+Com eles dá para rodar a campanha inteira por script (veja a seção 12.11).
 
 ---
 
@@ -540,6 +550,222 @@ a campanha inteira por script.
 - [ ] Ajustar a tabela `WAVES` (primeiro a fantasia, depois os números)
 - [ ] Trocar o mesh e o splat do projétil
 - [ ] Trocar o protegido (`makeChicken`) e o inimigo (`buildUfoMesh`)
+- [ ] Renomear as habilidades para o tema (ex.: "Ovo Flamejante" vira "Tomate Picante"), mantendo o efeito
+- [ ] Decidir as condições de derrota (vida do jogador, protegidos ou as duas) e os valores de dano
+- [ ] Conferir o modo PC: limites do WASD para o novo cenário e o alcance do `pcAim`
 - [ ] Rodar por script com `__cr.step` (campanha inteira) para pegar erros
 - [ ] Testar no Quest: arremesso, estilingue, pistolas, painel do colo e desempenho
+- [ ] Testar no PC: WASD, zoom, pausa no Esc e se a mira acerta onde aponta
 - [ ] Publicar no GitHub Pages (`marcofurtado-hub/<slug>`) e adicionar o card no hub
+
+---
+
+## 12. SISTEMAS REAPROVEITÁVEIS (receitas para outros jogos)
+
+Cada receita abaixo é **independente do tema**: não depende de ovo, galinha ou disco voador. Para cada uma
+há a ideia, os números que funcionaram e o código principal para copiar.
+
+**Que sistemas combinam com cada tipo de jogo:**
+
+| Tipo de jogo | Receitas que mais rendem |
+|---|---|
+| Wave shooter parado (VR ou PC) | todas, principalmente 12.1, 12.2, 12.7 e 12.8 |
+| Tower defense / proteger algo | 12.1, 12.5 (companheiro = torre), 12.6 (escudo de uso único), 12.7 |
+| Roguelite de salas (tipo Archero) | 12.1, 12.2, 12.3, 12.4 e 12.7 |
+| Jogo de arremesso / física | 12.8 (mira balística) e 3.5 (ímã) |
+| Qualquer jogo VR | 12.8 (versão PC de graça), 12.9 (HUD móvel), 12.11 (teste por script) |
+
+### 12.1 Progressão estilo Archero (escolha 1 de 3 habilidades)
+
+**Por que funciona:** cada escolha muda o jogo de um jeito que o jogador **vê** (dobrar tiros, botar fogo).
+Ao longo da partida as escolhas viram uma "build". Em cards puramente aleatórios ninguém sente a progressão.
+
+**As 6 regras:**
+1. **1 card por categoria** em toda oferta: ATAQUE, EFEITO e DEFESA. Toda escolha vira um trade-off (dano ou segurança?).
+2. **Raridade** comum, rara e épica, com cor de moldura própria (verde, azul, roxo brilhante). A chance de raro e
+   épico sobe ao longo do jogo:
+   - início: 62% comum, 30% raro, 8% épico
+   - meio: 50%, 36%, 14%
+   - fim: 40%, 40%, 20%
+3. **A primeira escolha é épica no ATAQUE.** O jogador sente o poder logo de cara.
+4. **Recompensa do chefão:** depois de um chefão vem uma escolha extra com épico garantido.
+5. **Sinergia:** 35% de chance de oferecer algo que o jogador já tem, para subir de nível (o card mostra "NÍVEL 1 → 2").
+6. **Socorro contextual:** se o jogador está mal (perdeu protegidos ou está com pouca vida), o card de DEFESA vira cura.
+
+**Apresentação:**
+- O card mostra categoria, raridade, ícone grande, nome, efeito e o nível (ou "NOVA HABILIDADE").
+- A build fica sempre visível: ícones com o nível no HUD.
+- A escolha é **diegética**: você atira no card. Isso funciona igual no VR, no PC e no mobile, sem menu.
+
+```js
+// Cada habilidade: { id, cat:'atk'|'egg'|'def', rar:'comum'|'raro'|'epico', icon, title, desc, max, cond?, apply }
+function buildOffer(kind) {                      // kind: 'normal' | 'first' | 'boss'
+  const epicCat = kind === 'first' ? 'atk' : kind === 'boss' ? pick(['atk', 'def', 'atk']) : null;
+  const taken = new Set(), out = [];
+  for (const cat of ['atk', 'egg', 'def']) {
+    let pool = SKILLS.filter(x => x.cat === cat && disponivel(x) && !taken.has(x.id));
+    const rar = cat === epicCat ? 'epico' : rollRarity();       // chances sobem com a wave
+    const ordem = rar === 'epico' ? ['epico', 'raro', 'comum'] : rar === 'raro' ? ['raro', 'comum', 'epico'] : ['comum', 'raro', 'epico'];
+    let cand = []; for (const r of ordem) { cand = pool.filter(x => x.rar === r); if (cand.length) break; }
+    const ja = cand.filter(x => nivel[x.id]);                    // sinergia: subir de nível
+    const escolha = ja.length && Math.random() < 0.35 ? pick(ja) : pick(cand);
+    taken.add(escolha.id); out.push(escolha);
+  }
+  if (jogadorMal()) out[2] = SKILL_CURA;                         // socorro
+  return out;
+}
+```
+
+**Catálogo de habilidades que funcionam em quase todo shooter:** dano +25%, cadência +20%, crítico 15%,
+fúria (mais dano quando está perdendo), tiro duplo, tiro em leque, perfurar, ricochete, fogo, gelo, choque,
+projétil maior, ímã, companheiro que atira, escudo de uso único, vida máxima, redução de dano, cura total,
+sorte (mais drops), combo mais longo e power-up mais longo.
+
+### 12.2 Multi-tiro universal (Duplo e Leque)
+
+**Ideia:** o multi-tiro vale para **todas** as armas, não só para uma. Ele fica no ponto central que cria
+projéteis, e cada arma só diz `volley: true`.
+
+```js
+function volleyDirs(dir) {                       // devolve [{ d: direção, off: deslocamento lateral }]
+  const r = new Vector3().crossVectors(dir, UP).normalize();    // "direita" do tiro
+  const upv = new Vector3().crossVectors(r, dir).normalize();   // "cima" do tiro
+  const out = [], n = 1 + nivelDuplo;
+  for (let k = 0; k < n; k++) out.push({ d: dir.clone(), off: r.clone().multiplyScalar((k - (n - 1) / 2) * 0.16) });
+  for (let k = 1; k <= nivelLeque; k++) for (const s of [-1, 1])
+    out.push({ d: dir.clone().applyAxisAngle(upv, s * k * 0.24), off: new Vector3() });   // ±14°, ±28°
+  return out;
+}
+// Dentro de spawnProjetil(pos, vel, o): se o.volley, cria uma cópia por direção (com volley:false) e retorna
+```
+
+**Regras de equilíbrio (para não travar o jogo):**
+- Armas de muitos projéteis dividem: escopeta = `14 / √n` chumbos por cópia.
+- Metralhadora: projétil vive menos (1.2 s em vez de 2 s).
+- Mísseis: só o primeiro da rajada é replicado.
+- Armas instantâneas (laser, raio): um feixe por direção, com teto (7 no laser, 5 no raio).
+- Limite global de projéteis vivos (240 aqui).
+
+### 12.3 Efeitos de impacto (fogo, gelo, choque, crítico, fúria)
+
+**Ideia:** todo dano passa por **uma** função `hitPart(alvo, parte, dano, pos, fx)`. O parâmetro `fx` diz se
+aquele dano veio de um tiro direto do jogador (`true`) ou de um efeito secundário (`false`: queimadura,
+salto de choque, explosão, cascata). Isso evita **recursão infinita**, como um choque gerando outro choque.
+
+| Efeito | Regra |
+|---|---|
+| Crítico | `random < 0.15 × nível` → dano ×2 e "CRÍTICO!" |
+| Fúria | dano × (1 + 0.10 × nível × protegidos perdidos) |
+| Fogo | 3 s de queimadura, ticks a cada 0.5 s, total de +60% do golpe por nível |
+| Gelo | `slowT = 2.5 s` e a entidade roda com `edt × 0.6` (0.4 no nível 2), o que deixa **lentas também as ações dela** (o feixe de abdução) |
+| Choque | salta para 2 ou 3 inimigos a até 6 m com 35% do dano. Limite de 1 choque a cada 0.3 s por alvo, para a metralhadora não criar centenas de raios |
+
+**O truque do gelo:** em vez de mexer na velocidade de cada comportamento, cada entidade recebe o seu próprio
+`dt` (`uedt = edt × slowMul`). Tudo o que ela faz desacelera junto, de graça.
+
+**Feedback visual:** queimando, o casco pisca laranja e solta faíscas. Congelado, fica azul e solta cristais.
+O choque desenha mini-raios.
+
+### 12.4 Ricochete (projétil e instantâneo)
+
+- **Projétil:** ao acertar, procura o inimigo vivo mais próximo (até 9 m) que ainda não foi atingido e redireciona
+  a velocidade para ele. Também desliga a gravidade e o ímã, guarda o alvo num `hitSet` e multiplica o dano por 0.7.
+- **Instantâneo** (`bounceChain`): desenha um raio curto até o próximo alvo e aplica 70% do dano a cada salto.
+- **Em armas que já pulam entre alvos (tesla):** cada nível de ricochete vale +1 geração de cascata.
+
+### 12.5 Companheiro que atira (estilo "espírito" do Archero)
+
+- Flutua ao lado do jogador. No VR fica a 0.55 m, perto do ombro. No PC fica a 1.1 m de lado e 1.4 m à frente,
+  para não tapar a tela. Balança um pouco.
+- Atira sozinho a cada 1.1 s (dividido pela cadência). Usa `acquireTarget`, a mesma mira do míssil, que prefere
+  o que está no cone de visão e, se não houver nada, pega o mais próximo.
+- Nível 2 = um segundo companheiro do outro lado.
+- Serve para qualquer tema: drone, fada, pássaro ou mini-torreta.
+
+### 12.6 Escudo de uso único nos protegidos
+
+- No começo de cada wave, cada protegido ganha uma bolha.
+- O primeiro ataque que ele receberia estoura a bolha (com penas e som), e o atacante fica **atordoado 1.6 s** e é empurrado para cima.
+- É uma defesa barata e muito legível. Combina com qualquer jogo de "proteger X".
+
+### 12.7 Vida do jogador + duas condições de derrota
+
+```js
+function damagePlayer(qtd, rotulo, cor) {
+  if (!emJogo() || invulnT > 0) return;                       // 0.6 s de invencibilidade depois do golpe
+  const dano = Math.max(1, Math.round(qtd * (1 - 0.2 * nivelColete)));
+  hp = Math.max(0, hp - dano); invulnT = 0.6;
+  vinhetaVermelha(); som(); vibrar(); popupNaFrente('-' + dano + ' ❤️ ' + rotulo, cor);
+  if (hp <= 0) gameOver('player');                            // a outra causa é gameOver('protegidos')
+}
+```
+
+**O que deixa a vida justa:**
+- Todo ataque pode ser **evitado**: atirar no projétil no ar, desviar (inclinar no VR, WASD no PC) ou matar o atacante antes.
+- A invencibilidade curta impede que uma rajada mate de uma vez.
+- Há várias fontes de cura: +20 por wave, power-up que cai mais quando a vida está baixa, e card de cura
+  garantido se a wave terminar com menos de 45%.
+- Com vida baixa (30% ou menos), batimento cardíaco e vinheta pulsando.
+- O game over diz **por que** você perdeu.
+
+**Números de referência:** vida 100, projétil comum −12, ataque suicida −25.
+
+### 12.8 Modo PC a partir de um jogo VR
+
+Um jogo VR "parado" vira um bom jogo de PC com 6 peças:
+
+1. **Mira exata (`pcAim`):** a cada frame, um raio do centro da tela encontra o que está sob a mira. Todas as armas
+   saem do cano (no canto da tela) e **convergem para esse ponto**. Sem isso os tiros passam paralelos e erram.
+2. **Mira balística** para projéteis com gravidade: calcula a velocidade que faz o arco cair no ponto mirado.
+   Deu 85% de acerto a 12 m.
+   ```js
+   function ballistic(o, alvo, vel, g, out) {
+     const d = alvo.clone().sub(o), t = Math.max(0.05, d.length() / vel);
+     out.copy(d).divideScalar(t); out.y += 0.5 * g * t; return out;   // compensa a queda
+   }
+   ```
+3. **Movimento limitado:** WASD move o rig na direção da câmera, preso numa área (aqui, a varanda). É o "desviar" que
+   no VR se faz com o corpo.
+   ```js
+   const sn = Math.sin(yaw), cs = Math.cos(yaw);              // W = -Z local, D = +X local
+   rig.x = clamp(rig.x + (mx * cs + mz * sn) * vel * dt, xMin, xMax);
+   rig.z = clamp(rig.z + (-mx * sn + mz * cs) * vel * dt, zMin, zMax);
+   ```
+4. **Zoom no botão direito:** FOV 80 → 42 suavizado, com a sensibilidade do mouse proporcional ao FOV.
+5. **Pausa automática** quando o pointer lock cai (Esc ou perda de foco), com uma tela que mostra os controles.
+   Clicar na tela volta ao jogo.
+6. **Marcador de acerto:** a mira fica vermelha e cresce por 0.12 s a cada dano causado.
+
+Extras: um botão "JOGAR NO PC" separado do "ENTER VR", e pixel ratio até 2 no PC (1.5 no mobile e no VR).
+
+### 12.9 HUD de VR que não atrapalha (painel móvel)
+
+- Painel pequeno (30 × 16 cm) **preso à cadeira** (que gira com a cabeça), abaixo e à esquerda, e que sempre vira
+  para o jogador (`lookAt` da câmera).
+- **GRIP perto dele = mover.** O painel segue a mão e, ao soltar, a posição é salva em `localStorage`.
+- O que mais importa fica em número grande e colorido: protegidos 7/12 (laranja com 4 ou menos, vermelho com 2 ou menos)
+  e a barra de vida. O detalhe vem menor embaixo.
+- Mostra a build (ícones das habilidades com o nível).
+- Avisos no momento certo: "-1 GALINHA · restam N" quando perde, e o total no fim da wave.
+
+### 12.10 Raios com vida por segmento
+
+- Um pool de cilindros aditivos (140), usados em fila circular.
+- Cada segmento guarda a própria vida (0.09 a 0.12 s) e some sozinho.
+- Assim, várias fontes de raio (tesla, choque, ricochete) convivem sem uma apagar a outra e sem esgotar o pool.
+- O "zigue-zague" é `jag × distância / segmentos`: 0.15 deixa reto e elegante, 0.3 ou mais fica caótico.
+
+### 12.11 Teste automático por script (vale para qualquer jogo)
+
+- Exponha um `step(n, dt)` que roda o loop do jogo **sem renderizar**. Ele funciona mesmo com a aba escondida,
+  quando o navegador para o `requestAnimationFrame`.
+- Monte um **robô** de poucas linhas: escolhe o alvo mais urgente, mira (`aimAt`) e atira (`setHold`/`shoot`).
+  Também escolhe cards (`hitCard`) e avança o menu.
+- Com isso dá para rodar a campanha inteira em segundos e conferir:
+  - se aparece erro (`#err`)
+  - se as waves terminam
+  - quantos projéteis ficam vivos
+  - a vida mínima
+  - a precisão de uma arma (ex.: 17 de 20 acertos a 12 m)
+- O robô tem mira perfeita, então ele mede **se o jogo funciona**, não se está difícil.
+  A dificuldade real se testa jogando.
