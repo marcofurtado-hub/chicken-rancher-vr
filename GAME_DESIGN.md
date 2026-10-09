@@ -2,7 +2,7 @@
 
 > Bíblia de design e técnica do jogo. Serve para portar as armas e os sistemas para
 > outros jogos e para criar variações do rancho. Todos os números foram tirados do código real
-> (`index.html`, ~3.900 linhas, um arquivo só, Three.js r160 via CDN, sem build).
+> (`index.html`, ~5.000 linhas, um arquivo só, Three.js r160 via CDN, sem build).
 
 - **Jogar:** https://marcofurtado-hub.github.io/chicken-rancher-vr/
 - **Versão 1.0 original:** https://marcofurtado-hub.github.io/chicken-rancher-vr/v1/
@@ -13,6 +13,11 @@
 > habilidades estilo Archero, multi-tiro universal, efeitos de impacto, ricochete, companheiro,
 > escudo, vida do jogador, modo PC a partir do VR, HUD móvel no VR e teste por script.
 > As armas estão na **seção 3** (com o guia de portar na 3.6).
+
+**Versão 2.1 (mais difícil e variada):** 12 waves, 11 armas (novo **rojão de fogos**), 11 naves (novas
+**bombardeira**, **sniper** e **ladra**), as naves comuns atiram plasma em você, **habilidades ativas de 8 s**
+com recarga (no lugar das permanentes), **passarinho** que voa sozinho, power-ups de 8 s, **andar livre**
+(joystick ou WASD, descer a rampa da varanda, cair) e a **cadeira de rodas voadora** na batalha final.
 
 ---
 
@@ -27,13 +32,13 @@ do arremesso com a mão até o raio tesla. As galinhas funcionam como vidas. Se 
 1. **Waves com escalada clara:** cada wave traz uma arma nova e uma ameaça nova.
 2. **Duas formas de perder:** se a sua vida ❤️ chegar a 0 ou se levarem todas as galinhas.
 3. **Tudo é ovo:** a identidade cômica vem do splat de ovo frito no chão e da explosão de clara e gema no ar.
-4. **VR sentado e sem enjoo:** o jogador não anda, só gira em passos (snap turn).
+4. **VR confortável:** gira em passos (snap turn). Andar com o joystick e voar ligam uma vinheta escura nas bordas para não enjoar.
 5. **Feedback exagerado:** popups de pontos, combo, vibração, sons sintetizados e ciclo dia/noite.
 
 **Loop principal**
 ```
 idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgrade (atira num card)
-     → próxima wave ... → wave 10 (nave-mãe) → victory → modo infinito → game_over → idle
+     → próxima wave ... → wave 12 (nave-mãe + cadeira voadora) → victory → modo infinito → game_over → idle
 ```
 
 ---
@@ -47,13 +52,23 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 | Arremessar ovo (mão) | balançar o controle | clique (mira balística) | toque |
 | Estilingue / besta | gatilho esquerdo pega a corda, puxa e solta | clique | toque |
 | Pistolas duplas | um gatilho para cada mão | clique (alterna as mãos) | segurar |
-| Trocar arma | A/X = anterior, B/Y = próxima | 1-9, 0, Q/E, roda | botão 🔄 |
-| Girar / mirar | thumbstick direito (snap de 30°) | mouse | arrastar |
-| **Desviar** | inclinar o corpo | **WASD / setas** (a cadeira anda na varanda) | n/a |
+| Trocar arma | A = próxima, X = anterior | 1-9, 0, - e roda | botão 🔄 |
+| **Habilidades (3 slots)** | **B**, **Y** e **GRIP direito** | **Q**, **E** e **F** | botões na tela |
+| **Andar** | **joystick esquerdo** (2.4 m/s, para todos os lados) | **WASD / setas** | n/a |
+| Girar / mirar | joystick direito (snap de 30°) | mouse | arrastar |
+| Voar (cadeira voadora) | olhar = direção · joystick esq. acelera/freia | olhar = direção · W/S acelera/freia | n/a |
 | Zoom | n/a | **botão direito** (FOV 80 → 42, sensibilidade cai junto) | n/a |
 | Pausa | n/a | **Esc** (tela de pausa com os controles) | n/a |
 | Mover o painel do colo | GRIP perto do painel | n/a | n/a |
 | Música | n/a | M | n/a |
+
+**Andar e cair:**
+- A varanda fica a 0.4 m do chão.
+- Na frente dela, no vão do meio, há uma **rampa** de 1.2 m que leva ao quintal.
+- As grades da frente e dos lados bloqueiam a passagem. Só se sobe pela rampa (degraus de mais de 12 cm bloqueiam).
+- Se você sair pela lateral da rampa, **cai** com gravidade, ouve um baque e o controle vibra.
+- O quintal é livre até a cerca.
+- Encostar numa galinha faz ela pular assustada.
 
 **Modo PC:**
 - **Mira exata:** a cada frame um raio sai do centro da tela (`pcAim`) e todas as armas convergem para o ponto
@@ -61,7 +76,7 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 - **Arremesso e estilingue** usam uma solução balística (`ballistic`): o ovo faz o arco certo para cair no ponto mirado.
   Isso dá 85% de acerto a 12 m.
 - **Marcador de acerto:** a mira fica vermelha e cresce por um instante a cada acerto.
-- A cadeira anda a 2.6 m/s dentro dos limites da varanda.
+- A cadeira anda a 2.6 m/s pela varanda, pela rampa e pelo quintal (mesmas regras do VR).
 - Ao perder o foco do mouse o jogo **pausa sozinho**.
 
 **HUD:** no VR, um painel pequeno (30 × 16 cm) fica no colo, à esquerda, e sempre vira para você.
@@ -103,7 +118,7 @@ o alvo sem acertar. O acerto escolhido é o de menor `t` (a primeira coisa que o
 - **caixa de power-up:** ativa o power-up
 - **card de upgrade:** escolhe o upgrade
 
-### 3.2 Tabela das 10 armas
+### 3.2 Tabela das 11 armas
 
 | # | Arma | Libera na | Tipo | Dano | Cadência | Velocidade | Especial |
 |---|---|---|---|---|---|---|---|
@@ -117,6 +132,7 @@ o alvo sem acertar. O acerto escolhido é o de menor `t` (a primeira coisa que o
 | 8 | 🚀 **Teleguiado** | wave 8 | rajada de 3 mísseis | 3 cada | 0.90 s | 12 → 24 m/s | trava em nave, caixa ou gosma, vida 4 s |
 | 9 | ⚡ **Laser** | wave 9 | raio instantâneo em pulsos | 2 por pulso | ~9.5 pulsos/s | instantâneo, 40 m | tremor leve no feixe |
 | 10 | 🌩 **Raio Tesla** | wave 10 | raio em cascata | 3 + cascata | 0.28 s | instantâneo, 45 m | salta para vizinhos com 55% / 30% / 17% |
+| 11 | 🎆 **Rojão** | wave 11 | foguete de fogos de artifício | 12 em área (4.5 m) + 4 estalinhos de 4 | 0.85 s | 30 m/s | explode perto de uma nave (2.2 m) ou no céu depois de 1.15 s |
 
 > As cadências são divididas por `up.rate` (upgrade Dedo Ligeiro). Todo dano é multiplicado por
 > `up.dmg` (Ovo Turbinado) e por ×3 durante o Ovo de Ouro.
@@ -189,6 +205,14 @@ for (let gen = 0; gen < 3 && frontier.length && total < 10; gen++) {
 }
 ```
 
+**11. Rojão (fogos de artifício)**
+- Sobe assobiando com um rastro de faíscas coloridas e uma gravidade bem leve (0.15).
+- Explode quando passa a 2.2 m de qualquer nave, quando bate em algo ou depois de 1.15 s, no céu.
+- A explosão tem 110 partículas numa paleta de 2 cores (5 paletas), um flash branco e um anel de choque.
+  Ela causa **12 de dano em todas as naves a até 4.5 m** e solta **4 estalinhos** que explodem logo depois
+  (4 de dano cada, raio 2.5 m).
+- Também coleta power-ups e estoura gosma. Um rojão matou 4 naves blindadas (6 de vida cada) de uma vez.
+
 ### 3.4 Modificadores globais das armas
 
 | Fonte | Efeito |
@@ -239,7 +263,7 @@ bola de neve que vira pó branco, bolha de sabão que estoura. O resto continua 
 
 ## 4. INIMIGOS
 
-### 4.1 Os 8 tipos de nave
+### 4.1 Os 11 tipos de nave
 
 | Tipo | Papel | HP base | Escala | Vel. | Feixe | Pontos | Drop | Comportamento |
 |---|---|---|---|---|---|---|---|---|
@@ -251,9 +275,24 @@ bola de neve que vira pó branco, bolha de sabão que estoura. O resto continua 
 | **Divisora** | abduz | 2 | 1.25 | 0.9× | 1.0× | 200 | 12% | ao morrer vira 2 mini naves |
 | **Escudeira** | suporte | 3 | 1.1 | 0.8× | n/a | 300 | 28% | blinda até 3 naves a menos de 11 m (bolha + cabo) |
 | **Fantasma** | abduz | 1 | 1.0 | 1.2× | 0.9× | 250 | 14% | fica 1.8 s invisível e intocável, 2.4 s visível |
+| **Bombardeira** | bombardeia | 3 | 1.2 | n/a | n/a | 250 | 18% | passa por cima de você a 10 m e solta bombas. Um anel vermelho no chão mostra onde cada uma vai cair |
+| **Sniper** | atira | 2 | 0.95 | n/a | n/a | 300 | 20% | fica a 18-24 m e mira um laser em você por 2 s. A mira trava 0.45 s antes do tiro, então dá para sair |
+| **Ladra** | rouba | 2 | 0.9 | n/a | n/a | 250 | 12% | voa baixo, **agarra** a galinha com garras e foge a 3.2 m/s. Se passar de 22 m, levou |
 | *Mini* | abduz | 1 | 0.6 | 1.6× | 0.7× | 60 | 0% | filha da divisora, zigue-zague 1.6 m |
 
 O HP real é `HP base × hpMult da wave` (de 1 a 3 na campanha, crescendo no infinito).
+
+**Ataques contra você (todos podem ser evitados):**
+
+| Ataque | Quem | Dano | Como evitar |
+|---|---|---|---|
+| Plasma vermelho (rápido) | naves comuns, a partir da wave 3 (a barriga pisca antes) | 10 | atirar nele ou desviar |
+| Gosma verde (lenta) | atiradora, chefão, nave-mãe | 18 | atirar nela no ar |
+| Bomba | bombardeira | 28 (raio 2 m) | sair do anel vermelho |
+| Laser | sniper | 25 | sair da linha depois que a mira trava |
+| Mergulho | kamikaze | 35 | derrubar antes |
+
+O **aggro** da wave (de 0 a 1.8, maior no infinito) controla a frequência desses ataques.
 
 **Detalhes dos comportamentos**
 - **Abdução:** a nave desce até `descendH` (2.5 a 4.6 m) acima da galinha. O feixe dura
@@ -301,18 +340,16 @@ O HP real é `HP base × hpMult da wave` (de 1 a 3 na campanha, crescendo no inf
 | Item | Valor |
 |---|---|
 | Vida inicial | 100 |
-| Gosma (atiradora, chefão, nave-mãe) | −12 (pode ser abatida no ar) |
-| Kamikaze | −25 |
+| Plasma / gosma / laser da sniper / bomba / kamikaze | −10 / −18 / −25 / −28 / −35 |
 | Invencibilidade depois de levar dano | 0.6 s (uma rajada não mata de uma vez) |
-| Cura no fim de cada wave | +20 |
-| Power-up ❤️ **Cura** | +40 (cai mais quando a vida está abaixo de 60% e de 35%) |
+| Cura no fim de cada wave | +15 |
+| Power-up ❤️ **Cura** | +35 (cai mais quando a vida está abaixo de 60% e de 35%) |
 | Vida baixa (30% ou menos) | batimento cardíaco + vinheta vermelha pulsando |
 
-**Habilidades de defesa ligadas à vida:**
-- ❤️ **Coração de Galo** (comum, máx 4): +25 de vida máxima e cura 25
-- 🧥 **Colete de Palha** (raro, máx 2): −20% de dano recebido por nível
-- 🍲 **Canja da Vovó** (comum): cura tudo. Aparece quando a vida está abaixo de 70%, e é garantida no slot de
-  DEFESA se você terminar a wave com menos de 45%
+**Cards ligados à vida (efeito na hora, não ocupam slot):**
+- ❤️ **Coração de Galo:** +20 de vida máxima (até 160)
+- 🍲 **Canja da Vovó:** cura 50. É garantida no slot de DEFESA se você terminar a wave com menos de 45%
+- Habilidade 🛡 **Bolha:** 8 s sem tomar dano
 
 **Derrota:** "VOCÊ FOI DERROTADO" (vida 0) ou "LEVARAM TODAS AS GALINHAS". A barra de vida aparece no painel do
 colo (VR) e no HUD (PC).
@@ -335,24 +372,28 @@ colo (VR) e no HUD (PC).
 
 ## 6. PROGRESSÃO
 
-### 6.1 As 10 waves
+### 6.1 As 12 waves
 
-| Wave | Hora | Arma nova | Nova ameaça | Composição | Intervalo | Máx. vivas | hpMult | Chefão |
-|---|---|---|---|---|---|---|---|---|
-| 1 | meio-dia | Mão | Comum | 6 comuns (perto da varanda, naves 1.7×) | 1.9 s | 3 | 1 | n/a |
-| 2 | dia | Estilingue | Veloz | 7 C + 3 V | 1.5 | 4 | 1 | n/a |
-| 3 | tarde | Besta | Blindada | 7 C, 3 V, 2 B | 1.3 | 5 | 1 | **8 HP** |
-| 4 | tarde dourada | Pistolas | Atiradora | 8 C, 4 V, 2 B, 3 A | 1.15 | 6 | 1 | n/a |
-| 5 | pôr do sol | Escopeta | Kamikaze | 9 C, 4 V, 3 B, 2 A, 4 K | 1.0 | 7 | 2 | n/a |
-| 6 | pôr do sol | Lança-ovo | Divisora | + 3 divisoras | 0.92 | 8 | 2 | **45 HP** (1 gosma) |
-| 7 | crepúsculo | Gatling | Escudeira | + 2 escudeiras | 0.8 | 9 | 3 | n/a |
-| 8 | anoitecer | Teleguiado | Fantasma | + 5 fantasmas | 0.74 | 10 | 3 | n/a |
-| 9 | noite | Laser | n/a | todas | 0.66 | 11 | 2 | **120 HP** (3 gosmas) |
-| 10 | noite | Raio Tesla | Nave-mãe | todas | 0.62 | 11 | 3 | **NAVE-MÃE** |
+| Wave | Hora | Arma nova | Nova ameaça | Aggro | Máx. vivas | hpMult | Especial |
+|---|---|---|---|---|---|---|---|
+| 1 | meio-dia | Mão | Comum | 0 | 3 | 1 | 7 comuns perto da varanda |
+| 2 | dia | Estilingue | Veloz | 0 | 4 | 1 | |
+| 3 | tarde | Besta | Blindada | 0.6 | 5 | 1 | **chefão 10 HP** |
+| 4 | tarde dourada | Pistolas | Atiradora | 1.0 | 7 | 1 | |
+| 5 | pôr do sol | Escopeta | Kamikaze | 1.1 | 8 | 2 | |
+| 6 | pôr do sol | Lança-ovo | Divisora | 1.2 | 9 | 2 | **chefão 55 HP** (2 gosmas) |
+| 7 | crepúsculo | Gatling | Escudeira | 1.3 | 10 | 3 | |
+| 8 | anoitecer | Teleguiado | Fantasma | 1.4 | 11 | 3 | |
+| 9 | noite | Laser | **Bombardeira** | 1.5 | 12 | 2 | **chefão 140 HP** (3 gosmas) |
+| 10 | noite | Raio Tesla | **Sniper** | 1.6 | 12 | 3 | |
+| 11 | noite | **Rojão** | **Ladra** | 1.7 | 13 | 3 | |
+| 12 | noite | n/a | todas | 1.8 | 13 | 3 | **NAVE-MÃE** (módulos 40, núcleo 130) + **CADEIRA VOADORA** |
 
-**Fórmula do modo infinito** (wave n = 0, 1, 2...): composição cresce +1 a +3 por tipo,
-intervalo = max(0.3, 0.56 − 0.03n), hpMult = 3 + 0.4n, chefão de HP 140 + 40n,
-e a cada 3 waves uma nave-mãe. Todas as armas ficam liberadas.
+Cada wave tem de 7 a 56 naves. O intervalo entre elas cai de 1.7 s para 0.55 s e o feixe de abdução de 7 s para 4.3 s.
+
+**Fórmula do modo infinito** (wave n = 0, 1, 2...): todos os 11 tipos, crescendo +1 a +3 por wave;
+intervalo = max(0.3, 0.52 − 0.03n), hpMult = 3 + 0.4n, aggro = 1.9 + 0.12n, chefão de HP 160 + 45n,
+e a cada 3 waves uma nave-mãe com cadeira voadora.
 
 **Ritmo dentro da wave:** a fila é embaralhada, mas as 2 primeiras são sempre comuns e a nova ameaça
 vem em 3º, para o jogador conhecer o inimigo novo. O chefão aparece com 45% da fila e a nave-mãe
@@ -375,58 +416,48 @@ vem em 3º, para o jogador conhecer o inimigo novo. O chefão aparece com 45% da
 `min(5, 1 + floor((combo − 1) / 3))`, ou seja x2 a partir de 4 abates, x3 a partir de 7, até x5.
 Zera ao perder galinha, levar gosma ou levar um kamikaze. O recorde fica salvo em `localStorage`.
 
-### 6.3 Habilidades entre as waves (sistema estilo Archero)
+### 6.3 Habilidades ATIVAS entre as waves (8 s + recarga)
 
-Inspirado em **Archero 1 e 2**: as habilidades mudam o seu tiro de forma **visível** e se combinam numa
-"build" ao longo da partida.
+Entre as waves você escolhe 1 de 3 cards (atirando nele). As escolhas seguem as regras do Archero, mas o **efeito
+não é permanente**. O card te dá uma **habilidade ativa** que você liga com um botão.
 
-**Cada oferta = 3 cards, 1 de cada categoria**, então toda escolha é um trade-off de verdade:
-- 🔴 **ATAQUE:** quanto e como você atira
-- 🔵 **OVO:** efeitos no impacto
-- 🟢 **DEFESA:** galinhas, ajudantes e utilidades
+- **Duração:** 8 s. **Recarga:** 26 s, depois 22 s e 18 s conforme o nível (1 a 3).
+- **Até 3 equipadas**, uma em cada botão: B / Y / GRIP direito no VR, Q / E / F no PC, botões na tela no mobile.
+- No começo de cada wave todas voltam **prontas**.
+- Quando os 3 slots estão cheios, só aparecem cards que **sobem o nível** do que você já tem, ou cards de efeito na hora.
+- O HUD mostra cada slot: ícone, botão, "ATIVO 5s", recarga em segundos ou "PRONTO!". Ao ficar pronta toca um som e
+  aparece um popup.
 
-**Raridade:** COMUM (moldura verde), RARO (azul) e ÉPICO (roxo brilhante).
-A chance de raro e épico sobe com as waves:
-- até a wave 3: 62% comum, 30% raro, 8% épico
-- waves 4 a 6: 50%, 36%, 14%
-- da wave 7 em diante: 40%, 40%, 20%
+**Regras da oferta:**
+- 1 card por categoria (ATAQUE · OVO · DEFESA), com raridade comum, raro ou épico.
+- A primeira escolha é um ataque épico.
+- Depois de um chefão há uma escolha extra com épico garantido.
+- 40% de chance de oferecer uma habilidade que você já tem.
+- Se você está mal, aparece um card de socorro (Anjo ou Canja).
 
-**Regras de progressão:**
-1. **Primeira habilidade** (depois da wave 1): o card de ATAQUE é sempre **ÉPICO** (Ovo Duplo ou Ovo Leque).
-   Logo no início você sente os tiros dobrarem.
-2. **Recompensa do Chefão** (waves 3, 6, 9, chefões do infinito e o começo do infinito): **2 escolhas**, e a segunda
-   tem um card **ÉPICO** garantido.
-3. **Sinergia:** 35% de chance de o card oferecido ser uma habilidade que você **já tem**, para subir de nível.
-   O card mostra "NÍVEL 1 → 2".
-4. **Socorro:** se você perdeu 2 ou mais galinhas na wave, o card de DEFESA vira **Anjo da Granja** (+2 galinhas).
+| Card | Cat. | Rar. | Efeito por nível (enquanto ativo) |
+|---|---|---|---|
+| 🔱 Ovo Leque | Ataque | épico | +2 ovos em diagonal → +4 → +4 e recarga menor |
+| ➕ Rajada Dupla | Ataque | épico | +1 ovo lado a lado → +2 → +2 e recarga menor |
+| 😤 Fúria | Ataque | raro | +50% / +75% / +100% de dano |
+| ⚡ Dedo Turbo | Ataque | comum | +50% / +75% / +100% de cadência |
+| 🎯 Olho de Águia | Ataque | raro | 35% / 50% / 65% de crítico (×2) |
+| 🔥 Ovo Flamejante | Ovo | raro | queima +60% / +120% / +180% do dano em 3 s |
+| ❄️ Ovo Congelante | Ovo | raro | nave e feixe 40% / 60% mais lentos |
+| 🌩 Ovo Elétrico | Ovo | raro | choque pula para 2 / 3 / 4 naves |
+| 🔁 Ricochete | Ovo | comum | quica 2 / 3 / 4 vezes |
+| 🗡 Ovo Perfurante | Ovo | comum | atravessa 2 / 3 / 4 naves |
+| 🐦 **Passarinho** | Defesa | épico | 1 passarinho → 1 mais forte → 2 passarinhos que voam sozinhos e atiram |
+| ⏳ Câmera Lenta | Defesa | raro | aliens 60% / 70% / 75% mais lentos |
+| 🛡 Bolha | Defesa | raro | 8 s sem tomar dano (recarga cada vez menor) |
+| 🪶 Escudo de Penas | Defesa | comum | cada galinha bloqueia 1 abdução (2 no nível 3) |
+| 🍲 Canja / 👼 Anjo / ❤️ Coração | Defesa | n/a | **na hora:** +50 de vida / +2 galinhas / +20 de vida máxima |
 
-| Card | Cat. | Raridade | Efeito | Máx. |
-|---|---|---|---|---|
-| 💪 Ovo Turbinado | Ataque | comum | +25% de dano | 5 |
-| ⚡ Dedo Ligeiro | Ataque | comum | +20% de cadência | 4 |
-| 🎯 Olho de Águia | Ataque | raro | +15% de chance de crítico (×2) por nível | 3 |
-| 😤 Fúria do Galo | Ataque | raro | +10% de dano por galinha perdida (abaixo de 7) | 2 |
-| ➕ **Ovo Duplo** | Ataque | **épico** | +1 ovo lado a lado em todo tiro | 2 |
-| 🔱 **Ovo Leque** | Ataque | **épico** | +2 ovos em diagonal em todo tiro | 2 |
-| 🗡 Ovo Perfurante | Ovo | raro | atravessa +1 nave | 2 |
-| 🔁 Ricochete | Ovo | raro | o ovo quica para a nave mais próxima (9 m) com 70% do dano. Laser: salto instantâneo. Tesla: +1 geração de cascata | 3 |
-| 🔥 Ovo Flamejante | Ovo | raro | queima por 3 s (+60% do dano por nível) | 2 |
-| ❄️ Ovo Congelante | Ovo | raro | nave **e feixe de abdução** 40% mais lentos (60% no nível 2) por 2.5 s | 2 |
-| 🌩 Ovo Elétrico | Ovo | raro | choque pula para 2 naves (3 no nível 2) a 6 m, com 35% do dano | 2 |
-| 🥚 Ovo Gigante | Ovo | comum | ovos maiores, acertam mais fácil | 3 |
-| 🧲 Ímã de Ovo | Ovo | comum | ovos curvam até as naves | 3 |
-| 🐤 **Pintinho Atirador** | Defesa | **épico** | ajudante que flutua do seu lado e atira sozinho a cada 1.1 s (2 no nível 2) | 2 |
-| 🪶 Escudo de Penas | Defesa | raro | cada galinha bloqueia 1 abdução por wave (a nave fica atordoada 1.6 s) | 1 |
-| 👼 Anjo da Granja | Defesa | raro | +2 galinhas | ∞ |
-| 🏋 Galinha Pesada | Defesa | comum | abdução 25% mais lenta | 3 |
-| 🍀 Sorte Grande | Defesa | comum | +50% de chance de power-up | 3 |
-| ⏱ Combo Mestre | Defesa | comum | +1 s de janela de combo | 3 |
-| ⏳ Power-up Longo | Defesa | comum | +50% de duração dos power-ups | 2 |
-| 💰 Bolada | n/a | n/a | +1500 pontos (reserva quando as opções acabam) | ∞ |
-
-**Feedback visual dos efeitos:** nave queimando solta faíscas laranja e pisca, nave congelada fica azul e solta
-cristais, o choque desenha mini-raios entre as naves, o crítico mostra "CRÍTICO!" e o Escudo de Penas é uma bolha
-branca em volta da galinha que estoura em penas.
+**Passarinho (independente da câmera):**
+- Nasce do seu lado e voa sozinho pelo quintal.
+- Persegue a nave mais urgente (prioriza a que está abduzindo ou roubando), circulando a 3 m dela.
+- Atira um ovo a cada 0.45 s.
+- Depois dos 8 s, sobe e vai embora.
 
 ### 6.4 Power-ups (caixas de paraquedas)
 - Caem de naves abatidas com a chance do tipo × Sorte, mais uma garantia a cada 22 abates sem
@@ -436,9 +467,10 @@ branca em volta da galinha que estoura em penas.
 
 | Power-up | Efeito | Duração |
 |---|---|---|
-| 🥚 Ovo de Ouro | dano ×3 | 10 s |
-| 💣 Ovo-Bomba | tudo explode em área | 10 s |
-| ⏳ Câmera Lenta | aliens a 35% de velocidade (vinheta azul) | 7 s |
+| 🥚 Ovo de Ouro | dano ×3 | 8 s |
+| 💣 Ovo-Bomba | tudo explode em área | 8 s |
+| ⏳ Câmera Lenta | aliens a 35% de velocidade (vinheta azul) | 8 s |
+| ❤️ Cura | +35 de vida (mais comum quando você está machucado) | n/a |
 | 🐔 +1 Galinha | uma galinha desce do céu (mais comum quando você tem menos de 5) | n/a |
 
 ---
@@ -576,6 +608,13 @@ há a ideia, os números que funcionaram e o código principal para copiar.
 | Qualquer jogo VR | 12.8 (versão PC de graça), 12.9 (HUD móvel), 12.11 (teste por script) |
 
 ### 12.1 Progressão estilo Archero (escolha 1 de 3 habilidades)
+
+> **Duas variantes testadas neste jogo:**
+> (a) **permanentes**: o efeito vale a partida toda. É a 2.0 e está descrita abaixo.
+> (b) **ativas de 8 s com recarga**: é a 2.1, descrita na seção 6.3.
+> A (b) deixa o jogo mais difícil e mais dinâmico, porque o jogador escolhe a hora certa de usar cada
+> habilidade. Para trocar de (a) para (b), basta recalcular `up` a cada frame a partir só das habilidades
+> ativas (`refreshUp`).
 
 **Por que funciona:** cada escolha muda o jogo de um jeito que o jogador **vê** (dobrar tiros, botar fogo).
 Ao longo da partida as escolhas viram uma "build". Em cards puramente aleatórios ninguém sente a progressão.
@@ -769,3 +808,43 @@ Extras: um botão "JOGAR NO PC" separado do "ENTER VR", e pixel ratio até 2 no 
   - a precisão de uma arma (ex.: 17 de 20 acertos a 12 m)
 - O robô tem mira perfeita, então ele mede **se o jogo funciona**, não se está difícil.
   A dificuldade real se testa jogando.
+
+### 12.12 Ataques avisados (dá para desviar)
+
+Todo ataque forte avisa antes, e isso torna a dificuldade justa:
+- **Bomba:** um **anel vermelho pulsando no chão** onde ela vai cair, cerca de 1.4 s antes.
+- **Sniper:** um **laser fino** acompanha você por 1.55 s e depois **trava e pisca** por 0.45 s. Quem se mexe escapa.
+- **Plasma:** a barriga da nave pisca 0.45 s antes do tiro.
+- **Kamikaze:** sirene e o casco piscando em vermelho por 1.3 s.
+
+Para isso funcionar o jogador precisa de uma forma de desviar: inclinar o corpo, andar com o joystick ou usar WASD.
+
+### 12.13 Movimento com altura (plataforma, rampa e queda)
+
+```js
+function groundHeightAt(x, z) {                        // a "planta" do cenário em 3 linhas
+  if (dentroDaVaranda(x, z)) return 0.4;
+  if (naRampa(x, z)) return 0.4 * (1 - (z - inicio) / comprimento);
+  return 0;
+}
+// mover: testa cada eixo separado; grades bloqueiam; degrau > 12 cm bloqueia (só sobe pela rampa)
+// altura: se o chão sumiu embaixo, cai com gravidade; ao pousar forte, baque + vibração
+```
+
+No VR, o joystick esquerdo move na direção da cabeça. Uma vinheta escura aparece enquanto você anda, o que
+reduz muito o enjoo.
+
+### 12.14 Veículo especial temporário (a cadeira voadora)
+
+É o padrão do "evento especial": aparece, você entra, ganha um poder novo por um tempo e o jogo te devolve sozinho.
+
+1. **Chega:** desce do céu 1.8 m à sua frente, com um feixe de luz vertical para você achar, e um banner explica o que fazer.
+2. **Entra:** basta encostar nela. Se você demorar 12 s, ela vem até você.
+3. **Usa:** 30 s de voo. A direção é a do olhar e o joystick (ou W/S) controla a velocidade. Começa com uma subida
+   automática de 1.6 s. Fica preso entre 2.5 e 20 m de altura, a no máximo 30 m do quintal. Asas batendo, jatos e
+   vinheta de conforto.
+4. **Volta sozinho:** voa de volta até a varanda, pousa e o jogo continua.
+   Se a wave acabar durante o voo, ele já começa a voltar.
+
+Serve para qualquer jogo: carrinho, cavalo, nave, balão ou torre móvel.
+

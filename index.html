@@ -44,6 +44,16 @@ canvas{display:block}
 #h-power div{font:bold 14px 'Helvetica Neue',Arial,sans-serif;margin-top:4px}
 #wbar{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:none;gap:5px;z-index:6;pointer-events:none}
 #wbar.show{display:flex}
+#skillbar{position:fixed;left:14px;bottom:14px;display:none;gap:8px;z-index:7}
+#skillbar.show{display:flex}
+#skillbar .sk{position:relative;width:66px;height:66px;border-radius:12px;background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.25);overflow:hidden;color:#fff;text-align:center}
+#skillbar .sk.ready{border-color:var(--g);box-shadow:0 0 12px rgba(141,255,74,.6)}
+#skillbar .sk.on{border-color:#fff;box-shadow:0 0 16px rgba(255,255,255,.7)}
+#skillbar .sk.cd{opacity:.6}
+#skillbar .sk .ic{position:relative;z-index:2;font-size:28px;line-height:44px;display:block}
+#skillbar .sk b{position:absolute;top:2px;left:5px;z-index:2;font:bold 12px sans-serif;color:var(--y)}
+#skillbar .sk em{position:absolute;bottom:3px;left:0;right:0;z-index:2;font:bold 10px sans-serif;font-style:normal}
+#skillbar .sk i{position:absolute;left:0;bottom:0;height:100%;background:rgba(141,255,74,.28);z-index:1}
 #wbar .slot{width:46px;height:50px;border-radius:9px;background:rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;color:#fff;opacity:.25}
 #wbar .slot.unl{opacity:.75}
 #wbar .slot.on{opacity:1;border-color:var(--g);box-shadow:0 0 14px rgba(141,255,74,.6);background:rgba(20,60,10,.6)}
@@ -93,20 +103,22 @@ canvas{display:block}
   <div class="best">🏆 RECORDE <b id="best-score">0</b></div>
   <div class="grid">
     <div class="card"><h3>🆕 O QUE TEM DE NOVO</h3><ul>
-      <li><b>10 waves</b> do meio-dia até a noite estrelada + <b>modo infinito</b></li>
-      <li><b>10 armas</b>: mão, estilingue, besta, pistolas duplas, escopeta, lança-ovo, gatling, teleguiado, laser e <b>raio tesla</b></li>
-      <li><b>8 tipos de nave</b>: comum, veloz, blindada, atiradora, kamikaze, divisora, escudeira e fantasma</li>
+      <li><b>12 waves</b> do meio-dia até a noite estrelada + <b>modo infinito</b></li>
+      <li><b>11 armas</b>: mão, estilingue, besta, pistolas duplas, escopeta, lança-ovo, gatling, teleguiado, laser, raio tesla e <b>rojão de fogos</b></li>
+      <li><b>11 tipos de nave</b>: comum, veloz, blindada, atiradora, kamikaze, divisora, escudeira, fantasma, <b>bombardeira, sniper e ladra</b></li>
+      <li><b>Cadeira de rodas voadora</b> na batalha final: monte e voe até as naves!</li>
+      <li><b>Ande pra todo lado</b>: desça a rampa da varanda e lute no quintal</li>
       <li><b>Chefões</b> com ponto fraco e a <b>NAVE-MÃE</b> no final</li>
       <li><b>Galo, pintinhos e a Galinha de Ouro</b>. Wave perfeita faz nascer pintinho</li>
-      <li><b>Habilidades estilo Archero</b> entre as waves: atire no card que quiser</li>
+      <li><b>Habilidades ativas</b> entre as waves: você ativa, duram 8s e recarregam</li>
       <li><b>Você tem vida ❤️</b>: gosma e kamikaze machucam. Você perde se morrer <b>ou</b> se levarem todas as galinhas</li>
       <li><b>Modo PC</b>: ande pela varanda com WASD pra desviar da gosma</li>
       <li><b>Power-ups de paraquedas</b>, pontos, combo e recorde</li>
     </ul></div>
     <div class="card"><h3>🎮 COMO JOGAR</h3>
       Você está na cadeira de rodas da varanda e as galinhas estão no quintal. Os aliens querem levar todas. <b>Sua munição é ovo.</b><br><br>
-      <b>VR:</b> na wave 1, arremesse os ovos com as mãos. Estilingue e besta: a mão esquerda pega a corda com o gatilho, puxa e solta. Pistolas: um gatilho para cada mão. As outras armas usam o gatilho direito (segure). <b>A/B/X/Y</b> trocam de arma e o thumbstick direito gira.<br>
-      <b>PC:</b> <b>WASD</b> anda na varanda (desvie da gosma!), o mouse mira, o <b>clique esquerdo</b> atira (segure), o <b>botão direito</b> dá zoom, <b>1-9, 0</b> ou a roda do mouse trocam de arma, <b>Esc</b> pausa e <b>M</b> liga e desliga a música.<br>
+      <b>VR:</b> na wave 1, arremesse os ovos com as mãos. Estilingue e besta: a mão esquerda pega a corda com o gatilho, puxa e solta. Pistolas: um gatilho para cada mão. As outras armas usam o gatilho direito (segure). <b>Joystick esquerdo</b> anda, o direito gira. <b>A / X</b> trocam de arma. <b>B, Y e GRIP direito</b> ativam as habilidades.<br>
+      <b>PC:</b> <b>WASD</b> anda (desça a rampa pro quintal, desvie das bombas!), o mouse mira, o <b>clique esquerdo</b> atira (segure), o <b>botão direito</b> dá zoom, <b>1-9, 0, -</b> ou a roda do mouse trocam de arma, <b>Q / E / F</b> ativam as habilidades, <b>Esc</b> pausa e <b>M</b> liga e desliga a música.<br>
       <b>Mobile:</b> arraste para mirar, toque para atirar e use 🔄 para trocar de arma.
     </div>
   </div>
@@ -116,7 +128,8 @@ canvas{display:block}
 
 <div id="hud"><div id="h-score">0</div><small>PONTOS · RECORDE <span id="h-best">0</span></small><div id="h-combo">COMBO x2</div><div class="row">🌊 <span id="h-wave">1/10</span></div><div class="row" id="h-chk"></div><div class="row" id="h-hp"></div><div id="h-power"></div></div>
 <div id="wbar"></div>
-<div id="pause"><h2>PAUSADO</h2><p>clique pra continuar</p><div class="keys"><b>W</b><b>A</b><b>S</b><b>D</b> andar · <b>mouse</b> mirar · <b>clique</b> atirar · <b>botão direito</b> zoom<br><b>1</b>…<b>0</b> / roda trocar arma · <b>M</b> música · <b>Esc</b> pausa</div></div>
+<div id="skillbar"></div>
+<div id="pause"><h2>PAUSADO</h2><p>clique pra continuar</p><div class="keys"><b>W</b><b>A</b><b>S</b><b>D</b> andar · <b>mouse</b> mirar · <b>clique</b> atirar · <b>botão direito</b> zoom<br><b>1</b>…<b>0</b> <b>-</b> / roda trocar arma · <b>Q</b> <b>E</b> <b>F</b> habilidades · <b>M</b> música · <b>Esc</b> pausa</div></div>
 <div id="crosshair"></div>
 <button id="m-switch">🔄</button>
 
@@ -174,8 +187,9 @@ const WEAPONS = {
   homing:   { label: 'TELEGUIADO',      icon: '🚀' },
   laser:    { label: 'LASER',           icon: '⚡' },
   tesla:    { label: 'RAIO TESLA',      icon: '🌩' },
+  fireworks:{ label: 'ROJÃO',           icon: '🎆' },
 };
-const WEAPON_ORDER = ['hands', 'slingshot', 'crossbow', 'pistols', 'shotgun', 'launcher', 'gatling', 'homing', 'laser', 'tesla'];
+const WEAPON_ORDER = ['hands', 'slingshot', 'crossbow', 'pistols', 'shotgun', 'launcher', 'gatling', 'homing', 'laser', 'tesla', 'fireworks'];
 
 // role: abduct | gunner | dive | support
 const UFO_TYPES = {
@@ -188,28 +202,34 @@ const UFO_TYPES = {
   mini:     { name: 'MINI NAVE',      desc: '',                                    role: 'abduct',  hp: 1, scale: 0.6,  speed: 1.6,  beam: 0.7,  color: 0x5fd8c4, glow: 0xa0ffe8, pts: 60,  drop: 0.0 },
   shielder: { name: 'NAVE ESCUDEIRA', desc: 'blinda as outras. Mate ela primeiro!', role: 'support', hp: 3, scale: 1.1,  speed: 0.8,  beam: 0,    color: 0x3a66e8, glow: 0x70b0ff, pts: 300, drop: 0.28 },
   ghost:    { name: 'NAVE FANTASMA',  desc: 'some e reaparece do nada',            role: 'abduct',  hp: 1, scale: 1.0,  speed: 1.2,  beam: 0.9,  color: 0xd8e0ff, glow: 0xd0a8ff, pts: 250, drop: 0.14 },
+  bomber:   { name: 'NAVE BOMBARDEIRA', desc: 'solta bombas onde você está. Saia de baixo!', role: 'bomber', hp: 3, scale: 1.2, speed: 1.0, beam: 0, color: 0x5a6a3a, glow: 0xff5020, pts: 250, drop: 0.18 },
+  sniper:   { name: 'NAVE SNIPER',      desc: 'mira um laser em você. Saia da mira!',  role: 'sniper',  hp: 2, scale: 0.95, speed: 1.0, beam: 0,    color: 0x2a3038, glow: 0xff2040, pts: 300, drop: 0.20 },
+  thief:    { name: 'NAVE LADRA',       desc: 'agarra uma galinha e foge voando baixo', role: 'thief',  hp: 2, scale: 0.9,  speed: 1.0, beam: 0,    color: 0xc03080, glow: 0xff60c0, pts: 250, drop: 0.12 },
   boss:     { name: 'CHEFÃO',         desc: '',                                    role: 'boss',    hp: 0, scale: 2.4,  speed: 0.75, beam: 0.8,  color: 0x3c3c4c, glow: 0xff3838, pts: 1500, drop: 1 },
 };
 
+// aggro = quanto as naves atacam você (tiros de plasma, cadência das atiradoras, bombas, sniper)
 const WAVES = [
-  { weapon: 'hands',     mix: { saucer: 6 }, interval: 1.9, speed: 1.0, beamTime: 7.5, maxAlive: 3, hpMult: 1, boss: 0, ufoScale: 1.7, tod: 0, close: true, intro: 'saucer' },
-  { weapon: 'slingshot', mix: { saucer: 7, zippy: 3 }, interval: 1.5, speed: 1.4, beamTime: 6.8, maxAlive: 4, hpMult: 1, boss: 0, ufoScale: 1.45, tod: 0.4, intro: 'zippy' },
-  { weapon: 'crossbow',  mix: { saucer: 7, zippy: 3, tank: 2 }, interval: 1.3, speed: 1.6, beamTime: 6.4, maxAlive: 5, hpMult: 1, boss: 8, ufoScale: 1.3, tod: 0.9, intro: 'tank' },
-  { weapon: 'pistols',   mix: { saucer: 8, zippy: 4, tank: 2, gunner: 3 }, interval: 1.15, speed: 1.8, beamTime: 6.0, maxAlive: 6, hpMult: 1, boss: 0, ufoScale: 1.2, tod: 1.3, intro: 'gunner' },
-  { weapon: 'shotgun',   mix: { saucer: 9, zippy: 4, tank: 3, gunner: 2, kamikaze: 4 }, interval: 1.0, speed: 2.0, beamTime: 5.8, maxAlive: 7, hpMult: 2, boss: 0, ufoScale: 1.1, tod: 1.8, intro: 'kamikaze' },
-  { weapon: 'launcher',  mix: { saucer: 9, zippy: 5, tank: 3, gunner: 3, kamikaze: 3, splitter: 3 }, interval: 0.92, speed: 2.1, beamTime: 5.5, maxAlive: 8, hpMult: 2, boss: 45, bossGoo: 1, ufoScale: 1.05, tod: 2.2, intro: 'splitter' },
-  { weapon: 'gatling',   mix: { saucer: 10, zippy: 6, tank: 4, gunner: 3, kamikaze: 4, splitter: 3, shielder: 2 }, interval: 0.8, speed: 2.3, beamTime: 5.2, maxAlive: 9, hpMult: 3, boss: 0, ufoScale: 0.98, tod: 2.7, intro: 'shielder' },
-  { weapon: 'homing',    mix: { saucer: 10, zippy: 6, tank: 4, gunner: 3, kamikaze: 5, splitter: 3, shielder: 2, ghost: 5 }, interval: 0.74, speed: 2.4, beamTime: 5.0, maxAlive: 10, hpMult: 3, boss: 0, ufoScale: 0.92, tod: 3.2, intro: 'ghost' },
-  { weapon: 'laser',     mix: { saucer: 12, zippy: 7, tank: 5, gunner: 4, kamikaze: 5, splitter: 4, shielder: 3, ghost: 5 }, interval: 0.66, speed: 2.6, beamTime: 4.8, maxAlive: 11, hpMult: 2, boss: 120, bossGoo: 3, ufoScale: 0.88, tod: 3.7 },
-  { weapon: 'tesla',     mix: { saucer: 12, zippy: 8, tank: 5, gunner: 4, kamikaze: 6, splitter: 4, shielder: 3, ghost: 5 }, interval: 0.62, speed: 2.7, beamTime: 4.6, maxAlive: 11, hpMult: 3, boss: 'mothership', motherPod: 30, motherCore: 100, ufoScale: 0.85, tod: 4 },
+  { weapon: 'hands',     mix: { saucer: 7 }, interval: 1.7, speed: 1.1, beamTime: 7.0, maxAlive: 3, hpMult: 1, boss: 0, ufoScale: 1.7, tod: 0, close: true, intro: 'saucer', aggro: 0 },
+  { weapon: 'slingshot', mix: { saucer: 8, zippy: 4 }, interval: 1.35, speed: 1.5, beamTime: 6.3, maxAlive: 4, hpMult: 1, boss: 0, ufoScale: 1.45, tod: 0.35, intro: 'zippy', aggro: 0 },
+  { weapon: 'crossbow',  mix: { saucer: 8, zippy: 4, tank: 3 }, interval: 1.15, speed: 1.7, beamTime: 5.9, maxAlive: 5, hpMult: 1, boss: 10, ufoScale: 1.3, tod: 0.7, intro: 'tank', aggro: 0.6 },
+  { weapon: 'pistols',   mix: { saucer: 9, zippy: 4, tank: 2, gunner: 4 }, interval: 1.0, speed: 1.9, beamTime: 5.6, maxAlive: 7, hpMult: 1, boss: 0, ufoScale: 1.2, tod: 1.1, intro: 'gunner', aggro: 1 },
+  { weapon: 'shotgun',   mix: { saucer: 10, zippy: 5, tank: 3, gunner: 3, kamikaze: 5 }, interval: 0.9, speed: 2.1, beamTime: 5.3, maxAlive: 8, hpMult: 2, boss: 0, ufoScale: 1.1, tod: 1.5, intro: 'kamikaze', aggro: 1.1 },
+  { weapon: 'launcher',  mix: { saucer: 10, zippy: 5, tank: 3, gunner: 3, kamikaze: 4, splitter: 4 }, interval: 0.84, speed: 2.2, beamTime: 5.1, maxAlive: 9, hpMult: 2, boss: 55, bossGoo: 2, ufoScale: 1.05, tod: 1.9, intro: 'splitter', aggro: 1.2 },
+  { weapon: 'gatling',   mix: { saucer: 11, zippy: 6, tank: 4, gunner: 4, kamikaze: 5, splitter: 3, shielder: 2 }, interval: 0.76, speed: 2.4, beamTime: 4.9, maxAlive: 10, hpMult: 3, boss: 0, ufoScale: 0.98, tod: 2.3, intro: 'shielder', aggro: 1.3 },
+  { weapon: 'homing',    mix: { saucer: 11, zippy: 6, tank: 4, gunner: 4, kamikaze: 5, splitter: 3, shielder: 2, ghost: 5 }, interval: 0.7, speed: 2.5, beamTime: 4.7, maxAlive: 11, hpMult: 3, boss: 0, ufoScale: 0.92, tod: 2.7, intro: 'ghost', aggro: 1.4 },
+  { weapon: 'laser',     mix: { saucer: 12, zippy: 6, tank: 4, gunner: 4, kamikaze: 5, splitter: 3, shielder: 2, ghost: 4, bomber: 4 }, interval: 0.65, speed: 2.6, beamTime: 4.6, maxAlive: 12, hpMult: 2, boss: 140, bossGoo: 3, ufoScale: 0.88, tod: 3.1, intro: 'bomber', aggro: 1.5 },
+  { weapon: 'tesla',     mix: { saucer: 12, zippy: 7, tank: 4, gunner: 4, kamikaze: 5, splitter: 3, shielder: 2, ghost: 4, bomber: 3, sniper: 4 }, interval: 0.6, speed: 2.7, beamTime: 4.5, maxAlive: 12, hpMult: 3, boss: 0, ufoScale: 0.86, tod: 3.5, intro: 'sniper', aggro: 1.6 },
+  { weapon: 'fireworks', mix: { saucer: 12, zippy: 7, tank: 5, gunner: 4, kamikaze: 6, splitter: 3, shielder: 2, ghost: 4, bomber: 3, sniper: 3, thief: 6 }, interval: 0.56, speed: 2.8, beamTime: 4.4, maxAlive: 13, hpMult: 3, boss: 0, ufoScale: 0.85, tod: 3.8, intro: 'thief', aggro: 1.7 },
+  { weapon: 'fireworks', mix: { saucer: 12, zippy: 7, tank: 5, gunner: 5, kamikaze: 6, splitter: 3, shielder: 3, ghost: 4, bomber: 4, sniper: 3, thief: 4 }, interval: 0.55, speed: 2.8, beamTime: 4.3, maxAlive: 13, hpMult: 3, boss: 'mothership', motherPod: 40, motherCore: 130, ufoScale: 0.85, tod: 4, aggro: 1.8, flight: true },
 ];
 function endlessWave(n) {
   return {
     weapon: null, endless: true, n,
-    mix: { saucer: 12 + 3 * n, zippy: 8 + 2 * n, tank: 5 + n, gunner: 4 + n, kamikaze: 6 + n, splitter: 4 + n, shielder: 3 + Math.floor(n / 2), ghost: 5 + n },
-    interval: Math.max(0.3, 0.56 - 0.03 * n), speed: 2.7 + 0.12 * n, beamTime: Math.max(3.0, 4.5 - 0.12 * n),
-    maxAlive: 11 + n, hpMult: 3 + 0.4 * n, boss: (n % 3 === 2) ? 'mothership' : 140 + 40 * n, bossGoo: 3,
-    motherPod: 35 + 10 * n, motherCore: 110 + 30 * n, ufoScale: 0.85, tod: 4,
+    mix: { saucer: 12 + 3 * n, zippy: 8 + 2 * n, tank: 5 + n, gunner: 5 + n, kamikaze: 6 + n, splitter: 4 + n, shielder: 3 + Math.floor(n / 2), ghost: 5 + n, bomber: 4 + n, sniper: 3 + Math.floor(n / 2), thief: 4 + n },
+    interval: Math.max(0.3, 0.52 - 0.03 * n), speed: 2.8 + 0.12 * n, beamTime: Math.max(3.0, 4.3 - 0.12 * n),
+    maxAlive: 13 + n, hpMult: 3 + 0.4 * n, boss: (n % 3 === 2) ? 'mothership' : 160 + 45 * n, bossGoo: 4,
+    motherPod: 45 + 12 * n, motherCore: 150 + 35 * n, ufoScale: 0.85, tod: 4, aggro: 1.9 + 0.12 * n, flight: n % 3 === 2,
   };
 }
 function getWave(i) { return i < WAVES.length ? WAVES[i] : endlessWave(i - WAVES.length); }
@@ -230,7 +250,8 @@ let activeWeapon = 'hands';
 const unlocked = new Set(['hands']);
 const power = { golden: 0, boom: 0, slow: 0 };
 const UP_DEFAULTS = { dmg: 1, rate: 1, big: 1, magnet: 0, coop: 1, luck: 1, combo: 0, power: 1, pierce: 0,
-  front: 0, diag: 0, ricochet: 0, fire: 0, ice: 0, shock: 0, crit: 0, rage: 0, feather: 0, buddy: 0, armor: 0 };
+  front: 0, diag: 0, ricochet: 0, fire: 0, ice: 0, shock: 0, crit: 0, rage: 0, feather: 0, buddy: 0, armor: 0,
+  critChance: 0, slowSkill: 1, bubble: 0 };
 const up = Object.assign({ counts: {} }, UP_DEFAULTS);
 let yaw = Math.PI, pitch = -0.08;
 let hp = 100, hpMax = 100, invulnT = 0, beatT = 0, hitMarkT = 0, paused = false, zoomHeld = false;
@@ -658,6 +679,11 @@ pine(-26, 12, 1.4); pine(26, 40, 1.6); pine(-30, 34, 1.5); pine(30, 4, 1.3); pin
   const h2 = cyl(S, 0.55, 0.55, 0.9, 10, 0xd0b048, -10.6, 0.55, 6.9); h2.rotation.z = Math.PI / 2;
   const h3 = cyl(S, 0.55, 0.55, 0.9, 10, 0xe0c060, -10.45, 1.5, 6.25); h3.rotation.z = Math.PI / 2;
 }
+{
+  const ramp = box(S, 2.7, 0.06, 1.32, 0x9a7848, 0, PORCH_LEVEL / 2 - 0.02, 1.1);
+  ramp.rotation.x = Math.atan2(PORCH_LEVEL, 1.2);
+  for (let k = 0; k < 6; k++) { const r = box(S, 2.7, 0.012, 0.04, 0x6a5028, 0, PORCH_LEVEL - 0.03 - k * 0.067 + 0.02, 0.58 + k * 0.2); }
+}
 scene.add(bakeStatic(S));
 
 // Grama instanciada (1 draw call)
@@ -835,6 +861,7 @@ cameraRig.add(wheelchair);
   box(W, 0.4, 0.04, 0.18, CH, 0, 0.25, 0.22);
   box(W, 0.55, 0.04, 0.04, CH, 0, 1.18, -0.32);
   wheelchair.add(bakeStatic(W, BAKE_SMOOTH));
+  wheelchair.userData.chair = wheelchair.children[0];
 }
 const lapCanvas = document.createElement('canvas');
 lapCanvas.width = 768; lapCanvas.height = 400;
@@ -1168,6 +1195,8 @@ const ovHurt = makeOverlay(VIGNETTE_TEX, 0xff2020);
 const ovFlash = makeOverlay(VIGNETTE_TEX, 0xffc020);
 const ovSlow = makeOverlay(VIGNETTE_TEX, 0x40a0ff);
 const ovSlime = makeOverlay(SLIME_TEX, 0xffffff);
+const ovBubble = makeOverlay(VIGNETTE_TEX, 0x60e0ff);
+const ovMove = makeOverlay(VIGNETTE_TEX, 0x000000);
 const ov = { hurt: 0, flash: 0, slime: 0 };
 function flashScreen(hex, t = 0.5) { ovFlash.material.color.setHex(hex); ov.flash = t; }
 function updateOverlays(dt) {
@@ -1177,7 +1206,9 @@ function updateOverlays(dt) {
   ovHurt.material.opacity = Math.min(0.85, ov.hurt * 2.2); ovHurt.visible = ov.hurt > 0;
   ovFlash.material.opacity = Math.min(0.7, ov.flash * 1.6); ovFlash.visible = ov.flash > 0;
   ovSlime.material.opacity = Math.min(1, ov.slime * 0.9); ovSlime.visible = ov.slime > 0;
-  const so = power.slow > 0 ? 0.35 : 0;
+  const so = (power.slow > 0 || up.slowSkill < 1) ? 0.35 : 0;
+  ovBubble.material.opacity += ((up.bubble ? 0.4 : 0) - ovBubble.material.opacity) * Math.min(1, dt * 6);
+  ovBubble.visible = ovBubble.material.opacity > 0.01;
   ovSlow.material.opacity += (so - ovSlow.material.opacity) * Math.min(1, dt * 4);
   ovSlow.visible = ovSlow.material.opacity > 0.01;
 }
@@ -1272,6 +1303,20 @@ function playSiren() { tone(600, 0.9, 'square', 0.07, 0.02, 1600); }
 function playDiveHit() { playGooSplat(); noise(0.5, 0.6, 'lowpass', 500, 1); }
 function playUpgrade() { [523, 784, 1047, 1568].forEach((f, i) => tone(f, 0.25, 'triangle', 0.16, 0.005, undefined, i * 0.07)); }
 function playTally() { tone(1200, 0.05, 'square', 0.08); }
+function playPlasma() { if (!throttle('plasma', 60)) return; tone(1400, 0.12, 'square', 0.08, 0.002, 500); }
+function playBombDrop() { tone(1800, 1.2, 'sine', 0.07, 0.05, 500); }
+function playSniperCharge() { if (!throttle('snc', 200)) return; tone(300, 1.9, 'sawtooth', 0.05, 0.3, 1600); }
+function playSniperShot() { noise(0.25, 0.5, 'highpass', 1500, 1); tone(2200, 0.15, 'square', 0.14, 0.002, 300); }
+function playThiefGrab() { tone(900, 0.1, 'square', 0.12, 0.003, 1500); tone(1500, 0.12, 'square', 0.1, 0.003, 900, 0.1); }
+function playSkillOn() { tone(660, 0.12, 'square', 0.12); tone(990, 0.16, 'square', 0.12, 0.005, undefined, 0.08); tone(1320, 0.22, 'triangle', 0.12, 0.005, undefined, 0.16); }
+function playSkillReady() { if (!throttle('skr', 300)) return; tone(1320, 0.08, 'sine', 0.1); tone(1760, 0.12, 'sine', 0.1, 0.005, undefined, 0.07); }
+function playDenied() { if (!throttle('deny', 250)) return; tone(160, 0.14, 'square', 0.12); }
+function playLand() { if (!throttle('land', 200)) return; tone(90, 0.18, 'sine', 0.3, 0.003, 50); noise(0.12, 0.25, 'lowpass', 400, 1); }
+function playFlightArrive() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.6, 'triangle', 0.1, 0.05, undefined, i * 0.09)); }
+function playTakeoff() { noise(1.2, 0.4, 'bandpass', 600, 0.6); tone(120, 1.4, 'sawtooth', 0.12, 0.1, 420); }
+function playFireworkLaunch() { if (!throttle('fwl', 80)) return; tone(700, 0.8, 'sine', 0.09, 0.02, 2600); noise(0.3, 0.2, 'highpass', 3000, 1); }
+function playFireworkBoom() { if (!throttle('fwb', 70)) return; noise(0.6, 0.75, 'lowpass', 500, 0.8); tone(65, 0.5, 'sine', 0.4, 0.004, 30); }
+function playCrackle() { if (!throttle('crk', 60)) return; for (let k = 0; k < 4; k++) noise(0.05, 0.25, 'highpass', 4000, 1, k * 0.05); }
 function playHurt() { noise(0.25, 0.6, 'lowpass', 600, 1); tone(180, 0.25, 'sawtooth', 0.18, 0.005, 70); }
 function playHeal() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.2, 'sine', 0.13, 0.01, undefined, i * 0.06)); }
 function playHeartbeat() { tone(62, 0.12, 'sine', 0.38, 0.005, 40); tone(56, 0.12, 'sine', 0.3, 0.005, 38, 0.18); }
@@ -1659,6 +1704,26 @@ const ACCENT = {
   ghost: bakeGeo(g => {
     for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; const c = cone(g, 0.09, 0.34, 6, 0xc8d0f0, Math.cos(a) * 0.36, -0.26, Math.sin(a) * 0.36); c.rotation.x = Math.PI; }
   }),
+  bomber: bakeGeo(g => {
+    for (const sx of [-1, 1]) { const w = box(g, 0.55, 0.04, 0.22, 0x3a4a2a, sx * 0.62, 0.0, 0); w.rotation.z = sx * -0.15; }
+    box(g, 0.22, 0.14, 0.3, 0x2a2a2a, 0, -0.22, 0);
+    for (const sx of [-1, 1]) sph(g, 0.05, 6, 5, 0xff5020, sx * 0.07, -0.3, 0.1);
+  }),
+  sniper: bakeGeo(g => {
+    const b = cyl(g, 0.025, 0.035, 0.5, 8, 0x101418, 0, -0.38, 0);
+    torusIn(g, 0.05, 0.015, 0xff2040, -0.6);
+    torusIn(g, 0.5, 0.02, 0xff2040, 0.02);
+    sph(g, 0.06, 8, 6, 0xff2040, 0, 0.36, 0.12);
+  }),
+  thief: bakeGeo(g => {
+    for (let k = 0; k < 3; k++) {
+      const a = k / 3 * Math.PI * 2; const sg = new THREE.Group(); sg.rotation.y = -a;
+      const c1 = box(sg, 0.03, 0.28, 0.03, 0x404040, 0.12, -0.3, 0); c1.rotation.z = 0.35;
+      const c2 = box(sg, 0.03, 0.12, 0.03, 0x404040, 0.17, -0.47, 0); c2.rotation.z = -0.6;
+      g.add(sg);
+    }
+    torusIn(g, 0.47, 0.03, 0xff60c0, 0.03);
+  }),
   boss: bakeGeo(g => {
     for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; const sg = new THREE.Group(); sg.rotation.y = -a; const c = cone(sg, 0.06, 0.24, 6, 0x801818, 0.62, 0.02, 0); c.rotation.z = -Math.PI / 2; g.add(sg); }
     cyl(g, 0.015, 0.02, 0.2, 5, 0x303030, 0.12, 0.38, 0);
@@ -1778,6 +1843,7 @@ function removeUfo(u) {
   if (u.bubble) { scene.remove(u.bubble); u.bubble = null; }
   for (const t of u.tethers) scene.remove(t);
   u.tethers.length = 0;
+  if (u.laser) scene.remove(u.laser);
   dropLinks(u);
   if (u.hullMat) u.hullMat.dispose();
   u.shadow.material.dispose();
@@ -1814,6 +1880,17 @@ function spawnRegular(typeKey, fromPos = null) {
     u.state = 'approach';
     u.station = new THREE.Vector3(rand(-5, 5), rand(7, 9), rand(8, 13));
     u.gooCD = 0.3;
+  } else if (T.role === 'bomber') {
+    u.state = 'turn'; u.idleT = rand(0.5, 1.5); u.bombCD = 0;
+    if (!fromPos) gp.set(Math.random() < 0.5 ? -32 : 32, rand(9, 11), rand(4, 14));
+  } else if (T.role === 'sniper') {
+    u.state = 'approach';
+    const a = rand(-1.0, 1.0), d = rand(18, 24);
+    u.station = new THREE.Vector3(Math.sin(a) * d, rand(6, 10), Math.cos(a) * d);
+    u.fireCD = rand(1.5, 3);
+  } else if (T.role === 'thief') {
+    u.state = 'descending'; u.target = pickUfoTarget();
+    if (!fromPos) gp.set(rand(-25, 25), rand(4, 7), rand(25, 35));
   } else if (T.role === 'dive') {
     u.state = 'approach';
     u.station = new THREE.Vector3(rand(-4, 4), rand(5, 7), rand(11, 14));
@@ -1913,7 +1990,8 @@ function setChickenShield(c, on) {
 }
 function startBeam(u, tgt) {
   if (tgt.shield) {
-    setChickenShield(tgt, false);
+    tgt.shieldHits = (tgt.shieldHits || 1) - 1;
+    if (tgt.shieldHits <= 0) setChickenShield(tgt, false);
     u.stunT = 1.6; u.target = null;
     u.group.position.y += 1.2;
     feathers(tgt.group.position, 12); playShieldDown(); pulseAll(0.3, 60);
@@ -2035,7 +2113,7 @@ function updateGunner(u, dt, edt) {
       fireGoo(TV[3], 0.02);
       u.charging = false;
       u.belly.scale.setScalar(1);
-      u.fireCD = Math.max(2.0, 3.8 - currentWave * 0.15) * rand(0.85, 1.15);
+      u.fireCD = Math.max(1.5, 3.4 - currentWave * 0.15) / Math.max(0.6, waveDef.aggro || 1) * rand(0.85, 1.15);
     }
   }
 }
@@ -2159,14 +2237,14 @@ function updateMother(u, dt, edt) {
     u.glow.material.opacity = 0.25 + Math.sin(totalTime * 3) * 0.1;
     u.gooCD -= edt;
     if (u.gooCD <= 0) {
-      const n = u.coreExposed ? 4 : 3;
+      const n = u.coreExposed ? 5 : 4;
       for (let k = 0; k < n; k++) { u.core.getWorldPosition(TV[5]); TV[5].x += rand(-2, 2); fireGoo(TV[5], 0.05 + k * 0.03); }
-      u.gooCD = u.coreExposed ? 2.4 : 3.6;
+      u.gooCD = u.coreExposed ? 2.0 : 3.0;
     }
     u.minionCD -= edt;
     if (u.minionCD <= 0) {
       u.minionCD = u.coreExposed ? 4 : 6.5;
-      if (aliveRegulars() < waveDef.maxAlive) { u.core.getWorldPosition(TV[5]); spawnRegular(pick(['saucer', 'saucer', 'zippy', 'kamikaze']), TV[5]); }
+      if (aliveRegulars() < waveDef.maxAlive) { u.core.getWorldPosition(TV[5]); spawnRegular(pick(['saucer', 'zippy', 'kamikaze', 'bomber', 'thief', 'gunner']), TV[5]); }
     }
   } else if (u.state === 'dying') {
     u.deadT += dt;
@@ -2185,6 +2263,117 @@ function updateMother(u, dt, edt) {
   }
 }
 
+// Naves que abduzem também atiram plasma em você (a partir da wave 3)
+function abductorShoot(u, edt) {
+  const ag = waveDef.aggro || 0;
+  if (!ag || u.kind !== 'ufo' || u.cloaked || (u.state !== 'descending' && u.state !== 'beaming')) { if (u.belly) u.belly.scale.setScalar(1); return; }
+  if (u.shotCD == null) u.shotCD = rand(3, 7) / ag;
+  u.shotCD -= edt;
+  const warn = u.shotCD < 0.45;
+  u.belly.scale.setScalar(warn ? 1.4 + Math.sin(totalTime * 40) * 0.3 : 1);
+  if (u.shotCD <= 0) {
+    u.belly.getWorldPosition(TV[3]);
+    fireEnemy('plasma', TV[3], 0.03);
+    u.shotCD = rand(5, 8.5) / ag;
+  }
+}
+function updateBomber(u, dt, edt) {
+  const gp = u.group.position, rp = cameraRig.position;
+  if (u.state === 'turn') {
+    u.idleT -= edt;
+    if (u.idleT <= 0) {
+      const side = gp.x < 0 ? 1 : -1;
+      u.passTo = new THREE.Vector3(side * 32, rand(9, 11), rp.z + rand(-1, 2));
+      gp.z += (rp.z - gp.z) * 0.6;
+      u.state = 'pass';
+    }
+  } else if (u.state === 'pass') {
+    u.passTo.z += (rp.z - u.passTo.z) * Math.min(1, edt * 0.6);
+    const arrived = moveToward(gp, u.passTo, 6.5 * Math.min(1.6, waveDef.aggro || 1) * edt);
+    u.group.rotation.z = Math.sign(u.passTo.x - gp.x) * -0.15;
+    u.bombCD -= edt;
+    if (u.bombCD <= 0 && Math.abs(gp.x - rp.x) < 1.6 && Math.abs(gp.z - rp.z) < 3) {
+      u.belly.getWorldPosition(TV[3]);
+      fireEnemy('bomb', TV[3]);
+      u.bombCD = 0.7;
+    }
+    if (arrived) { u.state = 'turn'; u.idleT = rand(2, 3.5) / Math.max(0.6, waveDef.aggro || 1); u.group.rotation.z = 0; }
+  }
+}
+function updateSniper(u, dt, edt) {
+  const gp = u.group.position;
+  if (!u.laser) { u.laser = new THREE.Mesh(UNIT_CYL, SNIPER_LASER_MAT); u.laser.visible = false; scene.add(u.laser); u.lockP = new THREE.Vector3(); u.shotFlash = 0; }
+  if (u.state === 'approach') {
+    if (moveToward(gp, u.station, 5 * edt)) u.state = 'hover';
+    u.laser.visible = false;
+    return;
+  }
+  gp.x += (u.station.x + Math.sin(u.age * 0.5 + u.bobPhase) * 1.2 - gp.x) * Math.min(1, edt);
+  gp.y += (u.station.y + Math.sin(u.age * 1.1) * 0.3 - gp.y) * Math.min(1, edt);
+  if (u.state === 'hover') {
+    if (u.shotFlash > 0) { u.shotFlash -= dt; u.laser.visible = u.shotFlash > 0; }
+    else u.laser.visible = false;
+    u.fireCD -= edt;
+    if (u.fireCD <= 0) { u.state = 'aim'; u.aimT = 0; playSniperCharge(); }
+  } else if (u.state === 'aim') {
+    // mira 2s; trava 0.45s antes do tiro: dá tempo de sair da linha
+    const AIM = 2.0, LOCK = 1.55;
+    u.aimT += edt;
+    if (u.aimT < LOCK) u.lockP.copy(camPos).add(TV[2].set(0, -0.12, 0));
+    u.belly.getWorldPosition(TV[3]);
+    const k = Math.min(1, u.aimT / AIM);
+    placeSegment(u.laser, TV[3], u.lockP, 0.006 + k * 0.012);
+    u.laser.visible = u.aimT < LOCK || Math.floor(u.aimT * 24) % 2 === 0;
+    if (u.aimT >= AIM) {
+      u.state = 'hover';
+      u.fireCD = rand(3, 4.5) / Math.max(0.6, waveDef.aggro || 1);
+      placeSegment(u.laser, TV[3], u.lockP, 0.05);
+      u.shotFlash = 0.14;
+      playSniperShot();
+      sparks(u.lockP, 0xff3050, 10, 3, 0.06, 0.4);
+      if (camPos.distanceTo(u.lockP) < 0.7) damagePlayer(25, 'SNIPER!', '#ff3050');
+    }
+  }
+}
+function updateThief(u, dt, edt) {
+  const gp = u.group.position;
+  if (u.stunT > 0) { u.stunT -= edt; u.group.rotation.z = u.stunT > 0 ? Math.sin(u.age * 25) * 0.25 : 0; if (u.state === 'descending') return; }
+  if (u.state === 'descending') {
+    let tgt = u.target;
+    if (!tgt || tgt.state === 'gone' || tgt.state === 'safe' || (tgt.state === 'abducting' && tgt.abductor !== u)) {
+      tgt = u.target = pickUfoTarget();
+      if (!tgt) { u.state = 'escaping'; return; }
+    }
+    const tp = TV[0].set(tgt.group.position.x, 1.5, tgt.group.position.z);
+    if (gp.distanceTo(tp) < 0.3) {
+      if (tgt.shield) {
+        tgt.shieldHits = (tgt.shieldHits || 1) - 1;
+        if (tgt.shieldHits <= 0) setChickenShield(tgt, false);
+        u.stunT = 1.6; u.target = null; gp.y += 1.5;
+        feathers(tgt.group.position, 12); playShieldDown();
+        popup('ESCUDO DE PENAS!', tgt.group.position.clone().setY(1.3), '#ffffff', 0.9);
+        return;
+      }
+      u.state = 'grab'; u.grabT = 0.5;
+      tgt.state = 'abducting'; tgt.abductor = u; tgt.alert.visible = false;
+      u.fleeDir = new THREE.Vector3(tgt.group.position.x, 0, tgt.group.position.z);
+      if (u.fleeDir.lengthSq() < 0.01) u.fleeDir.set(0, 0, 1);
+      u.fleeDir.normalize();
+      playThiefGrab();
+      popup('LADRA!', gp.clone().setY(gp.y + 0.6), '#ff60c0', 1);
+    } else moveToward(gp, tp, (3.6 + Math.min(currentWave, 12) * 0.1) * edt);
+  } else if (u.state === 'grab' || u.state === 'flee') {
+    const tgt = u.target;
+    if (!tgt || tgt.state !== 'abducting' || tgt.abductor !== u) { u.state = 'escaping'; return; }
+    if (u.state === 'grab') { u.grabT -= edt; if (u.grabT <= 0) u.state = 'flee'; }
+    else { gp.addScaledVector(u.fleeDir, 3.2 * edt); gp.y = Math.min(4, gp.y + 0.4 * edt); }
+    tgt.group.position.set(gp.x, Math.max(0, gp.y - 0.6), gp.z);
+    if (Math.hypot(gp.x, gp.z - 6) > 22) { abductChicken(tgt, u); u.state = 'escaping'; }
+  } else if (u.state === 'escaping') {
+    gp.y += edt * 7;
+    if (gp.y > 50) removeUfo(u);
+  }
+}
 function aliveRegulars() { let n = 0; for (const u of ufos) if (u.kind === 'ufo' && isAlive(u)) n++; return n; }
 
 function updateUfos(dt, edt) {
@@ -2227,7 +2416,10 @@ function updateUfos(dt, edt) {
       if (role === 'gunner') updateGunner(u, dt, uedt);
       else if (role === 'dive') updateKamikaze(u, dt, uedt);
       else if (role === 'support') updateShielder(u, dt, uedt);
-      else updateAbductor(u, dt, uedt);
+      else if (role === 'bomber') updateBomber(u, dt, uedt);
+      else if (role === 'sniper') updateSniper(u, dt, uedt);
+      else if (role === 'thief') updateThief(u, dt, uedt);
+      else { updateAbductor(u, dt, uedt); if (!u.removed) abductorShoot(u, uedt); }
     }
     if (u.removed) continue;
     if (u.kind !== 'mother') {
@@ -2268,35 +2460,92 @@ function updateUfos(dt, edt) {
 const GOO_GEO = new THREE.SphereGeometry(0.12, 10, 8);
 const GOO_MAT = new THREE.MeshBasicMaterial({ color: 0x8aff3a });
 const GOO_HALO_MAT = new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0x60ff20, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-function fireGoo(from, spread = 0) {
-  const dir = TV[7].copy(camPos).sub(from).normalize();
-  if (spread) { dir.x += rand(-1, 1) * spread; dir.y += rand(-1, 1) * spread * 0.5; dir.z += rand(-1, 1) * spread; dir.normalize(); }
-  const speed = 4.6 + Math.min(currentWave, 12) * 0.3;
-  const m = new THREE.Mesh(GOO_GEO, GOO_MAT);
+const PLASMA_GEO = new THREE.SphereGeometry(0.08, 8, 6);
+const PLASMA_MAT = new THREE.MeshBasicMaterial({ color: 0xff6070 });
+const PLASMA_HALO_MAT = new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0xff2040, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const BOMB_GEO = new THREE.SphereGeometry(0.17, 10, 8);
+const BOMB_MAT = new THREE.MeshLambertMaterial({ color: 0x303030, emissive: 0x500000 });
+const BOMB_HALO_MAT = new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0xff6020, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const TARGET_RING_MAT = new THREE.MeshBasicMaterial({ color: 0xff3020, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
+const SNIPER_LASER_MAT = new THREE.MeshBasicMaterial({ color: 0xff2040, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+const EPROJ = {
+  goo:    { geo: GOO_GEO, mat: GOO_MAT, halo: GOO_HALO_MAT, hs: 0.75, dmg: 18, label: 'GOSMA!', css: '#8aff3a', hex: 0x8aff3a, r: 0.36 },
+  plasma: { geo: PLASMA_GEO, mat: PLASMA_MAT, halo: PLASMA_HALO_MAT, hs: 0.5, dmg: 10, label: 'PLASMA!', css: '#ff5060', hex: 0xff5060, r: 0.32 },
+  bomb:   { geo: BOMB_GEO, mat: BOMB_MAT, halo: BOMB_HALO_MAT, hs: 0.6, dmg: 28, label: 'BOMBA!', css: '#ff8030', hex: 0xff8030, r: 0.42 },
+};
+function fireEnemy(type, from, spread = 0) {
+  const E = EPROJ[type];
+  const m = new THREE.Mesh(E.geo, E.mat);
   m.position.copy(from);
-  const halo = new THREE.Sprite(GOO_HALO_MAT); halo.scale.setScalar(0.75); m.add(halo);
+  const halo = new THREE.Sprite(E.halo); halo.scale.setScalar(E.hs); m.add(halo);
   scene.add(m);
-  goos.push({ mesh: m, vel: dir.clone().multiplyScalar(speed), life: 0, c: m.position });
-  playGooFire();
+  const g = { type, mesh: m, vel: new THREE.Vector3(), life: 0, c: m.position, ring: null, groundY: 0 };
+  if (type === 'bomb') {
+    // cai reto: o anel vermelho no chão mostra onde vai explodir
+    g.vel.set(0, -0.5, 0);
+    g.groundY = groundHeightAt(from.x, from.z);
+    const ring = new THREE.Mesh(GROUND_RING_GEO, TARGET_RING_MAT);
+    ring.position.set(from.x, g.groundY + 0.06, from.z);
+    ring.scale.setScalar(3.2);
+    scene.add(ring);
+    g.ring = ring;
+    playBombDrop();
+  } else {
+    const dir = TV[7].copy(camPos).sub(from).normalize();
+    if (spread) { dir.x += rand(-1, 1) * spread; dir.y += rand(-1, 1) * spread * 0.5; dir.z += rand(-1, 1) * spread; dir.normalize(); }
+    const speed = type === 'goo' ? 5 + Math.min(currentWave, 12) * 0.32 : 8 + Math.min(currentWave, 12) * 0.25;
+    g.vel.copy(dir).multiplyScalar(speed);
+    if (type === 'goo') playGooFire(); else playPlasma();
+  }
+  goos.push(g);
+  return g;
 }
+function fireGoo(from, spread = 0) { return fireEnemy('goo', from, spread); }
 function destroyGoo(gObj, byPlayer) {
   const i = goos.indexOf(gObj);
   if (i < 0) return;
   goos.splice(i, 1);
   scene.remove(gObj.mesh);
-  sparks(gObj.mesh.position, 0x8aff3a, 10, 3, 0.07, 0.5);
-  if (byPlayer) { addScore(50, gObj.mesh.position, '+50', '#8aff3a', 0.8); playEggSplat(); }
+  if (gObj.ring) scene.remove(gObj.ring);
+  const E = EPROJ[gObj.type];
+  sparks(gObj.mesh.position, E.hex, 10, 3, 0.07, 0.5);
+  if (byPlayer) { addScore(50, gObj.mesh.position, '+50', E.css, 0.8); playEggSplat(); }
+}
+function bombExplode(g) {
+  const p = g.mesh.position;
+  fireball(p, 1.1); spawnBlast(p, 2.2, 0xff6020); playBoom(); pulseAll(0.5, 120);
+  const rp = cameraRig.position;
+  if (Math.hypot(rp.x - p.x, rp.z - p.z) < 2.0 && Math.abs(camPos.y - p.y) < 3) damagePlayer(EPROJ.bomb.dmg, 'BOMBA!', '#ff8030');
+  for (const ck of chickens) if (Math.hypot(ck.group.position.x - p.x, ck.group.position.z - p.z) < 2.5) scareChicken(ck, p);
+}
+function hitPlayerBy(type) {
+  if (type === 'goo') gooHitPlayer();
+  else { flashScreen(0xff2040, 0.3); damagePlayer(EPROJ[type].dmg, EPROJ[type].label, EPROJ[type].css); }
 }
 function updateGoos(dt, edt) {
   for (let i = goos.length - 1; i >= 0; i--) {
-    const g = goos[i];
+    const g = goos[i], E = EPROJ[g.type], mp = g.mesh.position;
     g.life += edt;
-    g.mesh.position.addScaledVector(g.vel, edt);
-    const s = 1 + Math.sin(g.life * 14) * 0.12;
-    g.mesh.scale.set(s, 2 - s, s);
-    if (Math.random() < 0.6) { _c.setHex(0x70e030); fxAlpha.spawn(g.mesh.position.x, g.mesh.position.y, g.mesh.position.z, 0, -0.3, 0, _c, 0.08, 0.5, 0, 0, -0.5, 0.8); }
-    if (g.mesh.position.distanceTo(camPos) < 0.55) { goos.splice(i, 1); scene.remove(g.mesh); gooHitPlayer(); continue; }
-    if (g.life > 9 || g.mesh.position.y < 0) { goos.splice(i, 1); scene.remove(g.mesh); sparks(g.mesh.position, 0x8aff3a, 6, 2); }
+    if (g.type === 'bomb') {
+      g.vel.y -= 9.8 * edt;
+      mp.addScaledVector(g.vel, edt);
+      g.mesh.rotation.x += edt * 4;
+      if (g.ring) g.ring.scale.setScalar(3.2 * (0.85 + 0.15 * Math.sin(totalTime * 14)));
+      if (Math.random() < 0.6) { _c.setHex(0xff8030); fxAdd.spawn(mp.x, mp.y + 0.15, mp.z, 0, 0.5, 0, _c, 0.07, 0.3); }
+      if (mp.y <= g.groundY + 0.15 || mp.distanceTo(camPos) < 0.6) {
+        goos.splice(i, 1); scene.remove(g.mesh); if (g.ring) scene.remove(g.ring);
+        bombExplode(g);
+      }
+      continue;
+    }
+    mp.addScaledVector(g.vel, edt);
+    if (g.type === 'goo') {
+      const sc = 1 + Math.sin(g.life * 14) * 0.12;
+      g.mesh.scale.set(sc, 2 - sc, sc);
+      if (Math.random() < 0.6) { _c.setHex(0x70e030); fxAlpha.spawn(mp.x, mp.y, mp.z, 0, -0.3, 0, _c, 0.08, 0.5, 0, 0, -0.5, 0.8); }
+    } else if (Math.random() < 0.8) { _c.setHex(0xff4050); fxAdd.spawn(mp.x, mp.y, mp.z, 0, 0, 0, _c, 0.07, 0.15); }
+    if (mp.distanceTo(camPos) < 0.55) { goos.splice(i, 1); scene.remove(g.mesh); hitPlayerBy(g.type); continue; }
+    if (g.life > 9 || mp.y < -0.5) { goos.splice(i, 1); scene.remove(g.mesh); sparks(mp, E.hex, 6, 2); }
   }
 }
 
@@ -2304,11 +2553,11 @@ function updateGoos(dt, edt) {
 // POWER-UPS (caixas de paraquedas — atire nelas!)
 // =============================================================================
 const POWERS = {
-  golden:  { label: 'OVO DE OURO',  sub: 'DANO x3',       color: 0xffc820, css: '#ffd040', icon: '🥚', dur: 10 },
-  boom:    { label: 'OVO-BOMBA',    sub: 'EXPLODE TUDO',  color: 0xff6020, css: '#ff8040', icon: '💣', dur: 10 },
-  slow:    { label: 'CÂMERA LENTA', sub: 'ALIENS LERDOS', color: 0x40c0ff, css: '#60d0ff', icon: '⏳', dur: 7 },
+  golden:  { label: 'OVO DE OURO',  sub: 'DANO x3 · 8s',       color: 0xffc820, css: '#ffd040', icon: '🥚', dur: 8 },
+  boom:    { label: 'OVO-BOMBA',    sub: 'EXPLODE TUDO · 8s',  color: 0xff6020, css: '#ff8040', icon: '💣', dur: 8 },
+  slow:    { label: 'CÂMERA LENTA', sub: 'ALIENS LERDOS · 8s', color: 0x40c0ff, css: '#60d0ff', icon: '⏳', dur: 8 },
   chicken: { label: '+1 GALINHA',   sub: '',              color: 0xffffff, css: '#ffffff', icon: '🐔', dur: 0 },
-  heal:    { label: 'CURA',         sub: '+40 DE VIDA',   color: 0xff5070, css: '#ff6080', icon: '❤️', dur: 0 },
+  heal:    { label: 'CURA',         sub: '+35 DE VIDA',   color: 0xff5070, css: '#ff6080', icon: '❤️', dur: 0 },
 };
 const CRATE_GEO = new THREE.BoxGeometry(0.42, 0.42, 0.42);
 const CRATE_CY = 0.5, CRATE_RX = 0.8, CRATE_RY = 1.0;
@@ -2525,11 +2774,19 @@ const tesla = new THREE.Group();
   tesla.visible = false;
   scene.add(tesla);
 }
-const allWeaponGroups = { hands, slingshot, crossbow, pistols, shotgun, launcher, gatling, homing, laser, tesla };
+const fireworks = weaponGroup(g => {
+  const t = cyl(g, 0.05, 0.055, 0.44, 12, 0xd02030, 0, 0.03, -0.14); t.rotation.x = Math.PI / 2;
+  for (let k = 0; k < 3; k++) addMesh(g, new THREE.TorusGeometry(0.056, 0.01, 6, 14), 0xffffff, 0, 0.03, -0.02 - k * 0.12);
+  const tip = cone(g, 0.045, 0.1, 10, 0xffd040, 0, 0.03, -0.41); tip.rotation.x = -Math.PI / 2;
+  const gr = box(g, 0.04, 0.12, 0.05, 0x202020, 0, -0.07, 0.04); gr.rotation.x = 0.2;
+  box(g, 0.05, 0.07, 0.16, 0x6a4828, 0, 0.0, 0.17);
+  sph(g, 0.02, 6, 5, 0x40ff80, 0, 0.09, -0.1);
+});
+const allWeaponGroups = { hands, slingshot, crossbow, pistols, shotgun, launcher, gatling, homing, laser, tesla, fireworks };
 const WEAPON_MUZZLE = {
   hands: new THREE.Vector3(0, 0, 0), slingshot: new THREE.Vector3(0, 0.165, 0), crossbow: new THREE.Vector3(0, 0.02, -0.36),
   pistols: new THREE.Vector3(0, 0.005, -0.19), shotgun: new THREE.Vector3(0, 0.018, -0.36), launcher: new THREE.Vector3(0, 0.02, -0.36),
-  gatling: new THREE.Vector3(0, 0, -0.48), homing: new THREE.Vector3(0, 0, -0.27), laser: new THREE.Vector3(0, 0, -0.34), tesla: new THREE.Vector3(0, 0, -0.3),
+  gatling: new THREE.Vector3(0, 0, -0.48), homing: new THREE.Vector3(0, 0, -0.27), laser: new THREE.Vector3(0, 0, -0.34), tesla: new THREE.Vector3(0, 0, -0.3), fireworks: new THREE.Vector3(0, 0.03, -0.46),
 };
 
 // Laser beam + raios do tesla
@@ -2667,7 +2924,7 @@ function spawnEgg(pos, vel, o = {}) {
     gravity: !!o.gravity, gScale: o.gScale != null ? o.gScale : 1, arrow: !!o.arrow, rocket: !!o.rocket,
     maxLife: o.maxLife || 5, magnet: (o.magnet || 0) + (o.noMagnet ? 0 : up.magnet * 2.5),
     golden, boom, boomR: o.boomR || 2.8, boomDmg: o.boomDmg || 2, pierce: up.pierce + (o.pierce || 0), ricochet: o.noRicochet ? 0 : up.ricochet,
-    hitSet: null, homing: o.homing ? { target: null } : null, extraR: (up.big - 1) * 0.35 + (o.extraR || 0),
+    hitSet: null, firework: !!o.firework, homing: o.homing ? { target: null } : null, extraR: (up.big - 1) * 0.35 + (o.extraR || 0),
   };
   scene.add(m);
   projectiles.push(m);
@@ -2894,6 +3151,59 @@ function fireTesla() {
   weaponCD = 0.28 / up.rate;
   tesla.userData.kick = 1;
 }
+// Rojão: sobe assobiando e explode no céu num leque colorido que machuca muito
+function fireFireworks() {
+  const origin = muzzleWorld('fireworks', TV[0]);
+  const dir = shotDir(origin, rightCtrl, TV[1]);
+  spawnEgg(origin, dir.multiplyScalar(30), { damage: 4, rocket: true, firework: true, gravity: true, gScale: 0.15, maxLife: 1.15, noMagnet: true, magnet: 1.2, volley: true, scale: 1.2 });
+  muzzle(origin, 0xffd040, 0.35); smoke(origin, 3, 0xa0a0a0, 0.2, 0.6);
+  playFireworkLaunch(); pulseController(rightCtrl, 0.7, 80);
+  weaponCD = 0.85 / up.rate;
+  fireworks.userData.kick = 1;
+}
+const FW_PALETTES = [[0xff3060, 0xffd040], [0x40e0ff, 0xffffff], [0xa0ff60, 0xff60ff], [0xff8030, 0xfff080], [0x8060ff, 0x60ffd0]];
+const crackles = [];
+function aoeDamage(pos, R, dmg) {
+  for (const u of ufos.slice()) {
+    if (!isAlive(u)) continue;
+    let bestP = null, bd = Infinity;
+    for (const pt of u.parts) {
+      if (!pt.active || pt.kind === 'armor') continue;
+      const d = pt.c.distanceTo(pos) - (pt.ellip ? pt.ellip[1] : pt.r);
+      if (d < R && d < bd) { bd = d; bestP = pt; }
+    }
+    if (bestP) hitPart(u, bestP, dmg, bestP.c.clone(), false);
+  }
+  for (let i = goos.length - 1; i >= 0; i--) if (goos[i] && goos[i].c.distanceTo(pos) < R) destroyGoo(goos[i], true);
+  for (const cr of crates.slice()) if (cr.c.distanceTo(pos) < R + CRATE_RX) { const cp = cr.c.clone(); removeCrate(cr); activatePower(cr.type, cp); }
+}
+function fireworkBurst(posIn, ud) {
+  const pos = posIn.clone();
+  const pal = pick(FW_PALETTES);
+  _c.setHex(0xffffff); fxAdd.spawn(pos.x, pos.y, pos.z, 0, 0, 0, _c, 2.6, 0.18, 0, 0, 0.5, 1);
+  for (let i = 0; i < 110; i++) {
+    randDir(TV[15]); const sp = rand(6, 9);
+    _c.setHex(pal[i % 2]);
+    fxAdd.spawn(pos.x, pos.y, pos.z, TV[15].x * sp, TV[15].y * sp, TV[15].z * sp, _c, rand(0.12, 0.2), rand(1.0, 1.7), 2.2, 1.1, 0, 1);
+  }
+  spawnBlast(pos, 4.5, pal[0]);
+  playFireworkBoom(); pulseAll(0.5, 100);
+  const mult = up.dmg * (ud.golden ? 3 : 1);
+  aoeDamage(pos, 4.5, 12 * mult);
+  for (let k = 0; k < 4; k++) crackles.push({ t: 0.3 + k * 0.12, pos: pos.clone().add(TV[14].set(rand(-3, 3), rand(-2, 2), rand(-3, 3))), col: pal[k % 2], dmg: 4 * mult });
+}
+function updateCrackles(dt) {
+  for (let i = crackles.length - 1; i >= 0; i--) {
+    const c = crackles[i];
+    c.t -= dt;
+    if (c.t > 0) continue;
+    crackles.splice(i, 1);
+    _c.setHex(c.col);
+    for (let k = 0; k < 30; k++) { randDir(TV[15]); const sp = rand(3, 5); fxAdd.spawn(c.pos.x, c.pos.y, c.pos.z, TV[15].x * sp, TV[15].y * sp, TV[15].z * sp, _c, rand(0.08, 0.13), rand(0.6, 1.0), 2, 1.2, 0, 1); }
+    playCrackle();
+    aoeDamage(c.pos, 2.5, c.dmg);
+  }
+}
 function throwEgg(ctrl, vel) {
   const origin = ctrl.getWorldPosition(TV[0]);
   const sm = vel.length();
@@ -2971,7 +3281,7 @@ function castSegment(o, d, maxT, extraR = 0, skip = null) {
     }
   }
   for (const g of goos) {
-    const r = 0.36 + extraR, t = rayEllipsoidT(o, d, g.c, r, r, r, maxT);
+    const r = EPROJ[g.type].r + extraR, t = rayEllipsoidT(o, d, g.c, r, r, r, maxT);
     if (t >= 0 && t < bt) { bt = t; best = { kind: 'goo', g, t }; }
   }
   for (const cr of crates) {
@@ -3042,10 +3352,17 @@ function updateProjectiles(dt) {
     if (ud.golden && Math.random() < 0.6) { _c.setHex(0xffd040); fxAdd.spawn(pp.x, pp.y, pp.z, 0, 0, 0, _c, 0.06, 0.25); }
     else if (ud.rocket && Math.random() < 0.8) { _c.setHex(0xd0d0d0); fxAlpha.spawn(pp.x, pp.y, pp.z, 0, 0.2, 0, _c, 0.09, 0.5, 0, 0, 1.5, 0.6); _c.setHex(0xffa040); fxAdd.spawn(pp.x, pp.y, pp.z, 0, 0, 0, _c, 0.07, 0.1); }
     else if (ud.boom && Math.random() < 0.6) { _c.setHex(0xff8030); fxAdd.spawn(pp.x, pp.y, pp.z, 0, 0.3, 0, _c, 0.05, 0.25); }
+    if (ud.firework) {
+      _c.setHex(pick([0xffd040, 0xff6080, 0x80e0ff, 0xffffff])); fxAdd.spawn(pp.x, pp.y, pp.z, rand(-0.4, 0.4), rand(-0.4, 0.4), rand(-0.4, 0.4), _c, 0.07, 0.4, 1, 0.5);
+      let near = false;
+      for (const u of ufos) { if (!isAlive(u)) continue; for (const pt of u.parts) if (pt.active && pt.kind !== 'armor' && pt.c.distanceTo(pp) < 2.2) { near = true; break; } if (near) break; }
+      if (near || ud.life > ud.maxLife || pp.y <= 0.05) { fireworkBurst(pp, ud); scene.remove(p); projectiles.splice(i, 1); continue; }
+    }
     const seg = TV[1].copy(pp).sub(prev);
     const hit = castSegment(prev, seg, 1, ud.extraR, ud.hitSet);
     if (hit) {
       const hp = TV[2].copy(prev).addScaledVector(seg, hit.t).clone();
+      if (ud.firework) { if (hit.kind !== 'ufo') applyHit(hit, ud.damage, hp); fireworkBurst(hp, ud); scene.remove(p); projectiles.splice(i, 1); continue; }
       applyHit(hit, ud.damage, hp);
       if (hit.kind === 'ufo') {
         spawnEggSplat(hp, ud.golden);
@@ -3134,7 +3451,7 @@ function hitPart(u, part, dmg, pos, fx = true) {
   }
   if (fx) {
     if (up.rage) dmg *= 1 + up.rage * 0.10 * Math.max(0, INITIAL_FLOCK.length - chickensAlive());
-    if (up.crit && Math.random() < up.crit * 0.15) {
+    if (up.critChance && Math.random() < up.critChance) {
       dmg *= 2; playCritical();
       if (totalTime - u.lastPop > 0.6) { popup('CRÍTICO!', pos, '#ff6040', 0.9, 0.8); u.lastPop = totalTime; }
     }
@@ -3173,8 +3490,9 @@ function hitPart(u, part, dmg, pos, fx = true) {
 }
 function killUfo(u, hitPos) {
   if (!isAlive(u)) return;
-  const wasBeaming = u.state === 'beaming' && u.target && u.target.state === 'abducting' && u.target.abductor === u;
-  const prog = wasBeaming ? u.beamElapsed / u.beamDur : 0;
+  const wasBeaming = (u.state === 'beaming' || u.state === 'grab' || u.state === 'flee') && u.target && u.target.state === 'abducting' && u.target.abductor === u;
+  const prog = wasBeaming ? (u.state === 'beaming' ? u.beamElapsed / u.beamDur : 0.8) : 0;
+  if (u.laser) u.laser.visible = false;
   if (wasBeaming) rescueChicken(u.target);
   stopBeam(u);
   if (u.typeKey === 'shielder') dropLinks(u);
@@ -3252,7 +3570,7 @@ function activatePower(type, pos) {
   const Pw = POWERS[type];
   if (type === 'chicken') {
     if (chickensAlive() < MAX_CHICKENS) respawnChicken('hen'); else score += 500;
-  } else if (type === 'heal') healPlayer(40);
+  } else if (type === 'heal') healPlayer(35);
   else power[type] = Pw.dur * up.power;
   const lines = [[Pw.label, Pw.css, 1.4, 1.6]];
   if (Pw.sub) lines.push([Pw.sub, '#ffffff', 0.9, 1.6]);
@@ -3289,6 +3607,7 @@ function popupAhead(text, color, size = 1.2) {
 function damagePlayer(amount, label, color) {
   if (!(state === 'playing' || state === 'wave_intro')) return;
   if (invulnT > 0) return;
+  if (up.bubble) { playTink(); invulnT = 0.3; popupAhead('🛡 BLOQUEADO!', '#80e0ff', 0.8); return; }
   const dmg = Math.max(1, Math.round(amount * (1 - 0.2 * up.armor)));
   hp = Math.max(0, hp - dmg);
   invulnT = 0.6;
@@ -3307,7 +3626,7 @@ function gooHitPlayer() {
   resetCombo();
   ov.slime = 2.6;
   playGooSplat();
-  damagePlayer(12, 'GOSMA!', '#8aff3a');
+  damagePlayer(EPROJ.goo.dmg, 'GOSMA!', '#8aff3a');
 }
 function kamikazeHit(u) {
   const pos = u.group.position.clone();
@@ -3316,42 +3635,40 @@ function kamikazeHit(u) {
   resetCombo();
   ov.slime = 3; ov.hurt = 0.4;
   playDiveHit();
-  damagePlayer(25, 'KAMIKAZE!', '#ff8030');
+  damagePlayer(35, 'KAMIKAZE!', '#ff8030');
   for (const ck of chickens) scareChicken(ck, TV[8].set(0, 0, 0));
 }
 
 // =============================================================================
 // UPGRADES (atire no card)
 // =============================================================================
-// cat: atk = ATAQUE · egg = OVO (efeitos) · def = DEFESA/UTILIDADE
-// rar: comum · raro · epico — cada oferta traz 1 card de cada categoria (escolha com trade-off),
-// chefões dão uma escolha ÉPICA extra e o primeiro card do jogo já muda seu estilo de tiro.
-const UPGRADES = [
-  { id: 'dmg',      cat: 'atk', rar: 'comum', icon: '💪', title: 'OVO TURBINADO',   desc: '+25% de dano em tudo',                   max: 5, apply: () => { up.dmg += 0.25; } },
-  { id: 'rate',     cat: 'atk', rar: 'comum', icon: '⚡', title: 'DEDO LIGEIRO',    desc: '+20% de cadência',                       max: 4, apply: () => { up.rate += 0.2; } },
-  { id: 'crit',     cat: 'atk', rar: 'raro',  icon: '🎯', title: 'OLHO DE ÁGUIA',   desc: '+15% de chance de crítico (dano x2)',     max: 3, apply: () => { up.crit += 1; } },
-  { id: 'rage',     cat: 'atk', rar: 'raro',  icon: '😤', title: 'FÚRIA DO GALO',   desc: '+10% de dano por galinha perdida',       max: 2, apply: () => { up.rage += 1; } },
-  { id: 'front',    cat: 'atk', rar: 'epico', icon: '➕', title: 'OVO DUPLO',       desc: '+1 ovo lado a lado em todo tiro',        max: 2, apply: () => { up.front += 1; } },
-  { id: 'diag',     cat: 'atk', rar: 'epico', icon: '🔱', title: 'OVO LEQUE',       desc: '+2 ovos em diagonal em todo tiro',       max: 2, apply: () => { up.diag += 1; } },
-  { id: 'pierce',   cat: 'egg', rar: 'raro',  icon: '🗡', title: 'OVO PERFURANTE',  desc: 'atravessa +1 nave',                      max: 2, apply: () => { up.pierce += 1; } },
-  { id: 'ricochet', cat: 'egg', rar: 'raro',  icon: '🔁', title: 'RICOCHETE',       desc: 'o ovo quica pra +1 nave (70% do dano)',  max: 3, apply: () => { up.ricochet += 1; } },
-  { id: 'fire',     cat: 'egg', rar: 'raro',  icon: '🔥', title: 'OVO FLAMEJANTE',  desc: 'queima a nave: +60% de dano em 3s',      max: 2, apply: () => { up.fire += 1; } },
-  { id: 'ice',      cat: 'egg', rar: 'raro',  icon: '❄️', title: 'OVO CONGELANTE',  desc: 'nave e feixe 40% mais lentos',           max: 2, apply: () => { up.ice += 1; } },
-  { id: 'shock',    cat: 'egg', rar: 'raro',  icon: '🌩', title: 'OVO ELÉTRICO',    desc: 'choque pula pra 2 naves perto',          max: 2, apply: () => { up.shock += 1; } },
-  { id: 'big',      cat: 'egg', rar: 'comum', icon: '🥚', title: 'OVO GIGANTE',     desc: 'ovos maiores, acertam mais fácil',       max: 3, apply: () => { up.big += 0.3; } },
-  { id: 'magnet',   cat: 'egg', rar: 'comum', icon: '🧲', title: 'ÍMÃ DE OVO',      desc: 'ovos curvam até as naves',               max: 3, apply: () => { up.magnet += 1; } },
-  { id: 'buddy',    cat: 'def', rar: 'epico', icon: '🐤', title: 'PINTINHO ATIRADOR', desc: 'um ajudante que atira sozinho',       max: 2, apply: () => { up.buddy += 1; } },
-  { id: 'feather',  cat: 'def', rar: 'raro',  icon: '🪶', title: 'ESCUDO DE PENAS', desc: 'cada galinha bloqueia 1 abdução por wave', max: 1, apply: () => { up.feather = 1; } },
-  { id: 'angel',    cat: 'def', rar: 'raro',  icon: '👼', title: 'ANJO DA GRANJA',  desc: '+2 galinhas agora',                      max: 99, cond: () => chickensAlive() < MAX_CHICKENS - 1, apply: () => { respawnChicken('hen'); respawnChicken('hen'); } },
-  { id: 'coop',     cat: 'def', rar: 'comum', icon: '🏋', title: 'GALINHA PESADA',  desc: 'abdução 25% mais lenta',                 max: 3, apply: () => { up.coop += 0.25; } },
-  { id: 'luck',     cat: 'def', rar: 'comum', icon: '🍀', title: 'SORTE GRANDE',    desc: 'cai mais power-up',                      max: 3, apply: () => { up.luck += 0.5; } },
-  { id: 'combo',    cat: 'def', rar: 'comum', icon: '⏱', title: 'COMBO MESTRE',    desc: '+1s pra manter o combo',                 max: 3, apply: () => { up.combo += 1; } },
-  { id: 'power',    cat: 'def', rar: 'comum', icon: '⏳', title: 'POWER-UP LONGO',  desc: 'power-ups duram +50%',                   max: 2, apply: () => { up.power += 0.5; } },
-  { id: 'vida',     cat: 'def', rar: 'comum', icon: '❤️', title: 'CORAÇÃO DE GALO', desc: '+25 de vida máxima e cura 25',          max: 4, apply: () => { hpMax += 25; healPlayer(25); } },
-  { id: 'armor',    cat: 'def', rar: 'raro',  icon: '🧥', title: 'COLETE DE PALHA', desc: '-20% de dano recebido',                  max: 2, apply: () => { up.armor += 1; } },
-  { id: 'canja',    cat: 'def', rar: 'comum', icon: '🍲', title: 'CANJA DA VOVÓ',   desc: 'recupera toda a sua vida',               max: 99, cond: () => hp < hpMax * 0.7, apply: () => { healPlayer(hpMax); } },
-  { id: 'cash',     cat: 'def', rar: 'comum', icon: '💰', title: 'BOLADA',          desc: '+1500 pontos',                           max: 999, apply: () => { score += 1500; } },
+// HABILIDADES ATIVAS: o card te dá uma habilidade; você ATIVA com um botão, ela dura 8s e depois recarrega.
+// Até 3 equipadas. Cada oferta traz 1 card de cada categoria (ATAQUE · OVO · DEFESA) com raridade;
+// chefões dão uma escolha ÉPICA extra e o primeiro card do jogo é um ataque épico.
+const SKILL_DUR = 8, MAX_SLOTS = 3;
+const SKILLS = [
+  { id: 'fan',     cat: 'atk', rar: 'epico', icon: '🔱', title: 'OVO LEQUE',       desc: '+ovos em diagonal em todo tiro',  lvl: ['+2 ovos em leque', '+4 ovos em leque', '+4 ovos, recarga menor'] },
+  { id: 'double',  cat: 'atk', rar: 'epico', icon: '➕', title: 'RAJADA DUPLA',    desc: '+ovos lado a lado em todo tiro',  lvl: ['+1 ovo lado a lado', '+2 ovos lado a lado', '+2 ovos, recarga menor'] },
+  { id: 'fury',    cat: 'atk', rar: 'raro',  icon: '😤', title: 'FÚRIA',            desc: 'muito mais dano',                 lvl: ['+50% de dano', '+75% de dano', '+100% de dano'] },
+  { id: 'turbo',   cat: 'atk', rar: 'comum', icon: '⚡', title: 'DEDO TURBO',       desc: 'atira muito mais rápido',         lvl: ['+50% de cadência', '+75% de cadência', '+100% de cadência'] },
+  { id: 'eagle',   cat: 'atk', rar: 'raro',  icon: '🎯', title: 'OLHO DE ÁGUIA',    desc: 'chance de crítico (dano x2)',     lvl: ['35% de crítico', '50% de crítico', '65% de crítico'] },
+  { id: 'fire',    cat: 'egg', rar: 'raro',  icon: '🔥', title: 'OVO FLAMEJANTE',   desc: 'as naves pegam fogo',             lvl: ['queima +60%', 'queima +120%', 'queima +180%'] },
+  { id: 'ice',     cat: 'egg', rar: 'raro',  icon: '❄️', title: 'OVO CONGELANTE',   desc: 'naves e feixes ficam lentos',     lvl: ['40% mais lentas', '60% mais lentas', '60%, recarga menor'] },
+  { id: 'shock',   cat: 'egg', rar: 'raro',  icon: '🌩', title: 'OVO ELÉTRICO',     desc: 'choque pula pras vizinhas',       lvl: ['pula pra 2 naves', 'pula pra 3 naves', 'pula pra 4 naves'] },
+  { id: 'bounce',  cat: 'egg', rar: 'comum', icon: '🔁', title: 'RICOCHETE',        desc: 'o ovo quica de nave em nave',     lvl: ['quica 2 vezes', 'quica 3 vezes', 'quica 4 vezes'] },
+  { id: 'pierce',  cat: 'egg', rar: 'comum', icon: '🗡', title: 'OVO PERFURANTE',   desc: 'atravessa várias naves',          lvl: ['atravessa 2', 'atravessa 3', 'atravessa 4'] },
+  { id: 'bird',    cat: 'def', rar: 'epico', icon: '🐦', title: 'PASSARINHO',       desc: 'voa sozinho e caça naves',        lvl: ['1 passarinho', '1 passarinho forte', '2 passarinhos'] },
+  { id: 'slowmo',  cat: 'def', rar: 'raro',  icon: '⏳', title: 'CÂMERA LENTA',     desc: 'aliens em câmera lenta',          lvl: ['60% mais lentos', '70% mais lentos', '75% mais lentos'] },
+  { id: 'bubble',  cat: 'def', rar: 'raro',  icon: '🛡', title: 'BOLHA',            desc: 'você não toma dano',              lvl: ['bolha de 8s', 'recarga menor', 'recarga mínima'] },
+  { id: 'feather', cat: 'def', rar: 'comum', icon: '🪶', title: 'ESCUDO DE PENAS',  desc: 'galinhas bloqueiam abdução',      lvl: ['1 bloqueio por galinha', 'recarga menor', '2 bloqueios por galinha'] },
 ];
+const INSTANTS = [
+  { id: 'canja', cat: 'def', rar: 'comum', icon: '🍲', title: 'CANJA DA VOVÓ',   desc: 'cura 50 de vida agora', instant: true, cond: () => hp < hpMax * 0.8, apply: () => { healPlayer(50); } },
+  { id: 'angel', cat: 'def', rar: 'raro',  icon: '👼', title: 'ANJO DA GRANJA',  desc: '+2 galinhas agora',      instant: true, cond: () => chickensAlive() < MAX_CHICKENS - 1, apply: () => { respawnChicken('hen'); respawnChicken('hen'); } },
+  { id: 'heart', cat: 'def', rar: 'comum', icon: '❤️', title: 'CORAÇÃO DE GALO', desc: '+20 de vida máxima',     instant: true, cond: () => hpMax < 160, apply: () => { hpMax += 20; healPlayer(20); } },
+  { id: 'cash',  cat: 'def', rar: 'comum', icon: '💰', title: 'BOLADA',          desc: '+1500 pontos',           instant: true, apply: () => { score += 1500; } },
+];
+const ALL_CARDS = SKILLS.concat(INSTANTS);
 const RARITY = {
   comum: { label: 'COMUM', col: '#9fd090', bg: ['#1f4a1a', '#0a1f0a'], hex: 0x8dff4a },
   raro:  { label: 'RARO',  col: '#60b0ff', bg: ['#16305a', '#08142a'], hex: 0x60b0ff },
@@ -3359,10 +3676,19 @@ const RARITY = {
 };
 const CAT_LABEL = { atk: 'ATAQUE', egg: 'OVO', def: 'DEFESA' };
 let pendingPicks = 0;
-const upAvail = x => x.id !== 'cash' && (up.counts[x.id] || 0) < x.max && (!x.cond || x.cond());
+const slots = [];
+const slotOf = id => slots.find(x => x.sk.id === id);
+const skillCooldown = sl => 26 - (sl.lv - 1) * 4;
+function cardAvail(x) {
+  if (x.id === 'cash') return false;
+  if (x.instant) return !x.cond || x.cond();
+  const sl = slotOf(x.id);
+  if (sl) return sl.lv < 3;
+  return slots.length < MAX_SLOTS;
+}
 function rollRarity() {
   const r = Math.random();
-  const [c, ra] = currentWave < 3 ? [0.62, 0.30] : currentWave < 6 ? [0.50, 0.36] : [0.40, 0.40];
+  const [c, ra] = currentWave < 3 ? [0.62, 0.30] : currentWave < 7 ? [0.50, 0.36] : [0.40, 0.40];
   return r < c ? 'comum' : r < c + ra ? 'raro' : 'epico';
 }
 function buildOffer(kind) {
@@ -3370,30 +3696,88 @@ function buildOffer(kind) {
   if (kind === 'first') epicCat = 'atk';
   else if (kind === 'boss') epicCat = pick(['atk', 'def', 'atk']);
   const taken = new Set(), out = [];
+  const cash = INSTANTS.find(x => x.id === 'cash');
   for (const cat of ['atk', 'egg', 'def']) {
-    let pool = UPGRADES.filter(x => x.cat === cat && upAvail(x) && !taken.has(x.id));
-    if (!pool.length) pool = UPGRADES.filter(x => upAvail(x) && !taken.has(x.id));
-    if (!pool.length) { out.push(UPGRADES.find(x => x.id === 'cash')); continue; }
+    let pool = ALL_CARDS.filter(x => x.cat === cat && cardAvail(x) && !taken.has(x.id));
+    if (!pool.length) pool = ALL_CARDS.filter(x => cardAvail(x) && !taken.has(x.id));
+    if (!pool.length) { out.push(cash); continue; }
     const rar = cat === epicCat ? 'epico' : rollRarity();
     const order = rar === 'epico' ? ['epico', 'raro', 'comum'] : rar === 'raro' ? ['raro', 'comum', 'epico'] : ['comum', 'raro', 'epico'];
     let cand = [];
     for (const rr of order) { cand = pool.filter(x => x.rar === rr); if (cand.length) break; }
-    const owned = cand.filter(x => up.counts[x.id]);
-    const choice = owned.length && Math.random() < 0.35 ? pick(owned) : pick(cand);
+    const owned = cand.filter(x => slotOf(x.id));
+    const choice = owned.length && Math.random() < 0.4 ? pick(owned) : pick(cand);
     taken.add(choice.id);
     out.push(choice);
   }
   if (waveLost >= 2) {
-    const a = UPGRADES.find(x => x.id === 'angel');
-    if (upAvail(a) && !taken.has('angel')) out[2] = a;
+    const a = INSTANTS.find(x => x.id === 'angel');
+    if (cardAvail(a) && !taken.has('angel')) out[2] = a;
   } else if (hp < hpMax * 0.45) {
-    const c = UPGRADES.find(x => x.id === 'canja');
-    if (upAvail(c) && !taken.has('canja')) out[2] = c;
+    const c = INSTANTS.find(x => x.id === 'canja');
+    if (cardAvail(c) && !taken.has('canja')) out[2] = c;
   }
   return out;
 }
-function skillList() {
-  return UPGRADES.filter(x => up.counts[x.id] && x.id !== 'cash' && x.id !== 'angel' && x.id !== 'canja').map(x => ({ icon: x.icon, lv: up.counts[x.id], rar: x.rar }));
+function skillList() { return slots.map(sl => ({ icon: sl.sk.icon, lv: sl.lv, rar: sl.sk.rar })); }
+const SKILL_KEYS_VR = ['B', 'Y', 'GRIP D'];
+const SKILL_KEYS_PC = ['Q', 'E', 'F'];
+function skillKey(i) { return renderer.xr.isPresenting ? SKILL_KEYS_VR[i] : (isTouch ? 'toque' : SKILL_KEYS_PC[i]); }
+function useSkill(i) {
+  const sl = slots[i];
+  if (!sl || !(state === 'playing' || state === 'wave_intro')) return;
+  if (sl.active > 0) return;
+  if (sl.cd > 0) { playDenied(); popupAhead(sl.sk.icon + ' recarregando ' + Math.ceil(sl.cd) + 's', '#aaaaaa', 0.7); return; }
+  sl.active = SKILL_DUR;
+  onSkillStart(sl);
+  refreshUp();
+  const R = RARITY[sl.sk.rar] || RARITY.comum;
+  playSkillOn(); flashScreen(R.hex, 0.35); pulseAll(0.5, 80);
+  popupAhead(sl.sk.icon + ' ' + sl.sk.title + '! 8s', R.col, 1.0);
+}
+function onSkillStart(sl) {
+  if (sl.sk.id === 'feather') for (const c of chickens) if (c.state !== 'gone') { setChickenShield(c, true); c.shieldHits = sl.lv >= 3 ? 2 : 1; }
+  if (sl.sk.id === 'bird') spawnBirds(sl.lv >= 3 ? 2 : 1, sl.lv);
+}
+function onSkillEnd(sl) {
+  if (sl.sk.id === 'feather') for (const c of chickens) setChickenShield(c, false);
+  sl.cd = skillCooldown(sl);
+}
+function updateSkills(dt) {
+  for (let i = 0; i < slots.length; i++) {
+    const sl = slots[i];
+    if (sl.active > 0) { sl.active -= dt; if (sl.active <= 0) { sl.active = 0; onSkillEnd(sl); } }
+    else if (sl.cd > 0) {
+      sl.cd -= dt;
+      if (sl.cd <= 0) {
+        sl.cd = 0;
+        if (state === 'playing' || state === 'wave_intro') { playSkillReady(); popupAhead(sl.sk.icon + ' PRONTO! (' + skillKey(i) + ')', '#8dff4a', 0.6); }
+      }
+    }
+  }
+  refreshUp();
+}
+// Os efeitos só existem enquanto a habilidade está ativa
+function refreshUp() {
+  Object.assign(up, UP_DEFAULTS);
+  for (const sl of slots) {
+    if (sl.active <= 0) continue;
+    const L = sl.lv;
+    switch (sl.sk.id) {
+      case 'fan': up.diag = L >= 2 ? 2 : 1; break;
+      case 'double': up.front = L >= 2 ? 2 : 1; break;
+      case 'fury': up.dmg = 1.25 + 0.25 * L; break;
+      case 'turbo': up.rate = 1.25 + 0.25 * L; break;
+      case 'eagle': up.critChance = 0.2 + 0.15 * L; break;
+      case 'fire': up.fire = L; break;
+      case 'ice': up.ice = L >= 2 ? 2 : 1; break;
+      case 'shock': up.shock = L; break;
+      case 'bounce': up.ricochet = L + 1; break;
+      case 'pierce': up.pierce = L + 1; break;
+      case 'slowmo': up.slowSkill = [1, 0.4, 0.3, 0.25][L]; break;
+      case 'bubble': up.bubble = 1; break;
+    }
+  }
 }
 const CARD_GEO = new THREE.PlaneGeometry(1.15, 1.44);
 const cards = [];
@@ -3426,11 +3810,15 @@ function drawCard(x, w, h, upg) {
   x.fillStyle = '#ffd040'; x.font = 'bold 56px Impact, "Arial Black", sans-serif';
   wrapText(x, upg.title, w / 2, 375, w - 70, 62);
   x.fillStyle = '#ffffff'; x.font = 'bold 34px "Helvetica Neue", Arial, sans-serif';
-  wrapText(x, upg.desc, w / 2, 478, w - 80, 42);
-  const lvl = (up.counts[upg.id] || 0);
-  if (upg.max < 99) {
-    x.fillStyle = R.col; x.font = 'bold 30px sans-serif';
-    x.fillText(lvl ? 'NÍVEL ' + lvl + ' → ' + (lvl + 1) + '  (máx ' + upg.max + ')' : 'NOVA HABILIDADE', w / 2, 590);
+  wrapText(x, upg.desc, w / 2, 470, w - 80, 42);
+  x.fillStyle = R.col; x.font = 'bold 28px sans-serif';
+  if (upg.instant) x.fillText('EFEITO NA HORA', w / 2, 585);
+  else {
+    const sl = slotOf(upg.id);
+    const L = sl ? sl.lv : 0;
+    x.fillText(sl ? 'NÍVEL ' + L + ' → ' + (L + 1) + ': ' + upg.lvl[L] : 'ATIVA · 8s · ' + upg.lvl[0], w / 2, 572);
+    x.fillStyle = '#c0c8b8'; x.font = 'bold 24px sans-serif';
+    x.fillText('recarga ' + (26 - L * 4) + 's · até 3 habilidades', w / 2, 608);
   }
 }
 function clearCards() {
@@ -3457,23 +3845,30 @@ function showUpgradeCards(kind = 'normal') {
   });
   state = 'upgrade'; stateT = 0;
   music.intensity = 0;
+  const keys = renderer.xr.isPresenting ? 'B · Y · GRIP direito' : (isTouch ? 'botões na tela' : 'Q · E · F');
   if (kind === 'boss') showBanner3D('RECOMPENSA DO CHEFÃO', 'uma habilidade ÉPICA te espera', 'atire no card', '#e080ff', 3.5, 1.15);
-  else if (kind === 'first') showBanner3D('PRIMEIRA HABILIDADE!', 'escolha seu estilo de tiro', 'ATAQUE · OVO · DEFESA', '#8dff4a', 3.5, 1.15);
-  else showBanner3D('ESCOLHA UMA HABILIDADE', 'atire no card', 'ATAQUE · OVO · DEFESA', '#8dff4a', 3.5, 1.15);
+  else if (kind === 'first') showBanner3D('PRIMEIRA HABILIDADE!', 'habilidades duram 8s e recarregam', 'você ativa com ' + keys, '#8dff4a', 4, 1.15);
+  else showBanner3D('ESCOLHA UMA HABILIDADE', 'atire no card · ativa com ' + keys, 'ATAQUE · OVO · DEFESA', '#8dff4a', 3.5, 1.15);
   playWeaponPickup();
 }
 function chooseUpgrade(card) {
   if (upgradeChosen) return;
   upgradeChosen = true;
-  card.upg.apply();
-  up.counts[card.upg.id] = (up.counts[card.upg.id] || 0) + 1;
+  const sk = card.upg;
+  let msg, hint = '';
+  if (sk.instant) { sk.apply(); msg = sk.title + '!'; }
+  else {
+    let sl = slotOf(sk.id);
+    if (sl) { sl.lv++; sl.cd = 0; msg = sk.title + ' NÍVEL ' + sl.lv + '!'; }
+    else { slots.push({ sk, lv: 1, active: 0, cd: 0 }); sl = slots[slots.length - 1]; msg = 'NOVA: ' + sk.title + '!'; }
+    hint = 'aperte ' + skillKey(slots.indexOf(sl)) + ' pra usar';
+  }
   for (const c of cards) c.done = true;
   card.chosen = true;
   const R = RARITY[card.upg.rar] || RARITY.comum;
   playUpgrade(); flashScreen(R.hex, 0.5);
   sparks(card.c, R.hex, card.upg.rar === 'epico' ? 50 : 30, 5, 0.08, 0.9); pulseAll(0.6, 150);
-  const lv = up.counts[card.upg.id];
-  popup(card.upg.title + (card.upg.max < 99 && lv > 1 ? ' NV ' + lv : '') + '!', card.c.clone().setY(card.c.y + 0.9), R.col, 1.3, 1.5);
+  popupStack([[msg, R.col, 1.3, 1.8]].concat(hint ? [[hint, '#ffffff', 0.8, 1.8]] : []), card.c.clone().setY(card.c.y + 0.9));
   upgradeLeaveT = 1.2;
 }
 function updateCards(dt) {
@@ -3500,45 +3895,70 @@ function updateCards(dt) {
   }
 }
 
-const buddies = [];
-const BUDDY_GEO = bakeGeo(g => {
-  sph(g, 0.09, 10, 8, 0xffe060, 0, 0, 0);
-  const bk = cone(g, 0.025, 0.06, 6, 0xff9a20, 0, -0.01, 0.09); bk.rotation.x = Math.PI / 2;
-  for (const sx of [-1, 1]) { sph(g, 0.016, 6, 5, 0x000000, sx * 0.04, 0.03, 0.075); const w = box(g, 0.02, 0.05, 0.07, 0xf0c840, sx * 0.09, -0.01, 0); w.rotation.z = sx * 0.5; }
+const birds = [];
+const BIRD_BODY_GEO = bakeGeo(g => {
+  const b = sph(g, 0.09, 10, 8, 0x3a8ae0, 0, 0, 0); b.scale.set(1, 0.9, 1.3);
+  sph(g, 0.065, 8, 6, 0xf4f4f4, 0, -0.03, 0.04);
+  sph(g, 0.06, 8, 6, 0x3a8ae0, 0, 0.07, 0.09);
+  const bk = cone(g, 0.02, 0.06, 6, 0xffa020, 0, 0.06, 0.16); bk.rotation.x = Math.PI / 2;
+  for (const sx of [-1, 1]) sph(g, 0.012, 6, 5, 0x000000, sx * 0.03, 0.09, 0.14);
+  const t = box(g, 0.08, 0.02, 0.1, 0x2a6ac0, 0, 0.01, -0.14); t.rotation.x = 0.3;
 });
-const BUDDY_HALO = new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0xffd040, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
-function updateBuddies(dt) {
-  while (buddies.length < up.buddy) {
-    const m = new THREE.Mesh(BUDDY_GEO, BAKE_SMOOTH);
-    const h = new THREE.Sprite(BUDDY_HALO); h.scale.setScalar(0.4); m.add(h);
-    m.position.copy(camPos);
-    scene.add(m);
-    buddies.push({ mesh: m, cd: rand(0.3, 1), phase: rand(0, 6) });
+const BIRD_WING_GEO = new THREE.BoxGeometry(0.16, 0.012, 0.08); BIRD_WING_GEO.translate(0.08, 0, 0);
+const BIRD_WING_MAT = lam(0x2a6ac0);
+const BIRD_HALO = new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0x80c0ff, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false });
+function spawnBirds(n, lv) {
+  for (let i = 0; i < n; i++) {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(BIRD_BODY_GEO, BAKE_SMOOTH));
+    const wl = new THREE.Mesh(BIRD_WING_GEO, BIRD_WING_MAT); wl.position.set(0.05, 0.02, 0); g.add(wl);
+    const wr = new THREE.Mesh(BIRD_WING_GEO, BIRD_WING_MAT); wr.position.set(-0.05, 0.02, 0); wr.rotation.y = Math.PI; g.add(wr);
+    const h = new THREE.Sprite(BIRD_HALO); h.scale.setScalar(0.45); g.add(h);
+    g.scale.setScalar(1.5);
+    g.position.copy(camPos).add(TV[0].set(i ? 0.5 : -0.5, 0.3, 0));
+    scene.add(g);
+    birds.push({ g, wl, wr, life: SKILL_DUR, cd: 0.3 + i * 0.25, lv, phase: rand(0, 6), vel: new THREE.Vector3(0, 2, 0) });
   }
-  if (!buddies.length) return;
-  const fwd = camera.getWorldDirection(TV[12]); fwd.y = 0;
-  if (fwd.lengthSq() < 1e-3) fwd.set(0, 0, 1);
-  fwd.normalize();
-  const right = TV[13].crossVectors(fwd, UP);
-  const active = state === 'playing' || state === 'wave_intro';
-  buddies.forEach((b, i) => {
-    const side = i === 0 ? -1 : 1;
-    const xr = renderer.xr.isPresenting;
-    const tgtPos = TV[14].copy(camPos).addScaledVector(right, side * (xr ? 0.55 : 1.1)).addScaledVector(fwd, xr ? 0.35 : 1.4);
-    tgtPos.y += (xr ? 0.22 : 0.55) + Math.sin(totalTime * 2 + b.phase) * 0.05;
-    b.mesh.position.lerp(tgtPos, Math.min(1, dt * 6));
-    b.mesh.visible = state !== 'idle';
-    if (!active) return;
+  playChirp();
+}
+// Voa sozinho pelo quintal caçando a nave mais urgente (prioriza a que está abduzindo)
+function updateBirds(dt) {
+  for (let i = birds.length - 1; i >= 0; i--) {
+    const b = birds[i], gp = b.g.position;
+    b.life -= dt;
+    const flap = Math.sin(totalTime * 26 + b.phase) * 0.8;
+    b.wl.rotation.z = flap; b.wr.rotation.z = -flap;
+    if (b.life <= 0) {
+      gp.y += dt * 6;
+      b.g.scale.multiplyScalar(Math.max(0, 1 - dt * 0.8));
+      if (b.life < -1.5) { scene.remove(b.g); birds.splice(i, 1); }
+      continue;
+    }
+    let tgt = null, bd = Infinity;
+    for (const u of ufos) {
+      if (!isAlive(u)) continue;
+      const pt = u.parts.find(q => q.active && q.kind !== 'armor');
+      if (!pt) continue;
+      const d = pt.c.distanceTo(gp) - (u.state === 'beaming' || u.state === 'flee' ? 8 : 0);
+      if (d < bd) { bd = d; tgt = pt; }
+    }
+    const want = TV[1];
+    if (tgt) want.copy(tgt.c).add(TV[2].set(Math.cos(totalTime * 1.5 + b.phase) * 3, 1.2, Math.sin(totalTime * 1.5 + b.phase) * 3));
+    else want.set(Math.cos(totalTime * 0.8 + b.phase) * 5, 5 + Math.sin(totalTime + b.phase), 8 + Math.sin(totalTime * 0.8 + b.phase) * 5);
+    const to = TV[3].copy(want).sub(gp);
+    const d = to.length();
+    if (d > 1e-3) b.vel.lerp(to.divideScalar(d).multiplyScalar(Math.min(9, d * 2)), Math.min(1, dt * 3));
+    gp.addScaledVector(b.vel, dt);
+    if (b.vel.lengthSq() > 0.01) b.g.lookAt(TV[4].copy(gp).add(b.vel));
+    if (!tgt || !(state === 'playing' || state === 'wave_intro')) continue;
     b.cd -= dt;
-    if (b.cd > 0) return;
-    const t = acquireTarget(b.mesh.position, fwd);
-    if (!t) { b.cd = 0.3; return; }
-    const dir = t.c.clone().sub(b.mesh.position).normalize();
-    b.mesh.lookAt(t.c);
-    spawnEgg(b.mesh.position, dir.multiplyScalar(30), { damage: 2, maxLife: 2.5, magnet: 2, scale: 0.8, noRicochet: true });
-    muzzle(b.mesh.position, 0xffd040, 0.15); playChirp();
-    b.cd = 1.1 / up.rate;
-  });
+    if (b.cd <= 0 && tgt.c.distanceTo(gp) < 14) {
+      const dir = TV[5].copy(tgt.c).sub(gp).normalize();
+      spawnEgg(gp, dir.multiplyScalar(32), { damage: 2 + b.lv, maxLife: 1.5, magnet: 3, scale: 0.7, noRicochet: true });
+      muzzle(gp, 0x80c0ff, 0.15);
+      b.cd = 0.45;
+    }
+  }
 }
 
 function refreshUfoParts(u) {
@@ -3636,7 +4056,7 @@ function drawSign() {
   fitText(x, '🏆 RECORDE: ' + fmt(best), 512, 190, 900, 60, IMPACT, '#ffffff');
   if (lastScore > 0) fitText(x, 'última partida: ' + fmt(lastScore), 512, 255, 900, 36, SANS, '#e8d0a0');
   fitText(x, 'APERTE O GATILHO PRA COMEÇAR', 512, 340, 940, 54, IMPACT, '#8dff4a');
-  fitText(x, '10 WAVES · 10 ARMAS · 8 NAVES · CHEFÕES', 512, 430, 940, 34, SANS, '#ffb070');
+  fitText(x, '12 WAVES · 11 ARMAS · 11 NAVES · CADEIRA VOADORA', 512, 430, 940, 34, SANS, '#ffb070');
   signTex.needsUpdate = true;
 }
 
@@ -3651,12 +4071,22 @@ function powerList() {
   return out;
 }
 function updateWeaponBar() {
-  wbarEl.innerHTML = WEAPON_ORDER.map((w, i) => '<div class="slot' + (unlocked.has(w) ? ' unl' : '') + (w === activeWeapon ? ' on' : '') + '">' + WEAPONS[w].icon + '<i>' + ((i + 1) % 10) + '</i></div>').join('');
+  wbarEl.innerHTML = WEAPON_ORDER.map((w, i) => '<div class="slot' + (unlocked.has(w) ? ' unl' : '') + (w === activeWeapon ? ' on' : '') + '">' + WEAPONS[w].icon + '<i>' + (i === 10 ? '-' : (i + 1) % 10) + '</i></div>').join('');
+}
+const skillbarEl = document.getElementById('skillbar');
+function updateSkillBar() {
+  skillbarEl.innerHTML = slots.map((sl, i) => {
+    const st = sl.active > 0 ? 'on' : sl.cd > 0 ? 'cd' : 'ready';
+    const pct = sl.active > 0 ? (sl.active / SKILL_DUR) * 100 : sl.cd > 0 ? (1 - sl.cd / skillCooldown(sl)) * 100 : 100;
+    const txt = sl.active > 0 ? Math.ceil(sl.active) + 's' : sl.cd > 0 ? Math.ceil(sl.cd) + 's' : 'PRONTO';
+    return '<div class="sk ' + st + '" data-i="' + i + '"><span class="ic">' + sl.sk.icon + '</span><b>' + (isTouch ? '' : SKILL_KEYS_PC[i]) + '</b><i style="width:' + pct.toFixed(0) + '%"></i><em>' + txt + '</em></div>';
+  }).join('');
 }
 function updateHtmlHud() {
   const show = !renderer.xr.isPresenting && state !== 'idle';
   hudEl.classList.toggle('show', show);
   wbarEl.classList.toggle('show', show && unlocked.size > 1);
+  skillbarEl.classList.toggle('show', show && slots.length > 0);
   crossEl.classList.toggle('show', show && (canShoot() || state === 'wave_complete'));
   mSwitch.classList.toggle('show', isTouch && show && unlocked.size > 1);
   if (!show) return;
@@ -3669,8 +4099,8 @@ function updateHtmlHud() {
   const hpPct = clamp(hp / hpMax, 0, 1);
   document.getElementById('h-hp').innerHTML = '❤️<span class="hpbar"><i style="width:' + (hpPct * 100).toFixed(0) + '%;background:' + (hpPct <= 0.3 ? '#ff3040' : hpPct <= 0.6 ? '#ff9040' : '#ff5878') + '"></i></span>' + Math.ceil(hp) + '/' + hpMax;
   hChk.innerHTML = '🐔 <b style="color:' + (alive <= 2 ? '#ff5050' : alive <= 4 ? '#ffb040' : '#fff') + ';font-size:22px">' + alive + '</b>/' + MAX_CHICKENS + ' <span style="font-size:12px;color:#ccc">' + flockDetail() + '</span>';
-  const sk = skillList().map(k => k.icon + '<sub>' + k.lv + '</sub>').join(' ');
-  hPower.innerHTML = powerList().map(p => '<div style="color:' + p[1] + '">' + p[0] + '</div>').join('') + (sk ? '<div style="color:#ddd;font-size:16px">' + sk + '</div>' : '');
+  hPower.innerHTML = powerList().map(p => '<div style="color:' + p[1] + '">' + p[0] + '</div>').join('');
+  updateSkillBar();
 }
 function flockCounts() {
   const k = { hen: 0, rooster: 0, chick: 0, golden: 0 };
@@ -3721,15 +4151,19 @@ function drawLap() {
   const pl = powerList();
   if (pl.length) fitText(x, pl.map(q => q[0].split(' ')[0] + ' ' + q[0].split(' ').pop()).join('  '), 430, 282, 310, 30, SANS, pl[0][1]);
   // Habilidades (estilo Archero)
-  const sk = skillList();
-  if (sk.length) {
-    let xx = 30;
-    for (const k of sk) {
-      if (xx > W - 70) break;
-      x.font = '38px sans-serif'; x.fillStyle = '#fff'; x.fillText(k.icon, xx, 345);
-      x.font = 'bold 22px ' + SANS; x.fillStyle = (RARITY[k.rar] || RARITY.comum).col; x.fillText(String(k.lv), xx + 42, 360);
-      xx += 74;
-    }
+  if (slots.length) {
+    slots.forEach((sl, i) => {
+      const bx = 24 + i * 242, by = 312, bw = 230, bh = 74;
+      x.fillStyle = 'rgba(255,255,255,0.08)'; x.fillRect(bx, by, bw, bh);
+      if (sl.active > 0) { x.fillStyle = 'rgba(141,255,74,0.45)'; x.fillRect(bx, by, bw * (sl.active / SKILL_DUR), bh); }
+      else if (sl.cd > 0) { x.fillStyle = 'rgba(0,0,0,0.5)'; x.fillRect(bx, by, bw, bh); }
+      x.textAlign = 'left';
+      x.font = '42px sans-serif'; x.fillStyle = '#fff'; x.fillText(sl.sk.icon, bx + 8, by + 40);
+      x.font = 'bold 22px ' + SANS; x.fillStyle = '#ffd040'; x.fillText(skillKey(i) + ' · NV' + sl.lv, bx + 62, by + 22);
+      x.font = 'bold 26px ' + SANS;
+      x.fillStyle = sl.active > 0 ? '#d8ffb0' : sl.cd > 0 ? '#9a9a9a' : '#8dff4a';
+      x.fillText(sl.active > 0 ? 'ATIVO ' + Math.ceil(sl.active) + 's' : sl.cd > 0 ? Math.ceil(sl.cd) + 's' : 'PRONTO!', bx + 62, by + 54);
+    });
   } else if (lapHintT > 0) {
     x.font = 'bold 22px ' + SANS; x.fillStyle = '#7a8a70'; x.fillText('segure o GRIP perto deste painel pra mover', 30, 345);
   }
@@ -3756,6 +4190,7 @@ function startWave(idx) {
   queue = buildQueue(w.mix, w.intro);
   totalCount = queue.length; spawnedCount = 0; spawnT = 1.0;
   bossSpawned = false; waveLost = 0;
+  flight.done = false;
   bannerMesh.visible = false;
   let newWeapon = null;
   if (w.weapon) {
@@ -3774,7 +4209,8 @@ function startWave(idx) {
     for (const c of chickens) { const p = pos[k++ % pos.length]; c.group.position.set(p[0], 0, p[1]); c.state = 'pecking'; c.statePhase = rand(1, 2.5); }
   }
   todTarget = w.tod;
-  if (up.feather) for (const c of chickens) if (c.state !== 'gone') setChickenShield(c, true);
+  for (const sl of slots) { if (sl.active > 0) { sl.active = 0; onSkillEnd(sl); } sl.cd = 0; }
+  refreshUp();
   state = 'wave_intro'; stateT = 0;
   music.intensity = 1;
   const title = w.endless ? 'INFINITO ' + (w.n + 1) : 'WAVE ' + (idx + 1) + '/' + WAVES.length;
@@ -3796,6 +4232,8 @@ function growChick(c) {
 }
 function waveComplete() {
   state = 'wave_complete'; stateT = 0;
+  if (flight.phase === 'flying') flight.t = 0;
+  else if (flight.phase === 'descending' || flight.phase === 'parked') { flight.phase = 'none'; clearFlightChair(); }
   music.intensity = 0;
   setLaser(false);
   const alive = chickensAlive();
@@ -3809,7 +4247,7 @@ function waveComplete() {
     if (c.kind === 'chick' && (c.state === 'wandering' || c.state === 'pecking')) { c.waves++; if (c.waves >= 2) { growChick(c); extra.push('o pintinho cresceu!'); } }
   }
   if (waveLost === 0 && chickensAlive() < MAX_CHICKENS) { respawnChicken('chick'); extra.push('🐣 NASCEU UM PINTINHO!'); playHatch(); }
-  const healed = healPlayer(20);
+  const healed = healPlayer(15);
   if (healed > 0) extra.push('❤️ +' + healed);
   const last = currentWave === WAVES.length - 1;
   showBanner3D(last ? 'VOCÊ VENCEU!' : 'WAVE COMPLETA!', lines.join(' · '), extra.join(' · '), '#8dff4a', 3.2);
@@ -3854,7 +4292,7 @@ function resetGame() {
   ufos.length = 0;
   for (const p of projectiles) scene.remove(p);
   projectiles.length = 0;
-  for (const g of goos) scene.remove(g.mesh);
+  for (const g of goos) { scene.remove(g.mesh); if (g.ring) scene.remove(g.ring); }
   goos.length = 0;
   for (const cr of crates.slice()) removeCrate(cr);
   clearCards();
@@ -3867,8 +4305,11 @@ function resetGame() {
   score = 0; resetCombo(); multiN = 0; killsSinceDrop = 0; ufosKilled = 0; waveLost = 0;
   power.golden = power.boom = power.slow = 0;
   Object.assign(up, UP_DEFAULTS, { counts: {} });
-  for (const b of buddies) scene.remove(b.mesh);
-  buddies.length = 0;
+  for (const b of birds) scene.remove(b.g);
+  birds.length = 0;
+  for (const c of chickens) setChickenShield(c, false);
+  slots.length = 0;
+  refreshUp();
   pendingPicks = 0;
   unlocked.clear(); unlocked.add('hands');
   currentWave = 0; waveDef = WAVES[0]; queue = []; bossSpawned = false;
@@ -3878,6 +4319,7 @@ function resetGame() {
   equipWeapon('hands');
   bannerMesh.visible = false;
   ov.hurt = ov.slime = ov.flash = 0;
+  endFlight(); flight.done = false;
   hp = hpMax = 100; invulnT = 0;
   cameraRig.position.set(0, PLAYER_Y, 0);
   drawSign();
@@ -3900,6 +4342,7 @@ function updateWaveLogic(edt) {
       spawnedCount++;
       spawnT = waveDef.interval * rand(0.7, 1.3);
     }
+    if (waveDef.flight && !flight.done && stateT > 8) startFlightEvent();
     if (waveDef.boss && !bossSpawned) {
       if (waveDef.boss === 'mothership') {
         if (stateT > 2.5) { refreshUfoParts(spawnMothership()); bossSpawned = true; music.intensity = 2; }
@@ -3943,8 +4386,8 @@ function onTriggerEnd(ctrl) {
 }
 for (const c of [controller1, controller2]) {
   c.addEventListener('squeezestart', () => {
-    if (!lapPanel.visible) return;
-    if (c.getWorldPosition(TV[0]).distanceTo(lapPanel.getWorldPosition(TV[1])) < 0.3) { lapGrab = c; pulseController(c, 0.4, 40); }
+    if (lapPanel.visible && c.getWorldPosition(TV[0]).distanceTo(lapPanel.getWorldPosition(TV[1])) < 0.3) { lapGrab = c; pulseController(c, 0.4, 40); return; }
+    if (c === rightCtrl) useSkill(2);
   });
   c.addEventListener('squeezeend', () => {
     if (lapGrab !== c) return;
@@ -3979,15 +4422,20 @@ function selectWeapon(name) {
   else popupAhead(label, '#8dff4a', 0.7);
 }
 const btnPrev = new Map();
+// A = próxima arma, X = arma anterior, B = habilidade 1, Y = habilidade 2, GRIP direito = habilidade 3
 function pollButtons() {
   for (const c of [controller1, controller2]) {
     const s = c.userData.src;
     if (!s || !s.gamepad) continue;
     const b = s.gamepad.buttons;
-    for (const [idx, dir] of [[4, -1], [5, 1]]) {
+    const right = c === rightCtrl;
+    for (const idx of [4, 5]) {
       const pressed = !!(b[idx] && b[idx].pressed);
       const key = c.uuid + idx;
-      if (pressed && !btnPrev.get(key)) cycleWeapon(dir);
+      if (pressed && !btnPrev.get(key)) {
+        if (idx === 4) cycleWeapon(right ? 1 : -1);
+        else useSkill(right ? 0 : 1);
+      }
       btnPrev.set(key, pressed);
     }
   }
@@ -4051,8 +4499,10 @@ addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'Enter') { initAudio(); handleMenuAdvance(); }
   if (e.code === 'KeyR' && (state === 'game_over' || state === 'victory')) resetGame();
   if (e.code === 'KeyM') setMusic(!musicOn);
-  if (e.code === 'KeyQ') cycleWeapon(-1);
-  if (e.code === 'KeyE') cycleWeapon(1);
+  if (e.code === 'KeyQ') useSkill(0);
+  if (e.code === 'KeyE') useSkill(1);
+  if (e.code === 'KeyF') useSkill(2);
+  if (e.code === 'Minus') selectWeapon(WEAPON_ORDER[10]);
   const m = e.code.match(/^Digit(\d)$/);
   if (m) { const n = parseInt(m[1], 10); selectWeapon(WEAPON_ORDER[n === 0 ? 9 : n - 1]); }
 });
@@ -4127,6 +4577,12 @@ if (isTouch) {
   renderer.domElement.addEventListener('touchend', handleTouchEnd, { passive: false });
   renderer.domElement.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 }
+skillbarEl.addEventListener('touchstart', e => {
+  const el = e.target.closest('.sk');
+  if (!el) return;
+  e.preventDefault(); e.stopPropagation();
+  useSkill(parseInt(el.dataset.i, 10));
+}, { passive: false });
 mSwitch.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); cycleWeapon(1); }, { passive: false });
 mSwitch.addEventListener('click', e => { e.stopPropagation(); cycleWeapon(1); });
 
@@ -4244,17 +4700,196 @@ function animateWeapons(dt, held) {
 // =============================================================================
 const clock = new THREE.Clock();
 let hudTimer = 0, lapTimer = 0;
+// ---------- Movimento: varanda (0.4 m), rampa no meio da frente, quintal (chão) ----------
+let rigVy = 0, movingNow = false;
+const leftStick = new THREE.Vector2();
+function groundHeightAt(x, z) {
+  if (Math.abs(x) <= 3.96 && z <= 0.5 && z >= -3.6) return PORCH_LEVEL;
+  if (Math.abs(x) < 1.35 && z > 0.5 && z < 1.7) return PORCH_LEVEL * (1 - (z - 0.5) / 1.2);
+  return 0;
+}
+function blockedSeg(ox, oz, nx, nz) {
+  if ((oz <= 0.5) !== (nz <= 0.5) && Math.abs(nx) > 1.35 && Math.abs(nx) < 4.0) return true;
+  if (Math.min(oz, nz) < 0.5) for (const sx of [-3.96, 3.96]) if ((ox <= sx) !== (nx <= sx)) return true;
+  return false;
+}
+function moveRig(dx, dz) {
+  const rp = cameraRig.position;
+  for (const axis of [0, 1]) {
+    const nx = clamp(rp.x + (axis === 0 ? dx : 0), -8.6, 8.6);
+    const nz = clamp(rp.z + (axis === 1 ? dz : 0), -3.3, 17.4);
+    if (blockedSeg(rp.x, rp.z, nx, nz)) continue;
+    if (groundHeightAt(nx, nz) - rp.y > 0.12) continue;
+    rp.x = nx; rp.z = nz;
+  }
+  movingNow = true;
+  for (const c of chickens) if (c.state !== 'gone' && Math.hypot(c.group.position.x - rp.x, c.group.position.z - rp.z) < 0.55) scareChicken(c, rp);
+}
+function updateRigHeight(dt) {
+  if (flightActive()) return;
+  const rp = cameraRig.position, g = groundHeightAt(rp.x, rp.z);
+  if (rp.y > g + 0.01) {
+    rigVy -= 9.8 * dt;
+    rp.y = Math.max(g, rp.y + rigVy * dt);
+    if (rp.y <= g) { if (rigVy < -1.2) { playLand(); pulseAll(0.6, 120); } rigVy = 0; }
+  } else { rp.y = g; rigVy = 0; }
+}
+function vrLocomotion(dt) {
+  const s = leftCtrl.userData.src;
+  leftStick.set(0, 0);
+  if (!s || !s.gamepad) return;
+  const ax = s.gamepad.axes;
+  const x = ax[2] !== undefined ? ax[2] : (ax[0] || 0), y = ax[3] !== undefined ? ax[3] : (ax[1] || 0);
+  leftStick.set(x, y);
+  if (flightActive() || state === 'idle' || Math.hypot(x, y) < 0.18) return;
+  const fwd = camera.getWorldDirection(TV[6]); fwd.y = 0;
+  if (fwd.lengthSq() < 1e-4) return;
+  fwd.normalize();
+  const right = TV[7].crossVectors(fwd, UP);
+  const sp = 2.4 * dt;
+  moveRig((fwd.x * -y + right.x * x) * sp, (fwd.z * -y + right.z * x) * sp);
+}
+
+// ---------- Cadeira de rodas voadora (especial da batalha final) ----------
+const FLIGHT_DUR = 30;
+const flight = { phase: 'none', t: 0, done: false, chair: null, beacon: null, land: new THREE.Vector3(), vel: new THREE.Vector3(), parkT: 0, takeoff: 0 };
+const flightActive = () => flight.phase === 'flying' || flight.phase === 'returning';
+function makeFlyKit() {
+  const kit = new THREE.Group();
+  const wings = [];
+  for (const sx of [-1, 1]) {
+    const wg = new THREE.Group(); wg.position.set(sx * 0.3, 0.85, -0.3);
+    const raw = new THREE.Group();
+    for (let k = 0; k < 4; k++) { const f = box(raw, 0.55 - k * 0.1, 0.03, 0.13, k % 2 ? 0xf0f4ff : 0xffffff, sx * (0.27 - k * 0.03), -k * 0.07, k * 0.05); f.rotation.z = sx * (0.2 + k * 0.18); }
+    wg.add(bakeStatic(raw, BAKE_SMOOTH));
+    kit.add(wg); wings.push(wg);
+  }
+  const jets = new THREE.Group();
+  for (const sx of [-1, 1]) { const j = cyl(jets, 0.06, 0.085, 0.28, 10, 0x8890a0, sx * 0.22, 0.42, -0.42); j.rotation.x = Math.PI / 2; }
+  kit.add(bakeStatic(jets, BAKE_SMOOTH));
+  const glow = new THREE.Mesh(new THREE.RingGeometry(0.25, 0.65, 28), new THREE.MeshBasicMaterial({ color: 0x80e0ff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = 0.02; kit.add(glow);
+  kit.userData = { wings, glow };
+  return kit;
+}
+const flyKit = makeFlyKit();
+flyKit.visible = false;
+wheelchair.add(flyKit);
+function animateFlyKit(kit, dt, power) {
+  const f = Math.sin(totalTime * (6 + power * 8)) * (0.25 + power * 0.35);
+  kit.userData.wings[0].rotation.z = -f; kit.userData.wings[1].rotation.z = f;
+  kit.userData.glow.material.opacity = 0.4 + Math.sin(totalTime * 8) * 0.2;
+}
+function jetFx(origin, quat) {
+  for (const sx of [-1, 1]) {
+    const p = TV[8].set(sx * 0.22, 0.42, -0.58).applyQuaternion(quat).add(origin);
+    _c.setHex(Math.random() < 0.5 ? 0x60c0ff : 0xffa040);
+    fxAdd.spawn(p.x, p.y, p.z, rand(-0.3, 0.3), rand(-1.5, -0.5), rand(-0.3, 0.3), _c, rand(0.08, 0.14), 0.35, 0, 0.5, 0.6);
+  }
+}
+function startFlightEvent() {
+  flight.done = true; flight.phase = 'descending'; flight.parkT = 0;
+  const fwd = camera.getWorldDirection(TV[6]); fwd.y = 0;
+  if (fwd.lengthSq() < 1e-4) fwd.set(0, 0, 1);
+  fwd.normalize();
+  const rp = cameraRig.position;
+  let lx = clamp(rp.x + fwd.x * 1.8, -8, 8), lz = clamp(rp.z + fwd.z * 1.8, -3, 17);
+  if (blockedSeg(rp.x, rp.z, lx, lz)) { lx = rp.x; lz = rp.z + 0.9 * Math.sign(fwd.z || 1); }
+  flight.land.set(lx, groundHeightAt(lx, lz), lz);
+  const g = new THREE.Group();
+  g.add(wheelchair.userData.chair.clone());
+  g.add(makeFlyKit());
+  g.rotation.y = Math.atan2(fwd.x, fwd.z);
+  g.position.set(lx, flight.land.y + 25, lz);
+  scene.add(g);
+  flight.chair = g;
+  const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 30, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x60e0ff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  beacon.position.set(lx, flight.land.y + 15, lz);
+  scene.add(beacon);
+  flight.beacon = beacon;
+  showBanner3D('CADEIRA VOADORA!', 'chegue perto dela pra montar', 'VOE ATÉ AS NAVES!', '#60e0ff', 4);
+  playFlightArrive(); pulseAll(0.5, 300);
+}
+function clearFlightChair() {
+  if (flight.chair) { scene.remove(flight.chair); flight.chair = null; }
+  if (flight.beacon) { scene.remove(flight.beacon); flight.beacon.geometry.dispose(); flight.beacon = null; }
+}
+function mountFlight() {
+  clearFlightChair();
+  flight.phase = 'flying'; flight.t = FLIGHT_DUR; flight.takeoff = 1.6; flight.vel.set(0, 0, 0);
+  flyKit.visible = true;
+  popupAhead('DECOLANDO! 🚀', '#60e0ff', 1.3);
+  playTakeoff(); pulseAll(0.8, 400);
+}
+function endFlight() {
+  flight.phase = 'none';
+  flyKit.visible = false;
+  clearFlightChair();
+  rigVy = 0;
+}
+function updateFlight(dt, xr) {
+  if (flight.phase === 'none') return;
+  const rp = cameraRig.position;
+  if (flight.phase === 'descending' || flight.phase === 'parked') {
+    const g = flight.chair;
+    animateFlyKit(g.children[1], dt, 0.6);
+    if (flight.phase === 'descending') {
+      g.position.y = Math.max(flight.land.y + 0.3, g.position.y - dt * 7);
+      _c.setHex(0xa0f0ff); fxAdd.spawn(g.position.x + rand(-0.4, 0.4), g.position.y + 0.3, g.position.z + rand(-0.4, 0.4), 0, 1, 0, _c, 0.1, 0.6);
+      if (g.position.y <= flight.land.y + 0.31) { flight.phase = 'parked'; playLand(); }
+    } else {
+      flight.parkT += dt;
+      g.position.y = flight.land.y + 0.3 + Math.sin(totalTime * 3) * 0.06;
+      if (flight.parkT > 12) {   // demorou: ela vem até você
+        const to = TV[9].set(rp.x - g.position.x, 0, rp.z - g.position.z);
+        const d = to.length();
+        if (d > 0.01) g.position.addScaledVector(to, Math.min(1, dt * 2.5 / d) );
+        flight.land.x = g.position.x; flight.land.z = g.position.z;
+      }
+      if (Math.hypot(rp.x - g.position.x, rp.z - g.position.z) < 1.1) mountFlight();
+    }
+    return;
+  }
+  animateFlyKit(flyKit, dt, 1);
+  wheelchair.updateMatrixWorld(true);
+  wheelchair.getWorldQuaternion(_q);
+  jetFx(wheelchair.getWorldPosition(TV[10]), _q);
+  if (flight.phase === 'flying') {
+    flight.t -= dt;
+    // voa pra onde você olha; joystick esquerdo / W-S acelera ou freia
+    let speed = 4.5;
+    if (xr) speed += -leftStick.y * 3.5;
+    else speed += ((keys.KeyW || keys.ArrowUp) ? 3.5 : 0) - ((keys.KeyS || keys.ArrowDown) ? 3.5 : 0);
+    speed = clamp(speed, 0.5, 8.5);
+    const want = TV[11];
+    if (flight.takeoff > 0) { flight.takeoff -= dt; want.set(0, 4.5, 0); }
+    else want.copy(camera.getWorldDirection(TV[12])).multiplyScalar(speed);
+    flight.vel.lerp(want, Math.min(1, dt * 2.5));
+    rp.addScaledVector(flight.vel, dt);
+    rp.y = clamp(rp.y, 2.5, 20);
+    const hx = rp.x, hz = rp.z - 9, hd = Math.hypot(hx, hz);
+    if (hd > 30) { rp.x = hx / hd * 30; rp.z = 9 + hz / hd * 30; }
+    if (flight.t <= 0) { flight.phase = 'returning'; showBanner3D('VOLTANDO PRA VARANDA', '', '', '#60e0ff', 2.2); }
+  } else if (flight.phase === 'returning') {
+    const home = TV[11].set(0, PLAYER_Y, 0);
+    if (moveToward(rp, home, 7.5 * dt)) {
+      endFlight();
+      popupAhead('DE VOLTA À VARANDA!', '#8dff4a', 1.1);
+      playLand(); pulseAll(0.6, 150);
+    }
+  }
+}
+
+// ---------- PC ----------
 function updatePcControls(dt) {
   // Andar na varanda (WASD / setas): a cadeira rola, dá pra desviar da gosma e do kamikaze
-  if (state !== 'idle') {
+  if (state !== 'idle' && !flightActive()) {
     const mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
     const mz = (keys.KeyS || keys.ArrowDown ? 1 : 0) - (keys.KeyW || keys.ArrowUp ? 1 : 0);
     if (mx || mz) {
       const sp = 2.6 * dt / (mx && mz ? Math.SQRT2 : 1);
       const sn = Math.sin(yaw), cs = Math.cos(yaw);
-      cameraRig.position.x = clamp(cameraRig.position.x + (mx * cs + mz * sn) * sp, -3.4, 3.4);
-      cameraRig.position.z = clamp(cameraRig.position.z + (-mx * sn + mz * cs) * sp, -3.0, 0.15);
-      camera.getWorldPosition(camPos);
+      moveRig((mx * cs + mz * sn) * sp, (-mx * sn + mz * cs) * sp);
     }
   }
   // Zoom no botão direito
@@ -4277,7 +4912,14 @@ function gameLoop(time, frame, forcedDt) {
   totalTime += dt; stateT += dt;
   camera.getWorldPosition(camPos);
   const xr = renderer.xr.isPresenting;
+  movingNow = false;
   if (!xr) updatePcControls(dt);
+  else vrLocomotion(dt);
+  updateRigHeight(dt);
+  updateFlight(dt, xr);
+  camera.getWorldPosition(camPos);
+  ovMove.material.opacity += (((xr && (movingNow || flightActive())) ? 0.55 : 0) - ovMove.material.opacity) * Math.min(1, dt * 6);
+  ovMove.visible = ovMove.material.opacity > 0.01;
   invulnT = Math.max(0, invulnT - dt);
   if (state === 'playing' && hp > 0 && hp <= hpMax * 0.3) {
     beatT -= dt;
@@ -4286,7 +4928,8 @@ function gameLoop(time, frame, forcedDt) {
 
   weaponCD = Math.max(0, weaponCD - dt); cdL = Math.max(0, cdL - dt); cdR = Math.max(0, cdR - dt);
   for (const k of ['golden', 'boom', 'slow']) if (power[k] > 0) power[k] = Math.max(0, power[k] - dt);
-  timeScale += ((power.slow > 0 ? 0.35 : 1) - timeScale) * Math.min(1, dt * 5);
+  updateSkills(dt);
+  timeScale += (Math.min(power.slow > 0 ? 0.35 : 1, up.slowSkill) - timeScale) * Math.min(1, dt * 5);
   const edt = dt * timeScale;
   if (comboT > 0) { comboT -= dt; if (comboT <= 0) resetCombo(); }
 
@@ -4330,6 +4973,7 @@ function gameLoop(time, frame, forcedDt) {
       case 'gatling': if (rHeld && weaponCD <= 0) fireGatling(); break;
       case 'homing': if (rHeld && weaponCD <= 0) fireHoming(); break;
       case 'tesla': if (rHeld && weaponCD <= 0) fireTesla(); break;
+      case 'fireworks': if (rHeld && weaponCD <= 0) fireFireworks(); break;
       case 'laser': setLaser(rHeld); break;
     }
   } else setLaser(false);
@@ -4344,7 +4988,8 @@ function gameLoop(time, frame, forcedDt) {
   updateCrates(dt, edt);
   updateProjectiles(dt);
   updateCards(dt);
-  updateBuddies(dt);
+  updateBirds(dt);
+  updateCrackles(dt);
 
   updatePointScale();
   fxAdd.update(dt); fxAlpha.update(dt);
@@ -4386,7 +5031,7 @@ window.__cr = { get state() { return state; }, startWave, ufos, chickens, up, ge
   aimAt: p => { const d = new THREE.Vector3().copy(p).sub(camPos).normalize(); yaw = Math.atan2(-d.x, -d.z); pitch = Math.asin(clamp(d.y, -1, 1)); cameraRig.rotation.y = yaw; camera.rotation.x = pitch; },
   get crates() { return crates; }, get cards() { return cards; }, get projectiles() { return projectiles.length; }, get goos() { return goos.length; },
   hitCard: i => chooseUpgrade(cards[i]), activatePower, spawnCrate, get power() { return power; }, advance: handleMenuAdvance, shoot: () => { if (weaponCD <= 0) desktopShoot(); },
-  get hp() { return hp; }, get rig() { return cameraRig.position; }, get aim() { return pcAim; }, get paused() { return paused; }, setPaused,
+  get hp() { return hp; }, useSkill, slots, flight, moveRig, groundHeightAt, get birds() { return birds.length; }, get goosList() { return goos; }, startFlightEvent, get rig() { return cameraRig.position; }, get aim() { return pcAim; }, get paused() { return paused; }, setPaused,
   drawLap, lapCanvas, get cardsOffer() { return cards.map(c => c.upg.id + ':' + c.upg.rar); }, get pendingPicks() { return pendingPicks; }, buildOffer,
   get stateT() { return stateT; },
   step: (n, dt = 1 / 30, render = false) => { skipRender = !render; for (let i = 0; i < n; i++) gameLoop(0, null, dt); skipRender = false; } };
