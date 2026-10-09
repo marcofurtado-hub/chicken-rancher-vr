@@ -16,6 +16,9 @@ canvas{display:block}
 #err.show{display:block}
 
 #start{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;padding:26px 16px 130px;overflow-y:auto;color:#fff;text-align:center;cursor:pointer;touch-action:manipulation;background:radial-gradient(ellipse at 50% -10%,#2a5d93 0%,#10284a 40%,#060c18 100%)}
+#lang{display:flex;gap:8px;margin-bottom:12px}
+#lang button{font:bold 13px 'Helvetica Neue',Arial,sans-serif;letter-spacing:1px;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 12px;cursor:pointer}
+#lang button.on{background:var(--g);color:#0a200a;border-color:#fff;box-shadow:0 0 14px rgba(141,255,74,.55)}
 #start .deco{font-size:44px;line-height:1;margin-bottom:6px;animation:bob 2.6s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(-8px) rotate(-5deg)}}
 #start h1{font-family:Impact,'Arial Black',sans-serif;font-size:clamp(42px,9vw,82px);line-height:.92;letter-spacing:3px;color:var(--y);text-shadow:0 5px 0 #8a4a10,0 0 40px rgba(255,200,60,.45)}
@@ -97,12 +100,13 @@ canvas{display:block}
 </script>
 
 <div id="start">
+  <div id="lang"><button data-l="pt">🇧🇷 PORTUGUÊS</button><button data-l="en">🇺🇸 ENGLISH</button><button data-l="fi">🇫🇮 SUOMI</button></div>
   <div class="deco">🛸🐔</div>
   <h1>CHICKEN<br>RANCHER <span class="v">2.0</span></h1>
-  <div class="sub">DEFENDA O GALINHEIRO · META QUEST · DESKTOP · MOBILE</div>
-  <div class="best">🏆 RECORDE <b id="best-score">0</b></div>
+  <div class="sub" id="s-sub">DEFENDA O GALINHEIRO · META QUEST · DESKTOP · MOBILE</div>
+  <div class="best">🏆 <span id="s-best">RECORDE</span> <b id="best-score">0</b></div>
   <div class="grid">
-    <div class="card"><h3>🆕 O QUE TEM DE NOVO</h3><ul>
+    <div class="card" id="s-new"><h3>🆕 O QUE TEM DE NOVO</h3><ul>
       <li><b>12 waves</b> do meio-dia até a noite estrelada + <b>modo infinito</b></li>
       <li><b>11 armas</b>: mão, estilingue, besta, pistolas duplas, escopeta, lança-ovo, gatling, teleguiado, laser, raio tesla e <b>rojão de fogos</b></li>
       <li><b>11 tipos de nave</b>: comum, veloz, blindada, atiradora, kamikaze, divisora, escudeira, fantasma, <b>bombardeira, sniper e ladra</b></li>
@@ -115,7 +119,7 @@ canvas{display:block}
       <li><b>Modo PC</b>: ande pela varanda com WASD pra desviar da gosma</li>
       <li><b>Power-ups de paraquedas</b>, pontos, combo e recorde</li>
     </ul></div>
-    <div class="card"><h3>🎮 COMO JOGAR</h3>
+    <div class="card" id="s-how"><h3>🎮 COMO JOGAR</h3>
       Você está na cadeira de rodas da varanda e as galinhas estão no quintal. Os aliens querem levar todas. <b>Sua munição é ovo.</b><br><br>
       <b>VR:</b> na wave 1, arremesse os ovos com as mãos. Estilingue e besta: a mão esquerda pega a corda com o gatilho, puxa e solta. Pistolas: um gatilho para cada mão. As outras armas usam o gatilho direito (segure). <b>Joystick esquerdo</b> anda, o direito gira. <b>A / X</b> trocam de arma. <b>B, Y e GRIP direito</b> ativam as habilidades.<br>
       <b>PC:</b> <b>WASD</b> anda (desça a rampa pro quintal, desvie das bombas!), o mouse mira, o <b>clique esquerdo</b> atira (segure), o <b>botão direito</b> dá zoom, <b>1-9, 0, -</b> ou a roda do mouse trocam de arma, <b>Q / E / F</b> ativam as habilidades, <b>Esc</b> pausa e <b>M</b> liga e desliga a música.<br>
@@ -123,15 +127,98 @@ canvas{display:block}
     </div>
   </div>
   <div class="cta" id="cta">🖥️ JOGAR NO PC</div>
-  <div class="hint">No Quest: aperte <b>ENTER VR</b> lá embaixo<br><a href="v1/" id="v1link">jogar a versão 1.0 original</a></div>
+  <div class="hint"><span id="s-hint">No Quest: aperte <b>ENTER VR</b> lá embaixo</span><br><a href="v1/" id="v1link">jogar a versão 1.0 original</a></div>
 </div>
 
-<div id="hud"><div id="h-score">0</div><small>PONTOS · RECORDE <span id="h-best">0</span></small><div id="h-combo">COMBO x2</div><div class="row">🌊 <span id="h-wave">1/10</span></div><div class="row" id="h-chk"></div><div class="row" id="h-hp"></div><div id="h-power"></div></div>
+<div id="hud"><div id="h-score">0</div><small><span id="h-lbl">PONTOS · RECORDE</span> <span id="h-best">0</span></small><div id="h-combo">COMBO x2</div><div class="row">🌊 <span id="h-wave">1/10</span></div><div class="row" id="h-chk"></div><div class="row" id="h-hp"></div><div id="h-power"></div></div>
 <div id="wbar"></div>
 <div id="skillbar"></div>
-<div id="pause"><h2>PAUSADO</h2><p>clique pra continuar</p><div class="keys"><b>W</b><b>A</b><b>S</b><b>D</b> andar · <b>mouse</b> mirar · <b>clique</b> atirar · <b>botão direito</b> zoom<br><b>1</b>…<b>0</b> <b>-</b> / roda trocar arma · <b>Q</b> <b>E</b> <b>F</b> habilidades · <b>M</b> música · <b>Esc</b> pausa</div></div>
+<div id="pause"><h2 id="p-h">PAUSADO</h2><p id="p-p">clique pra continuar</p><div class="keys" id="p-keys"><b>W</b><b>A</b><b>S</b><b>D</b> andar · <b>mouse</b> mirar · <b>clique</b> atirar · <b>botão direito</b> zoom<br><b>1</b>…<b>0</b> <b>-</b> / roda trocar arma · <b>Q</b> <b>E</b> <b>F</b> habilidades · <b>M</b> música · <b>Esc</b> pausa</div></div>
 <div id="crosshair"></div>
 <button id="m-switch">🔄</button>
+
+<script>
+// Idioma: pt (padrão), en, fi. Escolhido na tela inicial e salvo em localStorage.
+(function(){
+  var L = null;
+  try { L = localStorage.getItem('cr_lang'); } catch (e) {}
+  if (L !== 'pt' && L !== 'en' && L !== 'fi') {
+    var n = (navigator.language || 'pt').toLowerCase();
+    L = n.indexOf('pt') === 0 ? 'pt' : n.indexOf('fi') === 0 ? 'fi' : 'en';
+  }
+  window.CR_LANG = L;
+  document.documentElement.lang = L === 'pt' ? 'pt-BR' : L;
+  var H = {
+    en: {
+      's-sub': 'DEFEND THE CHICKEN COOP · META QUEST · DESKTOP · MOBILE',
+      's-best': 'BEST',
+      's-new': '<h3>🆕 WHAT\'S NEW</h3><ul>' +
+        '<li><b>12 waves</b> from noon to a starry night + <b>endless mode</b></li>' +
+        '<li><b>11 weapons</b>: hand-thrown eggs, slingshot, crossbow, dual pistols, shotgun, egg launcher, gatling, homing, laser, tesla bolt and <b>fireworks</b></li>' +
+        '<li><b>11 saucer types</b>: saucer, speedster, armored, gunner, kamikaze, splitter, shielder, ghost, <b>bomber, sniper and thief</b></li>' +
+        '<li><b>Flying wheelchair</b> in the final battle: climb on and fly up to the saucers!</li>' +
+        '<li><b>Walk anywhere</b>: go down the porch ramp and fight in the yard</li>' +
+        '<li><b>Bosses</b> with weak spots and the <b>MOTHERSHIP</b> at the end</li>' +
+        '<li><b>Rooster, chicks and the Golden Hen</b>. A perfect wave hatches a chick</li>' +
+        '<li><b>Active skills</b> between waves: you trigger them, they last 8s and recharge</li>' +
+        '<li><b>You have health ❤️</b>: goo and kamikazes hurt. You lose if you die <b>or</b> if they take every chicken</li>' +
+        '<li><b>PC mode</b>: walk around the porch with WASD to dodge the goo</li>' +
+        '<li><b>Parachute power-ups</b>, points, combos and high score</li></ul>',
+      's-how': '<h3>🎮 HOW TO PLAY</h3>' +
+        'You sit in a wheelchair on the porch and the chickens are in the yard. The aliens want to take them all. <b>Your ammo is eggs.</b><br><br>' +
+        '<b>VR:</b> in wave 1, throw eggs with your hands. Slingshot and crossbow: grab the string with the left trigger, pull and release. Pistols: one trigger per hand. Other weapons use the right trigger (hold). <b>Left stick</b> walks, the right one turns. <b>A / X</b> switch weapons. <b>B, Y and right GRIP</b> trigger your skills.<br>' +
+        '<b>PC:</b> <b>WASD</b> walks (go down the ramp to the yard, dodge the bombs!), the mouse aims, <b>left click</b> shoots (hold), <b>right click</b> zooms, <b>1-9, 0, -</b> or the mouse wheel switch weapons, <b>Q / E / F</b> trigger skills, <b>Esc</b> pauses and <b>M</b> toggles music.<br>' +
+        '<b>Mobile:</b> drag to aim, tap to shoot and use 🔄 to switch weapons.',
+      'cta': '🖥️ PLAY ON PC',
+      's-hint': 'On Quest: press <b>ENTER VR</b> below',
+      'v1link': 'play the original version 1.0',
+      'h-lbl': 'SCORE · BEST',
+      'p-h': 'PAUSED', 'p-p': 'click to continue',
+      'p-keys': '<b>W</b><b>A</b><b>S</b><b>D</b> walk · <b>mouse</b> aim · <b>click</b> shoot · <b>right click</b> zoom<br><b>1</b>…<b>0</b> <b>-</b> / wheel switch weapon · <b>Q</b> <b>E</b> <b>F</b> skills · <b>M</b> music · <b>Esc</b> pause'
+    },
+    fi: {
+      's-sub': 'PUOLUSTA KANALAA · META QUEST · TIETOKONE · MOBIILI',
+      's-best': 'ENNÄTYS',
+      's-new': '<h3>🆕 UUTTA</h3><ul>' +
+        '<li><b>12 aaltoa</b> keskipäivästä tähtiyöhön + <b>loputon tila</b></li>' +
+        '<li><b>11 asetta</b>: käsin heitetyt munat, ritsa, varsijousi, tuplapistoolit, haulikko, munanheitin, gatling, hakeutuva, laser, teslasalama ja <b>ilotulitteet</b></li>' +
+        '<li><b>11 lautastyyppiä</b>: tavallinen, pika, panssari, ampuja, kamikaze, jakautuja, suojaaja, aave, <b>pommittaja, tarkka-ampuja ja varas</b></li>' +
+        '<li><b>Lentävä pyörätuoli</b> lopputaistelussa: nouse kyytiin ja lennä lautasten luo!</li>' +
+        '<li><b>Kävele minne haluat</b>: laskeudu kuistin luiskaa pihalle taistelemaan</li>' +
+        '<li><b>Pomot</b> heikkoine kohtineen ja lopussa <b>EMOALUS</b></li>' +
+        '<li><b>Kukko, tiput ja Kultakana</b>. Täydellinen aalto kuoriuttaa tipun</li>' +
+        '<li><b>Aktiiviset kyvyt</b> aaltojen välissä: aktivoit itse, ne kestävät 8 s ja latautuvat</li>' +
+        '<li><b>Sinulla on terveys ❤️</b>: lima ja kamikazet satuttavat. Häviät, jos kuolet <b>tai</b> jos kaikki kanat viedään</li>' +
+        '<li><b>PC-tila</b>: liiku kuistilla WASD-näppäimillä ja väistä limaa</li>' +
+        '<li><b>Laskuvarjo-tehosteet</b>, pisteet, combot ja ennätys</li></ul>',
+      's-how': '<h3>🎮 NÄIN PELAAT</h3>' +
+        'Istut pyörätuolissa kuistilla ja kanat ovat pihalla. Alienit haluavat viedä ne kaikki. <b>Ammuksesi ovat munia.</b><br><br>' +
+        '<b>VR:</b> aallossa 1 heitä munia käsilläsi. Ritsa ja varsijousi: tartu jänteeseen vasemmalla liipaisimella, vedä ja päästä. Pistoolit: yksi liipaisin kummallekin kädelle. Muut aseet käyttävät oikeaa liipaisinta (pidä pohjassa). <b>Vasen tikku</b> liikuttaa, oikea kääntää. <b>A / X</b> vaihtavat asetta. <b>B, Y ja oikea GRIP</b> aktivoivat kyvyt.<br>' +
+        '<b>PC:</b> <b>WASD</b> liikuttaa (laskeudu luiskaa pihalle, väistä pommeja!), hiiri tähtää, <b>vasen klikkaus</b> ampuu (pidä pohjassa), <b>oikea klikkaus</b> zoomaa, <b>1-9, 0, -</b> tai rulla vaihtavat asetta, <b>Q / E / F</b> aktivoivat kyvyt, <b>Esc</b> keskeyttää ja <b>M</b> kytkee musiikin.<br>' +
+        '<b>Mobiili:</b> tähtää vetämällä, ammu napauttamalla ja vaihda asetta 🔄-napista.',
+      'cta': '🖥️ PELAA PC:LLÄ',
+      's-hint': 'Questissa: paina <b>ENTER VR</b> alhaalla',
+      'v1link': 'pelaa alkuperäistä versiota 1.0',
+      'h-lbl': 'PISTEET · ENNÄTYS',
+      'p-h': 'TAUKO', 'p-p': 'klikkaa jatkaaksesi',
+      'p-keys': '<b>W</b><b>A</b><b>S</b><b>D</b> liiku · <b>hiiri</b> tähtää · <b>klikkaus</b> ammu · <b>oikea klikkaus</b> zoom<br><b>1</b>…<b>0</b> <b>-</b> / rulla vaihda asetta · <b>Q</b> <b>E</b> <b>F</b> kyvyt · <b>M</b> musiikki · <b>Esc</b> tauko'
+    }
+  };
+  var T = H[L];
+  if (T) for (var id in T) { var el = document.getElementById(id); if (el) el.innerHTML = T[id]; }
+  var bs = document.querySelectorAll('#lang button');
+  for (var i = 0; i < bs.length; i++) {
+    if (bs[i].getAttribute('data-l') === L) bs[i].className = 'on';
+    bs[i].addEventListener('click', function (e) {
+      e.stopPropagation();
+      var l = this.getAttribute('data-l');
+      if (l === window.CR_LANG) return;
+      try { localStorage.setItem('cr_lang', l); } catch (err) {}
+      location.reload();
+    });
+  }
+})();
+</script>
 
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
@@ -145,6 +232,8 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 // =============================================================================
 // UTIL
 // =============================================================================
+const LANG = window.CR_LANG || 'pt';
+const tr = (pt, en, fi) => (LANG === 'en' ? en : LANG === 'fi' ? fi : pt);
 const D2R = Math.PI / 180;
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -177,35 +266,35 @@ const BASE_COMBO_WINDOW = 2.6;
 const MAX_PROJECTILES = 240;
 
 const WEAPONS = {
-  hands:    { label: 'OVOS NA MÃO',     icon: '🥚' },
-  slingshot:{ label: 'ESTILINGUE',      icon: '🪨' },
-  crossbow: { label: 'BESTA',           icon: '🏹' },
-  pistols:  { label: 'PISTOLAS DUPLAS', icon: '🔫' },
-  shotgun:  { label: 'ESCOPETA',        icon: '💥' },
-  launcher: { label: 'LANÇA-OVO',       icon: '💣' },
+  hands:    { label: tr('OVOS NA MÃO', 'EGGS IN HAND', 'MUNAT KÄDESSÄ'),     icon: '🥚' },
+  slingshot:{ label: tr('ESTILINGUE', 'SLINGSHOT', 'RITSA'),      icon: '🪨' },
+  crossbow: { label: tr('BESTA', 'CROSSBOW', 'VARSIJOUSI'),           icon: '🏹' },
+  pistols:  { label: tr('PISTOLAS DUPLAS', 'DUAL PISTOLS', 'TUPLAPISTOOLIT'), icon: '🔫' },
+  shotgun:  { label: tr('ESCOPETA', 'SHOTGUN', 'HAULIKKO'),        icon: '💥' },
+  launcher: { label: tr('LANÇA-OVO', 'EGG LAUNCHER', 'MUNANHEITIN'),       icon: '💣' },
   gatling:  { label: 'GATLING',         icon: '🔥' },
-  homing:   { label: 'TELEGUIADO',      icon: '🚀' },
+  homing:   { label: tr('TELEGUIADO', 'HOMING', 'HAKEUTUVA'),      icon: '🚀' },
   laser:    { label: 'LASER',           icon: '⚡' },
-  tesla:    { label: 'RAIO TESLA',      icon: '🌩' },
-  fireworks:{ label: 'ROJÃO',           icon: '🎆' },
+  tesla:    { label: tr('RAIO TESLA', 'TESLA BOLT', 'TESLASALAMA'),      icon: '🌩' },
+  fireworks:{ label: tr('ROJÃO', 'FIREWORKS', 'ILOTULITE'),           icon: '🎆' },
 };
 const WEAPON_ORDER = ['hands', 'slingshot', 'crossbow', 'pistols', 'shotgun', 'launcher', 'gatling', 'homing', 'laser', 'tesla', 'fireworks'];
 
 // role: abduct | gunner | dive | support
 const UFO_TYPES = {
-  saucer:   { name: 'NAVE COMUM',     desc: 'abduz galinhas com o feixe',          role: 'abduct',  hp: 1, scale: 1.0,  speed: 1.0,  beam: 1.0,  color: 0xb8c2d4, glow: 0x5effd0, pts: 100, drop: 0.07 },
-  zippy:    { name: 'NAVE VELOZ',     desc: 'zigue-zague e abdução rápida',        role: 'abduct',  hp: 1, scale: 0.78, speed: 1.75, beam: 0.65, color: 0xe04848, glow: 0xffa040, pts: 150, drop: 0.09 },
-  tank:     { name: 'NAVE BLINDADA',  desc: 'aguenta vários ovos',                 role: 'abduct',  hp: 3, scale: 1.35, speed: 0.62, beam: 1.25, color: 0xd4aa3c, glow: 0xfff07a, pts: 250, drop: 0.22 },
-  gunner:   { name: 'NAVE ATIRADORA', desc: 'cospe gosma em você. Acerte a gosma no ar!', role: 'gunner', hp: 2, scale: 1.05, speed: 1.1, beam: 0, color: 0x8e5ad8, glow: 0x8aff50, pts: 200, drop: 0.14 },
-  kamikaze: { name: 'NAVE KAMIKAZE',  desc: 'mergulha na varanda. Derrube antes!',  role: 'dive',    hp: 1, scale: 0.85, speed: 1.0,  beam: 0,    color: 0xff8a20, glow: 0xff3020, pts: 175, drop: 0.10 },
-  splitter: { name: 'NAVE DIVISORA',  desc: 'vira duas quando explode',            role: 'abduct',  hp: 2, scale: 1.25, speed: 0.9,  beam: 1.0,  color: 0x2fae9c, glow: 0xa0ffe8, pts: 200, drop: 0.12 },
-  mini:     { name: 'MINI NAVE',      desc: '',                                    role: 'abduct',  hp: 1, scale: 0.6,  speed: 1.6,  beam: 0.7,  color: 0x5fd8c4, glow: 0xa0ffe8, pts: 60,  drop: 0.0 },
-  shielder: { name: 'NAVE ESCUDEIRA', desc: 'blinda as outras. Mate ela primeiro!', role: 'support', hp: 3, scale: 1.1,  speed: 0.8,  beam: 0,    color: 0x3a66e8, glow: 0x70b0ff, pts: 300, drop: 0.28 },
-  ghost:    { name: 'NAVE FANTASMA',  desc: 'some e reaparece do nada',            role: 'abduct',  hp: 1, scale: 1.0,  speed: 1.2,  beam: 0.9,  color: 0xd8e0ff, glow: 0xd0a8ff, pts: 250, drop: 0.14 },
-  bomber:   { name: 'NAVE BOMBARDEIRA', desc: 'solta bombas onde você está. Saia de baixo!', role: 'bomber', hp: 3, scale: 1.2, speed: 1.0, beam: 0, color: 0x5a6a3a, glow: 0xff5020, pts: 250, drop: 0.18 },
-  sniper:   { name: 'NAVE SNIPER',      desc: 'mira um laser em você. Saia da mira!',  role: 'sniper',  hp: 2, scale: 0.95, speed: 1.0, beam: 0,    color: 0x2a3038, glow: 0xff2040, pts: 300, drop: 0.20 },
-  thief:    { name: 'NAVE LADRA',       desc: 'agarra uma galinha e foge voando baixo', role: 'thief',  hp: 2, scale: 0.9,  speed: 1.0, beam: 0,    color: 0xc03080, glow: 0xff60c0, pts: 250, drop: 0.12 },
-  boss:     { name: 'CHEFÃO',         desc: '',                                    role: 'boss',    hp: 0, scale: 2.4,  speed: 0.75, beam: 0.8,  color: 0x3c3c4c, glow: 0xff3838, pts: 1500, drop: 1 },
+  saucer:   { name: tr('NAVE COMUM', 'SAUCER', 'LAUTANEN'),     desc: tr('abduz galinhas com o feixe', 'abducts chickens with its beam', 'sieppaa kanoja säteellään'),          role: 'abduct',  hp: 1, scale: 1.0,  speed: 1.0,  beam: 1.0,  color: 0xb8c2d4, glow: 0x5effd0, pts: 100, drop: 0.07 },
+  zippy:    { name: tr('NAVE VELOZ', 'SPEEDSTER', 'PIKALAUTANEN'),     desc: tr('zigue-zague e abdução rápida', 'zigzags and abducts fast', 'siksakkaa ja sieppaa nopeasti'),        role: 'abduct',  hp: 1, scale: 0.78, speed: 1.75, beam: 0.65, color: 0xe04848, glow: 0xffa040, pts: 150, drop: 0.09 },
+  tank:     { name: tr('NAVE BLINDADA', 'ARMORED SAUCER', 'PANSSARILAUTANEN'),  desc: tr('aguenta vários ovos', 'takes several eggs', 'kestää monta munaa'),                 role: 'abduct',  hp: 3, scale: 1.35, speed: 0.62, beam: 1.25, color: 0xd4aa3c, glow: 0xfff07a, pts: 250, drop: 0.22 },
+  gunner:   { name: tr('NAVE ATIRADORA', 'GUNNER', 'AMPUJA'), desc: tr('cospe gosma em você. Acerte a gosma no ar!', 'spits goo at you. Shoot the goo mid-air!', 'sylkee limaa päällesi. Ammu lima ilmassa!'), role: 'gunner', hp: 2, scale: 1.05, speed: 1.1, beam: 0, color: 0x8e5ad8, glow: 0x8aff50, pts: 200, drop: 0.14 },
+  kamikaze: { name: tr('NAVE KAMIKAZE', 'KAMIKAZE', 'KAMIKAZE'),  desc: tr('mergulha na varanda. Derrube antes!', 'dives at the porch. Shoot it down first!', 'syöksyy kuistille. Ammu se alas ensin!'),  role: 'dive',    hp: 1, scale: 0.85, speed: 1.0,  beam: 0,    color: 0xff8a20, glow: 0xff3020, pts: 175, drop: 0.10 },
+  splitter: { name: tr('NAVE DIVISORA', 'SPLITTER', 'JAKAUTUJA'),  desc: tr('vira duas quando explode', 'splits in two when it blows up', 'jakautuu kahdeksi räjähtäessään'),            role: 'abduct',  hp: 2, scale: 1.25, speed: 0.9,  beam: 1.0,  color: 0x2fae9c, glow: 0xa0ffe8, pts: 200, drop: 0.12 },
+  mini:     { name: tr('MINI NAVE', 'MINI SAUCER', 'MINILAUTANEN'),      desc: '',                                    role: 'abduct',  hp: 1, scale: 0.6,  speed: 1.6,  beam: 0.7,  color: 0x5fd8c4, glow: 0xa0ffe8, pts: 60,  drop: 0.0 },
+  shielder: { name: tr('NAVE ESCUDEIRA', 'SHIELDER', 'SUOJAAJA'), desc: tr('blinda as outras. Mate ela primeiro!', 'shields the others. Kill it first!', 'suojaa muita. Tuhoa se ensin!'), role: 'support', hp: 3, scale: 1.1,  speed: 0.8,  beam: 0,    color: 0x3a66e8, glow: 0x70b0ff, pts: 300, drop: 0.28 },
+  ghost:    { name: tr('NAVE FANTASMA', 'GHOST SAUCER', 'AAVELAUTANEN'),  desc: tr('some e reaparece do nada', 'vanishes and reappears out of nowhere', 'katoaa ja ilmestyy tyhjästä'),            role: 'abduct',  hp: 1, scale: 1.0,  speed: 1.2,  beam: 0.9,  color: 0xd8e0ff, glow: 0xd0a8ff, pts: 250, drop: 0.14 },
+  bomber:   { name: tr('NAVE BOMBARDEIRA', 'BOMBER', 'POMMITTAJA'), desc: tr('solta bombas onde você está. Saia de baixo!', 'drops bombs where you stand. Get out from under it!', 'pudottaa pommeja päällesi. Väistä alta!'), role: 'bomber', hp: 3, scale: 1.2, speed: 1.0, beam: 0, color: 0x5a6a3a, glow: 0xff5020, pts: 250, drop: 0.18 },
+  sniper:   { name: tr('NAVE SNIPER', 'SNIPER', 'TARKKA-AMPUJA'),      desc: tr('mira um laser em você. Saia da mira!', 'locks a laser on you. Move out of its sights!', 'tähtää sinua laserilla. Väistä tähtäin!'),  role: 'sniper',  hp: 2, scale: 0.95, speed: 1.0, beam: 0,    color: 0x2a3038, glow: 0xff2040, pts: 300, drop: 0.20 },
+  thief:    { name: tr('NAVE LADRA', 'THIEF', 'VARAS'),       desc: tr('agarra uma galinha e foge voando baixo', 'grabs a chicken and flees flying low', 'nappaa kanan ja pakenee matalalla'), role: 'thief',  hp: 2, scale: 0.9,  speed: 1.0, beam: 0,    color: 0xc03080, glow: 0xff60c0, pts: 250, drop: 0.12 },
+  boss:     { name: tr('CHEFÃO', 'BOSS', 'POMO'),         desc: '',                                    role: 'boss',    hp: 0, scale: 2.4,  speed: 0.75, beam: 0.8,  color: 0x3c3c4c, glow: 0xff3838, pts: 1500, drop: 1 },
 };
 
 // aggro = quanto as naves atacam você (tiros de plasma, cadência das atiradoras, bombas, sniper)
@@ -1394,10 +1483,10 @@ function pulseController(ctrl, intensity, duration) {
 // CHICKENS
 // =============================================================================
 const CHICKEN_KINDS = {
-  hen:     { label: 'Galinha',         scale: 1.0,  speed: 0.6, beamMul: 1.0, flee: 1.7 },
-  rooster: { label: 'Galo',            scale: 1.22, speed: 0.7, beamMul: 1.6, flee: 1.9 },
-  chick:   { label: 'Pintinho',        scale: 0.6,  speed: 1.0, beamMul: 0.7, flee: 2.4 },
-  golden:  { label: 'Galinha de Ouro', scale: 1.05, speed: 0.6, beamMul: 1.0, flee: 1.8 },
+  hen:     { label: tr('Galinha', 'Hen', 'Kana'),         scale: 1.0,  speed: 0.6, beamMul: 1.0, flee: 1.7 },
+  rooster: { label: tr('Galo', 'Rooster', 'Kukko'),            scale: 1.22, speed: 0.7, beamMul: 1.6, flee: 1.9 },
+  chick:   { label: tr('Pintinho', 'Chick', 'Tipu'),        scale: 0.6,  speed: 1.0, beamMul: 0.7, flee: 2.4 },
+  golden:  { label: tr('Galinha de Ouro', 'Golden Hen', 'Kultakana'), scale: 1.05, speed: 0.6, beamMul: 1.0, flee: 1.8 },
 };
 const HEN_SKINS = [[0xfafafa, 0xe6e6e6], [0xc07a3a, 0xa0602a], [0x3a3a3e, 0x2a2a2e], [0xe8c890, 0xd4b070]];
 const SHADOW_GEO = new THREE.PlaneGeometry(1, 1); SHADOW_GEO.rotateX(-Math.PI / 2);
@@ -1933,7 +2022,7 @@ function drawHpBar(u) {
   ctx.fillStyle = pct > 0.5 ? '#ff4040' : pct > 0.25 ? '#ffa030' : '#ff2020';
   ctx.fillRect(8, 8, 496 * pct, 48);
   ctx.fillStyle = '#fff'; ctx.font = 'bold 30px Impact, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText((u.kind === 'mother' ? 'NAVE-MÃE  ' : 'CHEFÃO  ') + Math.ceil(pct * 100) + '%', 256, 34);
+  ctx.fillText((u.kind === 'mother' ? tr('NAVE-MÃE  ', 'MOTHERSHIP  ', 'EMOALUS  ') : tr('CHEFÃO  ', 'BOSS  ', 'POMO  ')) + Math.ceil(pct * 100) + '%', 256, 34);
   bar.userData.tex.needsUpdate = true;
 }
 
@@ -1956,7 +2045,7 @@ function spawnBoss(hp) {
   drawHpBar(u);
   ufos.push(u);
   playBossSpawn(); pulseAll(0.6, 200);
-  showBanner3D('⚠ CHEFÃO ⚠', 'mire na luz vermelha embaixo dele', '', '#ff4040', 2.4);
+  showBanner3D(tr('⚠ CHEFÃO ⚠', '⚠ BOSS ⚠', '⚠ POMO ⚠'), tr('mire na luz vermelha embaixo dele', 'aim at the red light underneath', 'tähtää punaiseen valoon sen alla'), '', '#ff4040', 2.4);
   return u;
 }
 function spawnMothership() {
@@ -1978,7 +2067,7 @@ function spawnMothership() {
   drawHpBar(u);
   ufos.push(u);
   playMotherSpawn(); pulseAll(0.8, 600);
-  showBanner3D('NAVE-MÃE!', 'destrua os 3 módulos vermelhos', 'depois acerte o núcleo', '#ff40ff', 3.5);
+  showBanner3D(tr('NAVE-MÃE!', 'MOTHERSHIP!', 'EMOALUS!'), tr('destrua os 3 módulos vermelhos', 'destroy the 3 red pods', 'tuhoa 3 punaista moduulia'), tr('depois acerte o núcleo', 'then hit the core', 'osu sitten ytimeen'), '#ff40ff', 3.5);
   return u;
 }
 
@@ -1995,7 +2084,7 @@ function startBeam(u, tgt) {
     u.stunT = 1.6; u.target = null;
     u.group.position.y += 1.2;
     feathers(tgt.group.position, 12); playShieldDown(); pulseAll(0.3, 60);
-    popup('ESCUDO DE PENAS!', tgt.group.position.clone().setY(1.3), '#ffffff', 0.9);
+    popup(tr('ESCUDO DE PENAS!', 'FEATHER SHIELD!', 'HÖYHENSUOJA!'), tgt.group.position.clone().setY(1.3), '#ffffff', 0.9);
     return;
   }
   u.state = 'beaming'; u.beamElapsed = 0;
@@ -2209,7 +2298,7 @@ function exposeCore(u) {
   u.armorVel = new THREE.Vector3(rand(-1, 1), 1, rand(-1, 1));
   spawnBlast(u.core.getWorldPosition(TV[6]), 3, 0xff40ff);
   playBoom();
-  showBanner3D('NÚCLEO EXPOSTO!', 'ACERTE A ESFERA ROSA', '', '#ff40ff', 2.2);
+  showBanner3D(tr('NÚCLEO EXPOSTO!', 'CORE EXPOSED!', 'YDIN PALJAANA!'), tr('ACERTE A ESFERA ROSA', 'HIT THE PINK ORB', 'OSU VAALEANPUNAISEEN PALLOON'), '', '#ff40ff', 2.2);
 }
 function updateMother(u, dt, edt) {
   const g = u.group, gp = g.position;
@@ -2331,7 +2420,7 @@ function updateSniper(u, dt, edt) {
       u.shotFlash = 0.14;
       playSniperShot();
       sparks(u.lockP, 0xff3050, 10, 3, 0.06, 0.4);
-      if (camPos.distanceTo(u.lockP) < 0.7) damagePlayer(25, 'SNIPER!', '#ff3050');
+      if (camPos.distanceTo(u.lockP) < 0.7) damagePlayer(25, tr('SNIPER!', 'SNIPER!', 'TARKKA-AMPUJA!'), '#ff3050');
     }
   }
 }
@@ -2351,7 +2440,7 @@ function updateThief(u, dt, edt) {
         if (tgt.shieldHits <= 0) setChickenShield(tgt, false);
         u.stunT = 1.6; u.target = null; gp.y += 1.5;
         feathers(tgt.group.position, 12); playShieldDown();
-        popup('ESCUDO DE PENAS!', tgt.group.position.clone().setY(1.3), '#ffffff', 0.9);
+        popup(tr('ESCUDO DE PENAS!', 'FEATHER SHIELD!', 'HÖYHENSUOJA!'), tgt.group.position.clone().setY(1.3), '#ffffff', 0.9);
         return;
       }
       u.state = 'grab'; u.grabT = 0.5;
@@ -2360,7 +2449,7 @@ function updateThief(u, dt, edt) {
       if (u.fleeDir.lengthSq() < 0.01) u.fleeDir.set(0, 0, 1);
       u.fleeDir.normalize();
       playThiefGrab();
-      popup('LADRA!', gp.clone().setY(gp.y + 0.6), '#ff60c0', 1);
+      popup(tr('LADRA!', 'THIEF!', 'VARAS!'), gp.clone().setY(gp.y + 0.6), '#ff60c0', 1);
     } else moveToward(gp, tp, (3.6 + Math.min(currentWave, 12) * 0.1) * edt);
   } else if (u.state === 'grab' || u.state === 'flee') {
     const tgt = u.target;
@@ -2469,9 +2558,9 @@ const BOMB_HALO_MAT = new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0xff6020,
 const TARGET_RING_MAT = new THREE.MeshBasicMaterial({ color: 0xff3020, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
 const SNIPER_LASER_MAT = new THREE.MeshBasicMaterial({ color: 0xff2040, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
 const EPROJ = {
-  goo:    { geo: GOO_GEO, mat: GOO_MAT, halo: GOO_HALO_MAT, hs: 0.75, dmg: 18, label: 'GOSMA!', css: '#8aff3a', hex: 0x8aff3a, r: 0.36 },
+  goo:    { geo: GOO_GEO, mat: GOO_MAT, halo: GOO_HALO_MAT, hs: 0.75, dmg: 18, label: tr('GOSMA!', 'GOO!', 'LIMA!'), css: '#8aff3a', hex: 0x8aff3a, r: 0.36 },
   plasma: { geo: PLASMA_GEO, mat: PLASMA_MAT, halo: PLASMA_HALO_MAT, hs: 0.5, dmg: 10, label: 'PLASMA!', css: '#ff5060', hex: 0xff5060, r: 0.32 },
-  bomb:   { geo: BOMB_GEO, mat: BOMB_MAT, halo: BOMB_HALO_MAT, hs: 0.6, dmg: 28, label: 'BOMBA!', css: '#ff8030', hex: 0xff8030, r: 0.42 },
+  bomb:   { geo: BOMB_GEO, mat: BOMB_MAT, halo: BOMB_HALO_MAT, hs: 0.6, dmg: 28, label: tr('BOMBA!', 'BOMB!', 'POMMI!'), css: '#ff8030', hex: 0xff8030, r: 0.42 },
 };
 function fireEnemy(type, from, spread = 0) {
   const E = EPROJ[type];
@@ -2515,7 +2604,7 @@ function bombExplode(g) {
   const p = g.mesh.position;
   fireball(p, 1.1); spawnBlast(p, 2.2, 0xff6020); playBoom(); pulseAll(0.5, 120);
   const rp = cameraRig.position;
-  if (Math.hypot(rp.x - p.x, rp.z - p.z) < 2.0 && Math.abs(camPos.y - p.y) < 3) damagePlayer(EPROJ.bomb.dmg, 'BOMBA!', '#ff8030');
+  if (Math.hypot(rp.x - p.x, rp.z - p.z) < 2.0 && Math.abs(camPos.y - p.y) < 3) damagePlayer(EPROJ.bomb.dmg, tr('BOMBA!', 'BOMB!', 'POMMI!'), '#ff8030');
   for (const ck of chickens) if (Math.hypot(ck.group.position.x - p.x, ck.group.position.z - p.z) < 2.5) scareChicken(ck, p);
 }
 function hitPlayerBy(type) {
@@ -2553,11 +2642,11 @@ function updateGoos(dt, edt) {
 // POWER-UPS (caixas de paraquedas — atire nelas!)
 // =============================================================================
 const POWERS = {
-  golden:  { label: 'OVO DE OURO',  sub: 'DANO x3 · 8s',       color: 0xffc820, css: '#ffd040', icon: '🥚', dur: 8 },
-  boom:    { label: 'OVO-BOMBA',    sub: 'EXPLODE TUDO · 8s',  color: 0xff6020, css: '#ff8040', icon: '💣', dur: 8 },
-  slow:    { label: 'CÂMERA LENTA', sub: 'ALIENS LERDOS · 8s', color: 0x40c0ff, css: '#60d0ff', icon: '⏳', dur: 8 },
-  chicken: { label: '+1 GALINHA',   sub: '',              color: 0xffffff, css: '#ffffff', icon: '🐔', dur: 0 },
-  heal:    { label: 'CURA',         sub: '+35 DE VIDA',   color: 0xff5070, css: '#ff6080', icon: '❤️', dur: 0 },
+  golden:  { label: tr('OVO DE OURO', 'GOLDEN EGG', 'KULTAMUNA'),  sub: tr('DANO x3 · 8s', 'DAMAGE x3 · 8s', 'VAHINKO x3 · 8 s'),       color: 0xffc820, css: '#ffd040', icon: '🥚', dur: 8 },
+  boom:    { label: tr('OVO-BOMBA', 'BOMB EGG', 'POMMIMUNA'),    sub: tr('EXPLODE TUDO · 8s', 'EVERYTHING EXPLODES · 8s', 'KAIKKI RÄJÄHTÄÄ · 8 s'),  color: 0xff6020, css: '#ff8040', icon: '💣', dur: 8 },
+  slow:    { label: tr('CÂMERA LENTA', 'SLOW MOTION', 'HIDASTUS'), sub: tr('ALIENS LERDOS · 8s', 'SLOW ALIENS · 8s', 'HITAAT ALIENIT · 8 s'), color: 0x40c0ff, css: '#60d0ff', icon: '⏳', dur: 8 },
+  chicken: { label: tr('+1 GALINHA', '+1 CHICKEN', '+1 KANA'),   sub: '',              color: 0xffffff, css: '#ffffff', icon: '🐔', dur: 0 },
+  heal:    { label: tr('CURA', 'HEAL', 'PARANNUS'),         sub: tr('+35 DE VIDA', '+35 HP', '+35 HP'),   color: 0xff5070, css: '#ff6080', icon: '❤️', dur: 0 },
 };
 const CRATE_GEO = new THREE.BoxGeometry(0.42, 0.42, 0.42);
 const CRATE_CY = 0.5, CRATE_RX = 0.8, CRATE_RY = 1.0;
@@ -3146,7 +3235,7 @@ function fireTesla() {
     }
     if (power.boom > 0) explodeAt(hp, { boomR: 2, boomDmg: 2, golden: power.golden > 0 });
   }
-  if (popAt && total >= 2) popup('CHOQUE x' + (total + 1) + '!', popAt.clone().setY(popAt.y + 0.5), '#a8ecff', 0.9, 0.9);
+  if (popAt && total >= 2) popup(tr('CHOQUE x', 'SHOCK x', 'SHOKKI x') + (total + 1) + '!', popAt.clone().setY(popAt.y + 0.5), '#a8ecff', 0.9, 0.9);
   playTesla(); pulseController(rightCtrl, 0.55, 50);
   weaponCD = 0.28 / up.rate;
   tesla.userData.kick = 1;
@@ -3441,19 +3530,19 @@ function hitPart(u, part, dmg, pos, fx = true) {
   if (!isAlive(u)) return;
   if (u.shieldedBy && isAlive(u.shieldedBy)) {
     sparks(pos, 0x70b0ff, 5, 3); playTink();
-    if (totalTime - u.lastPop > 1.4) { popup('ESCUDO!', pos, '#80c0ff', 0.8, 0.8); u.lastPop = totalTime; }
+    if (totalTime - u.lastPop > 1.4) { popup(tr('ESCUDO!', 'SHIELD!', 'SUOJA!'), pos, '#80c0ff', 0.8, 0.8); u.lastPop = totalTime; }
     return;
   }
   if (part.kind === 'armor') {
     sparks(pos, 0xffe080, 5, 3); playTink();
-    if (totalTime - u.lastPop > 1.6) { popup('BLINDADO!', pos, '#cccccc', 0.9, 0.8); u.lastPop = totalTime; }
+    if (totalTime - u.lastPop > 1.6) { popup(tr('BLINDADO!', 'ARMORED!', 'PANSSAROITU!'), pos, '#cccccc', 0.9, 0.8); u.lastPop = totalTime; }
     return;
   }
   if (fx) {
     if (up.rage) dmg *= 1 + up.rage * 0.10 * Math.max(0, INITIAL_FLOCK.length - chickensAlive());
     if (up.critChance && Math.random() < up.critChance) {
       dmg *= 2; playCritical();
-      if (totalTime - u.lastPop > 0.6) { popup('CRÍTICO!', pos, '#ff6040', 0.9, 0.8); u.lastPop = totalTime; }
+      if (totalTime - u.lastPop > 0.6) { popup(tr('CRÍTICO!', 'CRITICAL!', 'KRIITTINEN!'), pos, '#ff6040', 0.9, 0.8); u.lastPop = totalTime; }
     }
   }
   if (fx) hitMarkT = 0.12;
@@ -3464,7 +3553,7 @@ function hitPart(u, part, dmg, pos, fx = true) {
     if (part.hp <= 0) {
       part.active = false; part.obj.visible = false;
       fireball(part.c, 1.4); spawnBlast(part.c, 2.5, 0xff4060); playUfoExplode(); pulseAll(0.7, 150);
-      addScore(800, part.c, 'MÓDULO! +800', '#ff60a0', 1.2);
+      addScore(800, part.c, tr('MÓDULO! +800', 'POD! +800', 'MODUULI! +800'), '#ff60a0', 1.2);
       if (!u.parts.some(p => p.kind === 'pod' && p.active)) exposeCore(u);
     }
     return;
@@ -3473,7 +3562,7 @@ function hitPart(u, part, dmg, pos, fx = true) {
   u.flashT = 0.09;
   if (part.mult > 1) {
     playCritical();
-    if (totalTime - u.lastPop > 0.6) { popup('CRÍTICO!', pos, '#ff6040', 0.9, 0.8); u.lastPop = totalTime; }
+    if (totalTime - u.lastPop > 0.6) { popup(tr('CRÍTICO!', 'CRITICAL!', 'KRIITTINEN!'), pos, '#ff6040', 0.9, 0.8); u.lastPop = totalTime; }
   }
   if (u.hp <= 0) { killUfo(u, pos); return; }
   if (fx) applyStatus(u, dmg, pos);
@@ -3484,7 +3573,7 @@ function hitPart(u, part, dmg, pos, fx = true) {
     while (u.minionMarks.length && u.hp / u.maxHp <= u.minionMarks[0]) {
       u.minionMarks.shift();
       for (let k = 0; k < 2; k++) spawnRegular(pick(['saucer', 'zippy']), u.group.position.clone().add(new THREE.Vector3(rand(-1.5, 1.5), -0.6, rand(-1.5, 1.5))));
-      popup('REFORÇOS!', u.group.position, '#ff8080', 1.2);
+      popup(tr('REFORÇOS!', 'REINFORCEMENTS!', 'VAHVISTUKSIA!'), u.group.position, '#ff8080', 1.2);
     }
   }
 }
@@ -3505,7 +3594,7 @@ function killUfo(u, hitPos) {
     u.state = 'dying'; u.deadT = 0;
     queue.length = 0;
     for (const o of ufos) if (o !== u && isAlive(o)) o.chainT = rand(0.3, 2.5);
-    showBanner3D('NAVE-MÃE DESTRUÍDA!', 'que ovada!', '', '#ff60ff', 3);
+    showBanner3D(tr('NAVE-MÃE DESTRUÍDA!', 'MOTHERSHIP DESTROYED!', 'EMOALUS TUHOTTU!'), tr('que ovada!', 'what an egging!', 'mikä munasade!'), '', '#ff60ff', 3);
     return;
   }
   u.state = 'dead'; u.deadT = 0;
@@ -3516,11 +3605,11 @@ function killUfo(u, hitPos) {
   sparks(pos, UFO_TYPES[u.typeKey].glow, 12, 5);
   spawnUfoDebris(pos, UFO_TYPES[u.typeKey].color, u.kind === 'boss' ? 16 : 6);
   playUfoExplode();
-  if (u.kind === 'boss') { spawnBlast(pos, 4, 0xff8030); pulseAll(0.95, 250); showBanner3D('CHEFÃO DERROTADO!', '', '', '#ffd040', 2); }
+  if (u.kind === 'boss') { spawnBlast(pos, 4, 0xff8030); pulseAll(0.95, 250); showBanner3D(tr('CHEFÃO DERROTADO!', 'BOSS DEFEATED!', 'POMO KUKISTETTU!'), '', '', '#ffd040', 2); }
   else pulseAll(0.45, 80);
   if (u.typeKey === 'splitter') {
     for (let k = 0; k < 2; k++) spawnRegular('mini', pos.clone().add(new THREE.Vector3(k ? 0.7 : -0.7, 0.2, 0)));
-    popup('DIVIDIU!', pos.clone().setY(pos.y + 0.6), '#a0ffe8', 0.9);
+    popup(tr('DIVIDIU!', 'SPLIT!', 'JAKAUTUI!'), pos.clone().setY(pos.y + 0.6), '#a0ffe8', 0.9);
   }
   maybeDropCrate(u, pos);
 }
@@ -3534,15 +3623,15 @@ function registerKill(u, pos, rescued, prog) {
   const lines = [];
   let base = u.pts;
   if (rescued) {
-    if (prog > 0.72) { base += 600; lines.push(['NA HORA H!', '#ff70ff', 0.9]); }
-    else { base += 300; lines.push(['RESGATE!', '#60e0ff', 0.9]); }
+    if (prog > 0.72) { base += 600; lines.push([tr('NA HORA H!', 'JUST IN TIME!', 'VIIME HETKELLÄ!'), '#ff70ff', 0.9]); }
+    else { base += 300; lines.push([tr('RESGATE!', 'RESCUE!', 'PELASTUS!'), '#60e0ff', 0.9]); }
   }
-  if (u.kind === 'ufo' && pos.distanceTo(camPos) > 17) { base += 100; lines.push(['DE LONGE!', '#ffffff', 0.8]); }
+  if (u.kind === 'ufo' && pos.distanceTo(camPos) > 17) { base += 100; lines.push([tr('DE LONGE!', 'LONG SHOT!', 'KAUKAA!'), '#ffffff', 0.8]); }
   if (totalTime - lastKillT < 0.25) multiN++; else multiN = 1;
   lastKillT = totalTime;
-  if (multiN === 2) { base += 100; lines.push(['DUPLO!', '#ffa040', 0.9]); }
-  else if (multiN === 3) { base += 250; lines.push(['TRIPLO!', '#ff7040', 1]); }
-  else if (multiN >= 4) { base += 400; lines.push(['MASSACRE!', '#ff3030', 1.1]); }
+  if (multiN === 2) { base += 100; lines.push([tr('DUPLO!', 'DOUBLE!', 'TUPLA!'), '#ffa040', 0.9]); }
+  else if (multiN === 3) { base += 250; lines.push([tr('TRIPLO!', 'TRIPLE!', 'TRIPLA!'), '#ff7040', 1]); }
+  else if (multiN >= 4) { base += 400; lines.push([tr('MASSACRE!', 'MASSACRE!', 'JOUKKOTUHO!'), '#ff3030', 1.1]); }
   const pts = Math.round(base * mult);
   score += pts;
   lines.unshift(['+' + pts, '#ffd040', u.kind === 'ufo' ? 1 : 1.6]);
@@ -3596,8 +3685,8 @@ function abductChicken(c, u) {
   resetCombo();
   playChickenAbducted(); ov.hurt = 0.45; pulseAll(0.6, 220);
   const left = chickensAlive();
-  popupStack([[c.kind === 'golden' ? 'LEVARAM A GALINHA DE OURO!' : '-1 ' + CHICKEN_KINDS[c.kind].label.toUpperCase(), '#ff4040', 1.2, 1.6],
-    ['restam ' + left + (left === 1 ? ' galinha' : ' galinhas'), left <= 2 ? '#ff6060' : '#ffffff', 0.9, 1.6]], u.group.position);
+  popupStack([[c.kind === 'golden' ? tr('LEVARAM A GALINHA DE OURO!', 'THEY TOOK THE GOLDEN HEN!', 'KULTAKANA VIETIIN!') : '-1 ' + CHICKEN_KINDS[c.kind].label.toUpperCase(), '#ff4040', 1.2, 1.6],
+    [tr('restam ' + left + (left === 1 ? ' galinha' : ' galinhas'), left + (left === 1 ? ' chicken left' : ' chickens left'), left + (left === 1 ? ' kana jäljellä' : ' kanaa jäljellä')), left <= 2 ? '#ff6060' : '#ffffff', 0.9, 1.6]], u.group.position);
   if (chickensAlive() === 0) enterGameOver('chickens');
 }
 function popupAhead(text, color, size = 1.2) {
@@ -3607,7 +3696,7 @@ function popupAhead(text, color, size = 1.2) {
 function damagePlayer(amount, label, color) {
   if (!(state === 'playing' || state === 'wave_intro')) return;
   if (invulnT > 0) return;
-  if (up.bubble) { playTink(); invulnT = 0.3; popupAhead('🛡 BLOQUEADO!', '#80e0ff', 0.8); return; }
+  if (up.bubble) { playTink(); invulnT = 0.3; popupAhead(tr('🛡 BLOQUEADO!', '🛡 BLOCKED!', '🛡 TORJUTTU!'), '#80e0ff', 0.8); return; }
   const dmg = Math.max(1, Math.round(amount * (1 - 0.2 * up.armor)));
   hp = Math.max(0, hp - dmg);
   invulnT = 0.6;
@@ -3626,7 +3715,7 @@ function gooHitPlayer() {
   resetCombo();
   ov.slime = 2.6;
   playGooSplat();
-  damagePlayer(EPROJ.goo.dmg, 'GOSMA!', '#8aff3a');
+  damagePlayer(EPROJ.goo.dmg, tr('GOSMA!', 'GOO!', 'LIMA!'), '#8aff3a');
 }
 function kamikazeHit(u) {
   const pos = u.group.position.clone();
@@ -3647,34 +3736,34 @@ function kamikazeHit(u) {
 // chefões dão uma escolha ÉPICA extra e o primeiro card do jogo é um ataque épico.
 const SKILL_DUR = 8, MAX_SLOTS = 3;
 const SKILLS = [
-  { id: 'fan',     cat: 'atk', rar: 'epico', icon: '🔱', title: 'OVO LEQUE',       desc: '+ovos em diagonal em todo tiro',  lvl: ['+2 ovos em leque', '+4 ovos em leque', '+4 ovos, recarga menor'] },
-  { id: 'double',  cat: 'atk', rar: 'epico', icon: '➕', title: 'RAJADA DUPLA',    desc: '+ovos lado a lado em todo tiro',  lvl: ['+1 ovo lado a lado', '+2 ovos lado a lado', '+2 ovos, recarga menor'] },
-  { id: 'fury',    cat: 'atk', rar: 'raro',  icon: '😤', title: 'FÚRIA',            desc: 'muito mais dano',                 lvl: ['+50% de dano', '+75% de dano', '+100% de dano'] },
-  { id: 'turbo',   cat: 'atk', rar: 'comum', icon: '⚡', title: 'DEDO TURBO',       desc: 'atira muito mais rápido',         lvl: ['+50% de cadência', '+75% de cadência', '+100% de cadência'] },
-  { id: 'eagle',   cat: 'atk', rar: 'raro',  icon: '🎯', title: 'OLHO DE ÁGUIA',    desc: 'chance de crítico (dano x2)',     lvl: ['35% de crítico', '50% de crítico', '65% de crítico'] },
-  { id: 'fire',    cat: 'egg', rar: 'raro',  icon: '🔥', title: 'OVO FLAMEJANTE',   desc: 'as naves pegam fogo',             lvl: ['queima +60%', 'queima +120%', 'queima +180%'] },
-  { id: 'ice',     cat: 'egg', rar: 'raro',  icon: '❄️', title: 'OVO CONGELANTE',   desc: 'naves e feixes ficam lentos',     lvl: ['40% mais lentas', '60% mais lentas', '60%, recarga menor'] },
-  { id: 'shock',   cat: 'egg', rar: 'raro',  icon: '🌩', title: 'OVO ELÉTRICO',     desc: 'choque pula pras vizinhas',       lvl: ['pula pra 2 naves', 'pula pra 3 naves', 'pula pra 4 naves'] },
-  { id: 'bounce',  cat: 'egg', rar: 'comum', icon: '🔁', title: 'RICOCHETE',        desc: 'o ovo quica de nave em nave',     lvl: ['quica 2 vezes', 'quica 3 vezes', 'quica 4 vezes'] },
-  { id: 'pierce',  cat: 'egg', rar: 'comum', icon: '🗡', title: 'OVO PERFURANTE',   desc: 'atravessa várias naves',          lvl: ['atravessa 2', 'atravessa 3', 'atravessa 4'] },
-  { id: 'bird',    cat: 'def', rar: 'epico', icon: '🐦', title: 'PASSARINHO',       desc: 'voa sozinho e caça naves',        lvl: ['1 passarinho', '1 passarinho forte', '2 passarinhos'] },
-  { id: 'slowmo',  cat: 'def', rar: 'raro',  icon: '⏳', title: 'CÂMERA LENTA',     desc: 'aliens em câmera lenta',          lvl: ['60% mais lentos', '70% mais lentos', '75% mais lentos'] },
-  { id: 'bubble',  cat: 'def', rar: 'raro',  icon: '🛡', title: 'BOLHA',            desc: 'você não toma dano',              lvl: ['bolha de 8s', 'recarga menor', 'recarga mínima'] },
-  { id: 'feather', cat: 'def', rar: 'comum', icon: '🪶', title: 'ESCUDO DE PENAS',  desc: 'galinhas bloqueiam abdução',      lvl: ['1 bloqueio por galinha', 'recarga menor', '2 bloqueios por galinha'] },
+  { id: 'fan',     cat: 'atk', rar: 'epico', icon: '🔱', title: tr('OVO LEQUE', 'FAN EGGS', 'VIUHKAMUNAT'),       desc: tr('+ovos em diagonal em todo tiro', '+diagonal eggs on every shot', '+vinomunia joka laukaukseen'),  lvl: [tr('+2 ovos em leque', '+2 fan eggs', '+2 viuhkamunaa'), tr('+4 ovos em leque', '+4 fan eggs', '+4 viuhkamunaa'), tr('+4 ovos, recarga menor', '+4 eggs, shorter cooldown', '+4 munaa, lyhyempi lataus')] },
+  { id: 'double',  cat: 'atk', rar: 'epico', icon: '➕', title: tr('RAJADA DUPLA', 'DOUBLE BURST', 'TUPLASARJA'),    desc: tr('+ovos lado a lado em todo tiro', '+side-by-side eggs on every shot', '+rinnakkaisia munia joka laukaukseen'),  lvl: [tr('+1 ovo lado a lado', '+1 side egg', '+1 rinnakkaismuna'), tr('+2 ovos lado a lado', '+2 side eggs', '+2 rinnakkaismunaa'), tr('+2 ovos, recarga menor', '+2 eggs, shorter cooldown', '+2 munaa, lyhyempi lataus')] },
+  { id: 'fury',    cat: 'atk', rar: 'raro',  icon: '😤', title: tr('FÚRIA', 'FURY', 'RAIVO'),            desc: tr('muito mais dano', 'much more damage', 'paljon enemmän vahinkoa'),                 lvl: [tr('+50% de dano', '+50% damage', '+50 % vahinkoa'), tr('+75% de dano', '+75% damage', '+75 % vahinkoa'), tr('+100% de dano', '+100% damage', '+100 % vahinkoa')] },
+  { id: 'turbo',   cat: 'atk', rar: 'comum', icon: '⚡', title: tr('DEDO TURBO', 'TURBO FINGER', 'TURBOSORMI'),       desc: tr('atira muito mais rápido', 'shoots much faster', 'ampuu paljon nopeammin'),         lvl: [tr('+50% de cadência', '+50% fire rate', '+50 % tulinopeutta'), tr('+75% de cadência', '+75% fire rate', '+75 % tulinopeutta'), tr('+100% de cadência', '+100% fire rate', '+100 % tulinopeutta')] },
+  { id: 'eagle',   cat: 'atk', rar: 'raro',  icon: '🎯', title: tr('OLHO DE ÁGUIA', 'EAGLE EYE', 'KOTKANSILMÄ'),    desc: tr('chance de crítico (dano x2)', 'critical chance (x2 damage)', 'kriittinen osuma (vahinko x2)'),     lvl: [tr('35% de crítico', '35% crit', '35 % kriittinen'), tr('50% de crítico', '50% crit', '50 % kriittinen'), tr('65% de crítico', '65% crit', '65 % kriittinen')] },
+  { id: 'fire',    cat: 'egg', rar: 'raro',  icon: '🔥', title: tr('OVO FLAMEJANTE', 'FLAMING EGG', 'LIEKKIMUNA'),   desc: tr('as naves pegam fogo', 'saucers catch fire', 'lautaset syttyvät tuleen'),             lvl: [tr('queima +60%', 'burn +60%', 'palo +60 %'), tr('queima +120%', 'burn +120%', 'palo +120 %'), tr('queima +180%', 'burn +180%', 'palo +180 %')] },
+  { id: 'ice',     cat: 'egg', rar: 'raro',  icon: '❄️', title: tr('OVO CONGELANTE', 'FREEZING EGG', 'JÄÄMUNA'),   desc: tr('naves e feixes ficam lentos', 'slows saucers and beams', 'hidastaa lautasia ja säteitä'),     lvl: [tr('40% mais lentas', '40% slower', '40 % hitaampia'), tr('60% mais lentas', '60% slower', '60 % hitaampia'), tr('60%, recarga menor', '60%, shorter cooldown', '60 %, lyhyempi lataus')] },
+  { id: 'shock',   cat: 'egg', rar: 'raro',  icon: '🌩', title: tr('OVO ELÉTRICO', 'ELECTRIC EGG', 'SÄHKÖMUNA'),     desc: tr('choque pula pras vizinhas', 'shock jumps to nearby saucers', 'shokki hyppää viereisiin'),       lvl: [tr('pula pra 2 naves', 'jumps to 2 saucers', 'hyppää 2 lautaseen'), tr('pula pra 3 naves', 'jumps to 3 saucers', 'hyppää 3 lautaseen'), tr('pula pra 4 naves', 'jumps to 4 saucers', 'hyppää 4 lautaseen')] },
+  { id: 'bounce',  cat: 'egg', rar: 'comum', icon: '🔁', title: tr('RICOCHETE', 'RICOCHET', 'KIMPOILU'),        desc: tr('o ovo quica de nave em nave', 'the egg bounces between saucers', 'muna kimpoaa lautaselta toiselle'),     lvl: [tr('quica 2 vezes', 'bounces 2 times', 'kimpoaa 2 kertaa'), tr('quica 3 vezes', 'bounces 3 times', 'kimpoaa 3 kertaa'), tr('quica 4 vezes', 'bounces 4 times', 'kimpoaa 4 kertaa')] },
+  { id: 'pierce',  cat: 'egg', rar: 'comum', icon: '🗡', title: tr('OVO PERFURANTE', 'PIERCING EGG', 'LÄPÄISYMUNA'),   desc: tr('atravessa várias naves', 'goes through several saucers', 'läpäisee monta lautasta'),          lvl: [tr('atravessa 2', 'pierces 2', 'läpäisee 2'), tr('atravessa 3', 'pierces 3', 'läpäisee 3'), tr('atravessa 4', 'pierces 4', 'läpäisee 4')] },
+  { id: 'bird',    cat: 'def', rar: 'epico', icon: '🐦', title: tr('PASSARINHO', 'LITTLE BIRD', 'PIKKULINTU'),       desc: tr('voa sozinho e caça naves', 'flies on its own and hunts saucers', 'lentää itse ja jahtaa lautasia'),        lvl: [tr('1 passarinho', '1 bird', '1 lintu'), tr('1 passarinho forte', '1 strong bird', '1 vahva lintu'), tr('2 passarinhos', '2 birds', '2 lintua')] },
+  { id: 'slowmo',  cat: 'def', rar: 'raro',  icon: '⏳', title: tr('CÂMERA LENTA', 'SLOW MOTION', 'HIDASTUS'),     desc: tr('aliens em câmera lenta', 'aliens in slow motion', 'alienit hidastettuina'),          lvl: [tr('60% mais lentos', '60% slower', '60 % hitaampia'), tr('70% mais lentos', '70% slower', '70 % hitaampia'), tr('75% mais lentos', '75% slower', '75 % hitaampia')] },
+  { id: 'bubble',  cat: 'def', rar: 'raro',  icon: '🛡', title: tr('BOLHA', 'BUBBLE', 'KUPLA'),            desc: tr('você não toma dano', 'you take no damage', 'et ota vahinkoa'),              lvl: [tr('bolha de 8s', '8s bubble', '8 s kupla'), tr('recarga menor', 'shorter cooldown', 'lyhyempi lataus'), tr('recarga mínima', 'minimum cooldown', 'lyhin lataus')] },
+  { id: 'feather', cat: 'def', rar: 'comum', icon: '🪶', title: tr('ESCUDO DE PENAS', 'FEATHER SHIELD', 'HÖYHENSUOJA'),  desc: tr('galinhas bloqueiam abdução', 'chickens block abductions', 'kanat torjuvat sieppaukset'),      lvl: [tr('1 bloqueio por galinha', '1 block per chicken', '1 torjunta per kana'), tr('recarga menor', 'shorter cooldown', 'lyhyempi lataus'), tr('2 bloqueios por galinha', '2 blocks per chicken', '2 torjuntaa per kana')] },
 ];
 const INSTANTS = [
-  { id: 'canja', cat: 'def', rar: 'comum', icon: '🍲', title: 'CANJA DA VOVÓ',   desc: 'cura 50 de vida agora', instant: true, cond: () => hp < hpMax * 0.8, apply: () => { healPlayer(50); } },
-  { id: 'angel', cat: 'def', rar: 'raro',  icon: '👼', title: 'ANJO DA GRANJA',  desc: '+2 galinhas agora',      instant: true, cond: () => chickensAlive() < MAX_CHICKENS - 1, apply: () => { respawnChicken('hen'); respawnChicken('hen'); } },
-  { id: 'heart', cat: 'def', rar: 'comum', icon: '❤️', title: 'CORAÇÃO DE GALO', desc: '+20 de vida máxima',     instant: true, cond: () => hpMax < 160, apply: () => { hpMax += 20; healPlayer(20); } },
-  { id: 'cash',  cat: 'def', rar: 'comum', icon: '💰', title: 'BOLADA',          desc: '+1500 pontos',           instant: true, apply: () => { score += 1500; } },
+  { id: 'canja', cat: 'def', rar: 'comum', icon: '🍲', title: tr('CANJA DA VOVÓ', 'GRANNY\'S SOUP', 'MUMMON KEITTO'),   desc: tr('cura 50 de vida agora', 'heals 50 HP now', 'parantaa 50 HP heti'), instant: true, cond: () => hp < hpMax * 0.8, apply: () => { healPlayer(50); } },
+  { id: 'angel', cat: 'def', rar: 'raro',  icon: '👼', title: tr('ANJO DA GRANJA', 'FARM ANGEL', 'MAATILAN ENKELI'),  desc: tr('+2 galinhas agora', '+2 chickens now', '+2 kanaa heti'),      instant: true, cond: () => chickensAlive() < MAX_CHICKENS - 1, apply: () => { respawnChicken('hen'); respawnChicken('hen'); } },
+  { id: 'heart', cat: 'def', rar: 'comum', icon: '❤️', title: tr('CORAÇÃO DE GALO', 'ROOSTER HEART', 'KUKON SYDÄN'), desc: tr('+20 de vida máxima', '+20 max HP', '+20 maksimi-HP'),     instant: true, cond: () => hpMax < 160, apply: () => { hpMax += 20; healPlayer(20); } },
+  { id: 'cash',  cat: 'def', rar: 'comum', icon: '💰', title: tr('BOLADA', 'JACKPOT', 'POTTI'),          desc: tr('+1500 pontos', '+1500 points', '+1500 pistettä'),           instant: true, apply: () => { score += 1500; } },
 ];
 const ALL_CARDS = SKILLS.concat(INSTANTS);
 const RARITY = {
-  comum: { label: 'COMUM', col: '#9fd090', bg: ['#1f4a1a', '#0a1f0a'], hex: 0x8dff4a },
-  raro:  { label: 'RARO',  col: '#60b0ff', bg: ['#16305a', '#08142a'], hex: 0x60b0ff },
-  epico: { label: 'ÉPICO', col: '#e080ff', bg: ['#4a1670', '#180828'], hex: 0xd070ff },
+  comum: { label: tr('COMUM', 'COMMON', 'TAVALLINEN'), col: '#9fd090', bg: ['#1f4a1a', '#0a1f0a'], hex: 0x8dff4a },
+  raro:  { label: tr('RARO', 'RARE', 'HARVINAINEN'),  col: '#60b0ff', bg: ['#16305a', '#08142a'], hex: 0x60b0ff },
+  epico: { label: tr('ÉPICO', 'EPIC', 'EEPPINEN'), col: '#e080ff', bg: ['#4a1670', '#180828'], hex: 0xd070ff },
 };
-const CAT_LABEL = { atk: 'ATAQUE', egg: 'OVO', def: 'DEFESA' };
+const CAT_LABEL = { atk: tr('ATAQUE', 'ATTACK', 'HYÖKKÄYS'), egg: tr('OVO', 'EGG', 'MUNA'), def: tr('DEFESA', 'DEFENSE', 'PUOLUSTUS') };
 let pendingPicks = 0;
 const slots = [];
 const slotOf = id => slots.find(x => x.sk.id === id);
@@ -3720,14 +3809,14 @@ function buildOffer(kind) {
   return out;
 }
 function skillList() { return slots.map(sl => ({ icon: sl.sk.icon, lv: sl.lv, rar: sl.sk.rar })); }
-const SKILL_KEYS_VR = ['B', 'Y', 'GRIP D'];
+const SKILL_KEYS_VR = ['B', 'Y', tr('GRIP D', 'R GRIP', 'O GRIP')];
 const SKILL_KEYS_PC = ['Q', 'E', 'F'];
-function skillKey(i) { return renderer.xr.isPresenting ? SKILL_KEYS_VR[i] : (isTouch ? 'toque' : SKILL_KEYS_PC[i]); }
+function skillKey(i) { return renderer.xr.isPresenting ? SKILL_KEYS_VR[i] : (isTouch ? tr('toque', 'tap', 'napauta') : SKILL_KEYS_PC[i]); }
 function useSkill(i) {
   const sl = slots[i];
   if (!sl || !(state === 'playing' || state === 'wave_intro')) return;
   if (sl.active > 0) return;
-  if (sl.cd > 0) { playDenied(); popupAhead(sl.sk.icon + ' recarregando ' + Math.ceil(sl.cd) + 's', '#aaaaaa', 0.7); return; }
+  if (sl.cd > 0) { playDenied(); popupAhead(sl.sk.icon + tr(' recarregando ', ' recharging ', ' latautuu ') + Math.ceil(sl.cd) + 's', '#aaaaaa', 0.7); return; }
   sl.active = SKILL_DUR;
   onSkillStart(sl);
   refreshUp();
@@ -3751,7 +3840,7 @@ function updateSkills(dt) {
       sl.cd -= dt;
       if (sl.cd <= 0) {
         sl.cd = 0;
-        if (state === 'playing' || state === 'wave_intro') { playSkillReady(); popupAhead(sl.sk.icon + ' PRONTO! (' + skillKey(i) + ')', '#8dff4a', 0.6); }
+        if (state === 'playing' || state === 'wave_intro') { playSkillReady(); popupAhead(sl.sk.icon + tr(' PRONTO! (', ' READY! (', ' VALMIS! (') + skillKey(i) + ')', '#8dff4a', 0.6); }
       }
     }
   }
@@ -3812,13 +3901,12 @@ function drawCard(x, w, h, upg) {
   x.fillStyle = '#ffffff'; x.font = 'bold 34px "Helvetica Neue", Arial, sans-serif';
   wrapText(x, upg.desc, w / 2, 470, w - 80, 42);
   x.fillStyle = R.col; x.font = 'bold 28px sans-serif';
-  if (upg.instant) x.fillText('EFEITO NA HORA', w / 2, 585);
+  if (upg.instant) fitText(x, tr('EFEITO NA HORA', 'INSTANT EFFECT', 'VÄLITÖN VAIKUTUS'), w / 2, 585, w - 70, 28, 'sans-serif', R.col);
   else {
     const sl = slotOf(upg.id);
     const L = sl ? sl.lv : 0;
-    x.fillText(sl ? 'NÍVEL ' + L + ' → ' + (L + 1) + ': ' + upg.lvl[L] : 'ATIVA · 8s · ' + upg.lvl[0], w / 2, 572);
-    x.fillStyle = '#c0c8b8'; x.font = 'bold 24px sans-serif';
-    x.fillText('recarga ' + (26 - L * 4) + 's · até 3 habilidades', w / 2, 608);
+    fitText(x, sl ? tr('NÍVEL ', 'LEVEL ', 'TASO ') + L + ' → ' + (L + 1) + ': ' + upg.lvl[L] : tr('ATIVA · 8s · ', 'ACTIVE · 8s · ', 'AKTIIVINEN · 8 s · ') + upg.lvl[0], w / 2, 572, w - 70, 28, 'sans-serif', R.col);
+    fitText(x, tr('recarga ', 'cooldown ', 'lataus ') + (26 - L * 4) + tr('s · até 3 habilidades', 's · up to 3 skills', ' s · enintään 3 kykyä'), w / 2, 608, w - 70, 24, 'sans-serif', '#c0c8b8');
   }
 }
 function clearCards() {
@@ -3845,10 +3933,10 @@ function showUpgradeCards(kind = 'normal') {
   });
   state = 'upgrade'; stateT = 0;
   music.intensity = 0;
-  const keys = renderer.xr.isPresenting ? 'B · Y · GRIP direito' : (isTouch ? 'botões na tela' : 'Q · E · F');
-  if (kind === 'boss') showBanner3D('RECOMPENSA DO CHEFÃO', 'uma habilidade ÉPICA te espera', 'atire no card', '#e080ff', 3.5, 1.15);
-  else if (kind === 'first') showBanner3D('PRIMEIRA HABILIDADE!', 'habilidades duram 8s e recarregam', 'você ativa com ' + keys, '#8dff4a', 4, 1.15);
-  else showBanner3D('ESCOLHA UMA HABILIDADE', 'atire no card · ativa com ' + keys, 'ATAQUE · OVO · DEFESA', '#8dff4a', 3.5, 1.15);
+  const keys = renderer.xr.isPresenting ? tr('B · Y · GRIP direito', 'B · Y · right GRIP', 'B · Y · oikea GRIP') : (isTouch ? tr('botões na tela', 'on-screen buttons', 'näytön napit') : 'Q · E · F');
+  if (kind === 'boss') showBanner3D(tr('RECOMPENSA DO CHEFÃO', 'BOSS REWARD', 'POMON PALKINTO'), tr('uma habilidade ÉPICA te espera', 'an EPIC skill awaits', 'EEPPINEN kyky odottaa'), tr('atire no card', 'shoot a card', 'ammu korttia'), '#e080ff', 3.5, 1.15);
+  else if (kind === 'first') showBanner3D(tr('PRIMEIRA HABILIDADE!', 'FIRST SKILL!', 'ENSIMMÄINEN KYKY!'), tr('habilidades duram 8s e recarregam', 'skills last 8s, then recharge', 'kyvyt kestävät 8 s ja latautuvat'), tr('você ativa com ', 'activate with ', 'aktivoi: ') + keys, '#8dff4a', 4, 1.15);
+  else showBanner3D(tr('ESCOLHA UMA HABILIDADE', 'CHOOSE A SKILL', 'VALITSE KYKY'), tr('atire no card · ativa com ', 'shoot a card · activate with ', 'ammu korttia · aktivoi: ') + keys, tr('ATAQUE · OVO · DEFESA', 'ATTACK · EGG · DEFENSE', 'HYÖKKÄYS · MUNA · PUOLUSTUS'), '#8dff4a', 3.5, 1.15);
   playWeaponPickup();
 }
 function chooseUpgrade(card) {
@@ -3859,9 +3947,9 @@ function chooseUpgrade(card) {
   if (sk.instant) { sk.apply(); msg = sk.title + '!'; }
   else {
     let sl = slotOf(sk.id);
-    if (sl) { sl.lv++; sl.cd = 0; msg = sk.title + ' NÍVEL ' + sl.lv + '!'; }
-    else { slots.push({ sk, lv: 1, active: 0, cd: 0 }); sl = slots[slots.length - 1]; msg = 'NOVA: ' + sk.title + '!'; }
-    hint = 'aperte ' + skillKey(slots.indexOf(sl)) + ' pra usar';
+    if (sl) { sl.lv++; sl.cd = 0; msg = sk.title + tr(' NÍVEL ', ' LEVEL ', ' TASO ') + sl.lv + '!'; }
+    else { slots.push({ sk, lv: 1, active: 0, cd: 0 }); sl = slots[slots.length - 1]; msg = tr('NOVA: ', 'NEW: ', 'UUSI: ') + sk.title + '!'; }
+    hint = tr('aperte ', 'press ', 'paina ') + skillKey(slots.indexOf(sl)) + tr(' pra usar', ' to use', ' käyttääksesi');
   }
   for (const c of cards) c.done = true;
   card.chosen = true;
@@ -4053,10 +4141,10 @@ function drawSign() {
   for (let i = 1; i < 10; i++) { x.beginPath(); x.moveTo(20, i * 50); x.bezierCurveTo(300, i * 50 + 8, 700, i * 50 - 8, 1004, i * 50); x.stroke(); }
   x.textAlign = 'center'; x.textBaseline = 'middle';
   fitText(x, 'CHICKEN RANCHER 2.0', 512, 80, 940, 84, IMPACT, '#ffd040', true);
-  fitText(x, '🏆 RECORDE: ' + fmt(best), 512, 190, 900, 60, IMPACT, '#ffffff');
-  if (lastScore > 0) fitText(x, 'última partida: ' + fmt(lastScore), 512, 255, 900, 36, SANS, '#e8d0a0');
-  fitText(x, 'APERTE O GATILHO PRA COMEÇAR', 512, 340, 940, 54, IMPACT, '#8dff4a');
-  fitText(x, '12 WAVES · 11 ARMAS · 11 NAVES · CADEIRA VOADORA', 512, 430, 940, 34, SANS, '#ffb070');
+  fitText(x, tr('🏆 RECORDE: ', '🏆 BEST: ', '🏆 ENNÄTYS: ') + fmt(best), 512, 190, 900, 60, IMPACT, '#ffffff');
+  if (lastScore > 0) fitText(x, tr('última partida: ', 'last game: ', 'viime peli: ') + fmt(lastScore), 512, 255, 900, 36, SANS, '#e8d0a0');
+  fitText(x, tr('APERTE O GATILHO PRA COMEÇAR', 'PULL THE TRIGGER TO START', 'ALOITA LIIPAISIMELLA'), 512, 340, 940, 54, IMPACT, '#8dff4a');
+  fitText(x, tr('12 WAVES · 11 ARMAS · 11 NAVES · CADEIRA VOADORA', '12 WAVES · 11 WEAPONS · 11 SAUCERS · FLYING WHEELCHAIR', '12 AALTOA · 11 ASETTA · 11 LAUTASTA · LENTÄVÄ PYÖRÄTUOLI'), 512, 430, 940, 34, SANS, '#ffb070');
   signTex.needsUpdate = true;
 }
 
@@ -4078,7 +4166,7 @@ function updateSkillBar() {
   skillbarEl.innerHTML = slots.map((sl, i) => {
     const st = sl.active > 0 ? 'on' : sl.cd > 0 ? 'cd' : 'ready';
     const pct = sl.active > 0 ? (sl.active / SKILL_DUR) * 100 : sl.cd > 0 ? (1 - sl.cd / skillCooldown(sl)) * 100 : 100;
-    const txt = sl.active > 0 ? Math.ceil(sl.active) + 's' : sl.cd > 0 ? Math.ceil(sl.cd) + 's' : 'PRONTO';
+    const txt = sl.active > 0 ? Math.ceil(sl.active) + 's' : sl.cd > 0 ? Math.ceil(sl.cd) + 's' : tr('PRONTO', 'READY', 'VALMIS');
     return '<div class="sk ' + st + '" data-i="' + i + '"><span class="ic">' + sl.sk.icon + '</span><b>' + (isTouch ? '' : SKILL_KEYS_PC[i]) + '</b><i style="width:' + pct.toFixed(0) + '%"></i><em>' + txt + '</em></div>';
   }).join('');
 }
@@ -4094,7 +4182,7 @@ function updateHtmlHud() {
   hBest.textContent = fmt(Math.max(best, score));
   hCombo.textContent = 'COMBO ' + combo + ' · x' + comboMult();
   hCombo.classList.toggle('on', combo >= 2);
-  hWave.textContent = 'WAVE ' + waveLabel() + ' · ' + WEAPONS[activeWeapon].icon + ' ' + WEAPONS[activeWeapon].label;
+  hWave.textContent = tr('WAVE ', 'WAVE ', 'AALTO ') + waveLabel() + ' · ' + WEAPONS[activeWeapon].icon + ' ' + WEAPONS[activeWeapon].label;
   const alive = chickensAlive();
   const hpPct = clamp(hp / hpMax, 0, 1);
   document.getElementById('h-hp').innerHTML = '❤️<span class="hpbar"><i style="width:' + (hpPct * 100).toFixed(0) + '%;background:' + (hpPct <= 0.3 ? '#ff3040' : hpPct <= 0.6 ? '#ff9040' : '#ff5878') + '"></i></span>' + Math.ceil(hp) + '/' + hpMax;
@@ -4138,7 +4226,7 @@ function drawLap() {
   // Wave + arma
   x.fillStyle = 'rgba(255,255,255,0.12)'; x.fillRect(24, 184, W - 48, 2);
   x.textAlign = 'left';
-  fitText(x, 'WAVE ' + waveLabel(), 30, 222, 300, 38, IMPACT, '#ffffff');
+  fitText(x, tr('WAVE ', 'WAVE ', 'AALTO ') + waveLabel(), 30, 222, 300, 38, IMPACT, '#ffffff');
   x.textAlign = 'right';
   fitText(x, WEAPONS[activeWeapon].icon + ' ' + WEAPONS[activeWeapon].label, 738, 222, 420, 38, IMPACT, '#8dff4a');
   // Power-ups ativos
@@ -4159,13 +4247,13 @@ function drawLap() {
       else if (sl.cd > 0) { x.fillStyle = 'rgba(0,0,0,0.5)'; x.fillRect(bx, by, bw, bh); }
       x.textAlign = 'left';
       x.font = '42px sans-serif'; x.fillStyle = '#fff'; x.fillText(sl.sk.icon, bx + 8, by + 40);
-      x.font = 'bold 22px ' + SANS; x.fillStyle = '#ffd040'; x.fillText(skillKey(i) + ' · NV' + sl.lv, bx + 62, by + 22);
+      x.font = 'bold 22px ' + SANS; x.fillStyle = '#ffd040'; x.fillText(skillKey(i) + tr(' · NV', ' · LV', ' · T') + sl.lv, bx + 62, by + 22);
       x.font = 'bold 26px ' + SANS;
       x.fillStyle = sl.active > 0 ? '#d8ffb0' : sl.cd > 0 ? '#9a9a9a' : '#8dff4a';
-      x.fillText(sl.active > 0 ? 'ATIVO ' + Math.ceil(sl.active) + 's' : sl.cd > 0 ? Math.ceil(sl.cd) + 's' : 'PRONTO!', bx + 62, by + 54);
+      x.fillText(sl.active > 0 ? tr('ATIVO ', 'ACTIVE ', 'PÄÄLLÄ ') + Math.ceil(sl.active) + 's' : sl.cd > 0 ? Math.ceil(sl.cd) + 's' : tr('PRONTO!', 'READY!', 'VALMIS!'), bx + 62, by + 54);
     });
   } else if (lapHintT > 0) {
-    x.font = 'bold 22px ' + SANS; x.fillStyle = '#7a8a70'; x.fillText('segure o GRIP perto deste painel pra mover', 30, 345);
+    x.font = 'bold 22px ' + SANS; x.fillStyle = '#7a8a70'; x.fillText(tr('segure o GRIP perto deste painel pra mover', 'hold GRIP near this panel to move it', 'pidä GRIP-nappia paneelin lähellä siirtääksesi sitä'), 30, 345);
   }
   lapTex.needsUpdate = true;
 }
@@ -4213,12 +4301,12 @@ function startWave(idx) {
   refreshUp();
   state = 'wave_intro'; stateT = 0;
   music.intensity = 1;
-  const title = w.endless ? 'INFINITO ' + (w.n + 1) : 'WAVE ' + (idx + 1) + '/' + WAVES.length;
-  const sub = idx === WAVES.length - 1 ? 'BATALHA FINAL · NAVE-MÃE' : (w.boss ? '⚠ TEM CHEFÃO NESSA WAVE ⚠' : (w.endless ? 'ATÉ ONDE VOCÊ AGUENTA?' : 'PREPARE-SE'));
-  const l3 = newWeapon ? 'NOVA ARMA: ' + WEAPONS[newWeapon].icon + ' ' + WEAPONS[newWeapon].label : '';
+  const title = w.endless ? tr('INFINITO ', 'ENDLESS ', 'LOPUTON ') + (w.n + 1) : tr('WAVE ', 'WAVE ', 'AALTO ') + (idx + 1) + '/' + WAVES.length;
+  const sub = idx === WAVES.length - 1 ? tr('BATALHA FINAL · NAVE-MÃE', 'FINAL BATTLE · MOTHERSHIP', 'LOPPUTAISTELU · EMOALUS') : (w.boss ? tr('⚠ TEM CHEFÃO NESSA WAVE ⚠', '⚠ BOSS IN THIS WAVE ⚠', '⚠ TÄSSÄ AALLOSSA ON POMO ⚠') : (w.endless ? tr('ATÉ ONDE VOCÊ AGUENTA?', 'HOW LONG CAN YOU LAST?', 'KUINKA KAUAN KESTÄT?') : tr('PREPARE-SE', 'GET READY', 'VALMISTAUDU')));
+  const l3 = newWeapon ? tr('NOVA ARMA: ', 'NEW WEAPON: ', 'UUSI ASE: ') + WEAPONS[newWeapon].icon + ' ' + WEAPONS[newWeapon].label : '';
   const T = w.intro && w.intro !== 'saucer' ? UFO_TYPES[w.intro] : null;
-  let l4 = T ? 'NOVA AMEAÇA: ' + T.name + ' (' + T.desc + ')' : '';
-  if (idx === 0) l4 = renderer.xr.isPresenting ? 'balance o controle pra arremessar ovos!' : (isTouch ? 'toque pra arremessar ovos!' : 'clique pra arremessar ovos!');
+  let l4 = T ? tr('NOVA AMEAÇA: ', 'NEW THREAT: ', 'UUSI UHKA: ') + T.name + ' (' + T.desc + ')' : '';
+  if (idx === 0) l4 = renderer.xr.isPresenting ? tr('balance o controle pra arremessar ovos!', 'swing the controller to throw eggs!', 'heilauta ohjainta heittääksesi munia!') : (isTouch ? tr('toque pra arremessar ovos!', 'tap to throw eggs!', 'napauta heittääksesi munia!') : tr('clique pra arremessar ovos!', 'click to throw eggs!', 'klikkaa heittääksesi munia!'));
   showBanner3D(title, sub, l3, '#ffd040', 3.6, 0, l4);
   playWaveStart();
   if (newWeapon) playWeaponPickup();
@@ -4228,7 +4316,7 @@ function growChick(c) {
   const p = c.group.position.clone();
   removeChicken(c);
   spawnChicken('hen', p.x, p.z);
-  popup('O PINTINHO CRESCEU!', p.setY(0.8), '#ffe060', 0.9, 1.6);
+  popup(tr('O PINTINHO CRESCEU!', 'THE CHICK GREW UP!', 'TIPU KASVOI ISOKSI!'), p.setY(0.8), '#ffe060', 0.9, 1.6);
 }
 function waveComplete() {
   state = 'wave_complete'; stateT = 0;
@@ -4237,20 +4325,20 @@ function waveComplete() {
   music.intensity = 0;
   setLaser(false);
   const alive = chickensAlive();
-  const lines = ['GALINHAS ' + alive + '/' + MAX_CHICKENS + ' +' + fmt(alive * 150)];
+  const lines = [tr('GALINHAS ', 'CHICKENS ', 'KANAT ') + alive + '/' + MAX_CHICKENS + ' +' + fmt(alive * 150)];
   let bonus = alive * 150;
-  if (waveLost === 0) { bonus += 1000; lines.push('PERFEITA +1000'); }
-  if (chickens.some(c => c.kind === 'golden' && c.state !== 'gone')) { bonus += 500; lines.push('🌟 OURO +500'); }
+  if (waveLost === 0) { bonus += 1000; lines.push(tr('PERFEITA +1000', 'PERFECT +1000', 'TÄYDELLINEN +1000')); }
+  if (chickens.some(c => c.kind === 'golden' && c.state !== 'gone')) { bonus += 500; lines.push(tr('🌟 OURO +500', '🌟 GOLD +500', '🌟 KULTA +500')); }
   score += bonus;
   const extra = [];
   for (const c of chickens.slice()) {
-    if (c.kind === 'chick' && (c.state === 'wandering' || c.state === 'pecking')) { c.waves++; if (c.waves >= 2) { growChick(c); extra.push('o pintinho cresceu!'); } }
+    if (c.kind === 'chick' && (c.state === 'wandering' || c.state === 'pecking')) { c.waves++; if (c.waves >= 2) { growChick(c); extra.push(tr('o pintinho cresceu!', 'the chick grew up!', 'tipu kasvoi isoksi!')); } }
   }
-  if (waveLost === 0 && chickensAlive() < MAX_CHICKENS) { respawnChicken('chick'); extra.push('🐣 NASCEU UM PINTINHO!'); playHatch(); }
+  if (waveLost === 0 && chickensAlive() < MAX_CHICKENS) { respawnChicken('chick'); extra.push(tr('🐣 NASCEU UM PINTINHO!', '🐣 A CHICK HATCHED!', '🐣 TIPU KUORIUTUI!')); playHatch(); }
   const healed = healPlayer(15);
   if (healed > 0) extra.push('❤️ +' + healed);
   const last = currentWave === WAVES.length - 1;
-  showBanner3D(last ? 'VOCÊ VENCEU!' : 'WAVE COMPLETA!', lines.join(' · '), extra.join(' · '), '#8dff4a', 3.2);
+  showBanner3D(last ? tr('VOCÊ VENCEU!', 'YOU WIN!', 'VOITIT!') : tr('WAVE COMPLETA!', 'WAVE COMPLETE!', 'AALTO SELVITETTY!'), lines.join(' · '), extra.join(' · '), '#8dff4a', 3.2);
   playRescue();
 }
 function advanceFromComplete() {
@@ -4268,7 +4356,7 @@ function finalizeScore() {
 function enterVictory() {
   state = 'victory'; stateT = 0; music.intensity = 0;
   finalizeScore();
-  showBanner3D('VITÓRIA!', 'PONTOS: ' + fmt(score) + (newRecord ? ' · 🏆 NOVO RECORDE!' : ''), 'GATILHO = MODO INFINITO', '#ffd040', 999, 0, 'você salvou o galinheiro!');
+  showBanner3D(tr('VITÓRIA!', 'VICTORY!', 'VOITTO!'), tr('PONTOS: ', 'SCORE: ', 'PISTEET: ') + fmt(score) + (newRecord ? tr(' · 🏆 NOVO RECORDE!', ' · 🏆 NEW RECORD!', ' · 🏆 UUSI ENNÄTYS!') : ''), tr('GATILHO = MODO INFINITO', 'TRIGGER = ENDLESS MODE', 'LIIPAISIN = LOPUTON TILA'), '#ffd040', 999, 0, tr('você salvou o galinheiro!', 'you saved the coop!', 'pelastit kanalan!'));
   playVictory();
 }
 function startEndless() {
@@ -4281,10 +4369,10 @@ function enterGameOver(reason = 'chickens') {
   state = 'game_over'; stateT = 0; music.intensity = -1;
   setLaser(false);
   finalizeScore();
-  const reached = currentWave < WAVES.length ? 'chegou na wave ' + (currentWave + 1) : 'infinito ' + (currentWave - WAVES.length + 1);
-  const why = reason === 'player' ? 'VOCÊ FOI DERROTADO! ❤️ 0' : 'LEVARAM TODAS AS GALINHAS!';
-  const again = renderer.xr.isPresenting ? 'aperte o gatilho pra recomeçar' : (isTouch ? 'toque pra recomeçar' : 'clique pra recomeçar');
-  showBanner3D('GAME OVER', why, (newRecord ? '🏆 NOVO RECORDE! ' : '') + 'PONTOS: ' + fmt(score), '#ff4040', 999, 0, reached + ' · ' + again);
+  const reached = currentWave < WAVES.length ? tr('chegou na wave ', 'reached wave ', 'pääsit aaltoon ') + (currentWave + 1) : tr('infinito ', 'endless ', 'loputon ') + (currentWave - WAVES.length + 1);
+  const why = reason === 'player' ? tr('VOCÊ FOI DERROTADO! ❤️ 0', 'YOU WERE DEFEATED! ❤️ 0', 'HÄVISIT! ❤️ 0') : tr('LEVARAM TODAS AS GALINHAS!', 'THEY TOOK ALL THE CHICKENS!', 'KAIKKI KANAT VIETIIN!');
+  const again = renderer.xr.isPresenting ? tr('aperte o gatilho pra recomeçar', 'pull the trigger to restart', 'aloita alusta liipaisimella') : (isTouch ? tr('toque pra recomeçar', 'tap to restart', 'napauta aloittaaksesi alusta') : tr('clique pra recomeçar', 'click to restart', 'klikkaa aloittaaksesi alusta'));
+  showBanner3D(tr('GAME OVER', 'GAME OVER', 'PELI OHI'), why, (newRecord ? tr('🏆 NOVO RECORDE! ', '🏆 NEW RECORD! ', '🏆 UUSI ENNÄTYS! ') : '') + tr('PONTOS: ', 'SCORE: ', 'PISTEET: ') + fmt(score), '#ff4040', 999, 0, reached + ' · ' + again);
   playGameOver();
 }
 function resetGame() {
@@ -4818,7 +4906,7 @@ function startFlightEvent() {
   beacon.position.set(lx, flight.land.y + 15, lz);
   scene.add(beacon);
   flight.beacon = beacon;
-  showBanner3D('CADEIRA VOADORA!', 'chegue perto dela pra montar', 'VOE ATÉ AS NAVES!', '#60e0ff', 4);
+  showBanner3D(tr('CADEIRA VOADORA!', 'FLYING WHEELCHAIR!', 'LENTÄVÄ PYÖRÄTUOLI!'), tr('chegue perto dela pra montar', 'get close to climb on', 'mene lähelle noustaksesi kyytiin'), tr('VOE ATÉ AS NAVES!', 'FLY UP TO THE SAUCERS!', 'LENNÄ LAUTASTEN LUO!'), '#60e0ff', 4);
   playFlightArrive(); pulseAll(0.5, 300);
 }
 function clearFlightChair() {
@@ -4829,7 +4917,7 @@ function mountFlight() {
   clearFlightChair();
   flight.phase = 'flying'; flight.t = FLIGHT_DUR; flight.takeoff = 1.6; flight.vel.set(0, 0, 0);
   flyKit.visible = true;
-  popupAhead('DECOLANDO! 🚀', '#60e0ff', 1.3);
+  popupAhead(tr('DECOLANDO! 🚀', 'TAKING OFF! 🚀', 'NOUSU! 🚀'), '#60e0ff', 1.3);
   playTakeoff(); pulseAll(0.8, 400);
 }
 function endFlight() {
@@ -4880,12 +4968,12 @@ function updateFlight(dt, xr) {
     rp.y = clamp(rp.y, 2.5, 20);
     const hx = rp.x, hz = rp.z - 9, hd = Math.hypot(hx, hz);
     if (hd > 30) { rp.x = hx / hd * 30; rp.z = 9 + hz / hd * 30; }
-    if (flight.t <= 0) { flight.phase = 'returning'; showBanner3D('VOLTANDO PRA VARANDA', '', '', '#60e0ff', 2.2); }
+    if (flight.t <= 0) { flight.phase = 'returning'; showBanner3D(tr('VOLTANDO PRA VARANDA', 'HEADING BACK TO THE PORCH', 'PALUU KUISTILLE'), '', '', '#60e0ff', 2.2); }
   } else if (flight.phase === 'returning') {
     const home = TV[11].set(0, PLAYER_Y, 0);
     if (moveToward(rp, home, 7.5 * dt)) {
       endFlight();
-      popupAhead('DE VOLTA À VARANDA!', '#8dff4a', 1.1);
+      popupAhead(tr('DE VOLTA À VARANDA!', 'BACK ON THE PORCH!', 'TAKAISIN KUISTILLA!'), '#8dff4a', 1.1);
       playLand(); pulseAll(0.6, 150);
     }
   }
@@ -5035,7 +5123,7 @@ renderer.setAnimationLoop(gameLoop);
 // =============================================================================
 spawnInitialFlock();
 equipWeapon('hands');
-if (isTouch) document.getElementById('cta').textContent = '📱 JOGAR';
+if (isTouch) document.getElementById('cta').textContent = tr('📱 JOGAR', '📱 PLAY', '📱 PELAA');
 drawSign();
 updateStartBest();
 window.__cr = { get state() { return state; }, startWave, ufos, chickens, up, get score() { return score; }, selectWeapon, unlocked, spawnUfo, killAll: () => { for (const u of ufos.slice()) if (isAlive(u)) killUfo(u, u.group.position); },

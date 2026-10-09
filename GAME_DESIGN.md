@@ -19,6 +19,8 @@
 com recarga (no lugar das permanentes), **passarinho** que voa sozinho, power-ups de 8 s, **andar livre**
 (joystick ou WASD, descer a rampa da varanda, cair) e a **cadeira de rodas voadora** na batalha final.
 
+**Idiomas:** português, inglês e finlandês, escolhidos na tela inicial (receita 12.15).
+
 ---
 
 ## 1. Conceito
@@ -849,3 +851,19 @@ reduz muito o enjoo.
 
 Serve para qualquer jogo: carrinho, cavalo, nave, balão ou torre móvel.
 
+### 12.15 Vários idiomas num jogo de arquivo único
+
+Sem biblioteca e sem arquivo de tradução: cada texto carrega as três línguas no próprio lugar onde é usado.
+
+1. **Escolha do idioma:** um `<script>` comum, antes do módulo do jogo, lê `localStorage.cr_lang`. Se não houver nada salvo,
+   usa a língua do aparelho (`pt*` → português, `fi*` → finlandês, o resto → inglês). O resultado fica em `window.CR_LANG`.
+2. **Tela inicial (HTML):** os blocos traduzíveis têm `id` e esse mesmo script troca o `innerHTML` deles antes do primeiro desenho.
+   O português fica escrito direto no HTML, como padrão.
+3. **Textos do jogo:** `const tr = (pt, en, fi) => LANG === 'en' ? en : LANG === 'fi' ? fi : pt;` e todo texto vira
+   `tr('ESCUDO!', 'SHIELD!', 'SUOJA!')`. Vale para tabelas (armas, naves, habilidades), banners, popups e o HUD.
+4. **Trocar de idioma:** os botões salvam em `localStorage` e recarregam a página. Assim nenhum texto já desenhado em
+   textura (placa, cards, painel) fica na língua antiga.
+5. **Textos longos:** finlandês é a língua mais comprida. Toda linha desenhada em canvas usa `fitText`, que diminui a fonte
+   até caber na largura.
+6. **Plural e ordem das palavras:** monte a frase inteira dentro do `tr`, sem colar pedaços.
+   Exemplo: `tr('restam ' + n + ' galinhas', n + ' chickens left', n + ' kanaa jäljellä')`.
