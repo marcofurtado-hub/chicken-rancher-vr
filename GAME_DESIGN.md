@@ -32,7 +32,8 @@ do arremesso com a mão até o raio tesla. As galinhas funcionam como vidas. Se 
 1. **Waves com escalada clara:** cada wave traz uma arma nova e uma ameaça nova.
 2. **Duas formas de perder:** se a sua vida ❤️ chegar a 0 ou se levarem todas as galinhas.
 3. **Tudo é ovo:** a identidade cômica vem do splat de ovo frito no chão e da explosão de clara e gema no ar.
-4. **VR confortável:** gira em passos (snap turn). Andar com o joystick e voar ligam uma vinheta escura nas bordas para não enjoar.
+4. **VR confortável:** giro suave no joystick direito (curva quadrática, pivô na cabeça, até ~125°/s). Andar, girar e voar ligam uma vinheta escura nas bordas para não enjoar.
+5. **Arremesso por gesto mede a mão relativa ao corpo** (posição local no rig), senão andar/girar/cair dispara arremessos sozinho.
 5. **Feedback exagerado:** popups de pontos, combo, vibração, sons sintetizados e ciclo dia/noite.
 
 **Loop principal**
@@ -55,7 +56,7 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 | Trocar arma | A = próxima, X = anterior | 1-9, 0, - e roda | botão 🔄 |
 | **Habilidades (3 slots)** | **B**, **Y** e **GRIP direito** | **Q**, **E** e **F** | botões na tela |
 | **Andar** | **joystick esquerdo** (2.4 m/s, para todos os lados) | **WASD / setas** | n/a |
-| Girar / mirar | joystick direito (snap de 30°) | mouse | arrastar |
+| Girar / mirar | joystick direito (giro suave) | mouse | arrastar |
 | Voar (cadeira voadora) | olhar = direção · joystick esq. acelera/freia | olhar = direção · W/S acelera/freia | n/a |
 | Zoom | n/a | **botão direito** (FOV 80 → 42, sensibilidade cai junto) | n/a |
 | Pausa | n/a | **Esc** (tela de pausa com os controles) | n/a |

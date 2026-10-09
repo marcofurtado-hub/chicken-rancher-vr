@@ -4440,14 +4440,23 @@ function pollButtons() {
     }
   }
 }
-let snapCD = 0;
+// Giro suave (sem degraus) no direcional direito, com pivô na cabeça
+const TURN_SPEED = 2.2; // rad/s com o direcional no máximo
 function vrSnap(dt) {
-  snapCD -= dt;
   const s = rightCtrl.userData.src;
   if (!s || !s.gamepad) return;
   const ax = s.gamepad.axes;
   const sx = ax[2] !== undefined ? ax[2] : (ax[0] || 0);
-  if (Math.abs(sx) > 0.7 && snapCD <= 0) { cameraRig.rotation.y -= Math.sign(sx) * Math.PI / 6; snapCD = 0.32; }
+  const a = Math.abs(sx);
+  if (a < 0.15) return;
+  const k = (a - 0.15) / 0.85, ang = -Math.sign(sx) * k * k * TURN_SPEED * dt;
+  const head = camera.getWorldPosition(TV[13]);
+  const rp = cameraRig.position, dx = rp.x - head.x, dz = rp.z - head.z;
+  const c = Math.cos(ang), sn = Math.sin(ang);
+  rp.x = head.x + dx * c + dz * sn;
+  rp.z = head.z - dx * sn + dz * c;
+  cameraRig.rotation.y += ang;
+  turnVigT = 0.15;
 }
 renderer.xr.addEventListener('sessionstart', () => {
   initAudio();
@@ -4658,9 +4667,11 @@ function syncWeapons(dt, xr) {
   }
 }
 function trackHands(dt) {
-  const lp = leftCtrl.getWorldPosition(TV[6]), rp = rightCtrl.getWorldPosition(TV[7]);
-  ctrlVel.left.copy(lp).sub(ctrlPrevPos.left).divideScalar(Math.max(dt, 0.001));
-  ctrlVel.right.copy(rp).sub(ctrlPrevPos.right).divideScalar(Math.max(dt, 0.001));
+  // Velocidade da mão relativa ao corpo (posição local no rig): andar, girar, cair ou voar não conta como arremesso
+  const lp = TV[6].copy(leftCtrl.position), rp = TV[7].copy(rightCtrl.position);
+  const idt = 1 / Math.max(dt, 0.001), rq = cameraRig.quaternion;
+  ctrlVel.left.copy(lp).sub(ctrlPrevPos.left).multiplyScalar(idt).applyQuaternion(rq);
+  ctrlVel.right.copy(rp).sub(ctrlPrevPos.right).multiplyScalar(idt).applyQuaternion(rq);
   ctrlPrevPos.left.copy(lp); ctrlPrevPos.right.copy(rp);
   ctrlVelHistory.left.push(ctrlVel.left.clone());
   if (ctrlVelHistory.left.length > VEL_HISTORY) ctrlVelHistory.left.shift();
@@ -4701,7 +4712,7 @@ function animateWeapons(dt, held) {
 const clock = new THREE.Clock();
 let hudTimer = 0, lapTimer = 0;
 // ---------- Movimento: varanda (0.4 m), rampa no meio da frente, quintal (chão) ----------
-let rigVy = 0, movingNow = false;
+let rigVy = 0, movingNow = false, turnVigT = 0;
 const leftStick = new THREE.Vector2();
 function groundHeightAt(x, z) {
   if (Math.abs(x) <= 3.96 && z <= 0.5 && z >= -3.6) return PORCH_LEVEL;
@@ -4918,7 +4929,8 @@ function gameLoop(time, frame, forcedDt) {
   updateRigHeight(dt);
   updateFlight(dt, xr);
   camera.getWorldPosition(camPos);
-  ovMove.material.opacity += (((xr && (movingNow || flightActive())) ? 0.55 : 0) - ovMove.material.opacity) * Math.min(1, dt * 6);
+  turnVigT = Math.max(0, turnVigT - dt);
+  ovMove.material.opacity += (((xr && (movingNow || turnVigT > 0 || flightActive())) ? 0.55 : 0) - ovMove.material.opacity) * Math.min(1, dt * 6);
   ovMove.visible = ovMove.material.opacity > 0.01;
   invulnT = Math.max(0, invulnT - dt);
   if (state === 'playing' && hp > 0 && hp <= hpMax * 0.3) {
