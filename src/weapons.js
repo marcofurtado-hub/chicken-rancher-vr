@@ -752,41 +752,15 @@ export function targetVel(hit, out) {
 }
 /** Para o HUD/arco de prévia: o arremesso atual alcança a mira? */
 export const aimInfo = { inRange: true, active: false };
-const _po = new THREE.Vector3(), _pv = new THREE.Vector3(), _pp = new THREE.Vector3();
-const ARC_N = 16;
-const arcDots = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.8, depthWrite: false, fog: false }), ARC_N);
-arcDots.frustumCulled = false; arcDots.count = 0; arcDots.renderOrder = 5;
-arcDots.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-scene.add(arcDots);
-const ARC_OK = new THREE.Color(0xffffff), ARC_FAR = new THREE.Color(0xff7a5a), _ac = new THREE.Color(), _iq = new THREE.Quaternion();
-function drawThrowPreview() {
+const _po = new THREE.Vector3(), _pv = new THREE.Vector3();
+/** Sem nada na tela: só guarda se o arremesso atual alcança a mira (usado nos testes). */
+function updateAimInfo() {
   aimInfo.active = false;
-  arcDots.count = 0;
   if (xrActive() || isTouch || !canShoot()) return;
   const spec = THROW[G.weapon];
   if (!spec) return;
-  throwOrigin(_po);
-  const r = solveThrow(_po, pcAim, pcAimVel, spec, _pv);
+  const r = solveThrow(throwOrigin(_po), pcAim, pcAimVel, spec, _pv);
   aimInfo.active = true; aimInfo.inRange = r.inRange;
-  // pontinhos do arco: até onde ele cai (ou até 2,2 s de voo)
-  const Tend = r.inRange ? r.T : 2.2;
-  let m = 0;
-  for (let k = 2; k <= ARC_N + 1; k++) {
-    const t = Tend * k / (ARC_N + 1);
-    _pp.copy(_po).addScaledVector(_pv, t); _pp.y -= 0.5 * spec.g * t * t;
-    if (_pp.y < groundHeightAt(_pp.x, _pp.z)) break;
-    const f = k / (ARC_N + 1), last = k === ARC_N + 1 && r.inRange;
-    // o tamanho cresce com a distância para continuar visível; o último ponto marca onde cai
-    const sz = (0.022 + 0.016 * f) * Math.max(1, _pp.distanceTo(camPos) * 0.12) * (last ? 1.8 : 1);
-    _m4.compose(_pp, _iq, _s.set(sz, sz, sz));
-    arcDots.setMatrixAt(m, _m4);
-    _ac.copy(r.inRange ? ARC_OK : ARC_FAR).multiplyScalar(0.75 + 0.25 * f);
-    arcDots.setColorAt(m, _ac);
-    m++;
-  }
-  arcDots.count = m;
-  arcDots.instanceMatrix.needsUpdate = true;
-  if (arcDots.instanceColor) arcDots.instanceColor.needsUpdate = true;
 }
 /** Tiro de clique (PC/celular) para as armas de arremesso. */
 export function desktopShoot(aim = pcAim, aimVel = pcAimVel) {
@@ -885,7 +859,7 @@ export function onTriggerEnd(ctrl) {
 
 /** Posiciona as armas (mão no VR, canto da tela no PC) e dispara as automáticas. */
 export function updateWeapons(dt, xr, rHeld, lHeld) {
-  aimInfo.active = false; arcDots.count = 0;
+  aimInfo.active = false;
   trackUfoVel(dt);
   W.cd = Math.max(0, W.cd - dt); W.cdL = Math.max(0, W.cdL - dt); W.cdR = Math.max(0, W.cdR - dt);
   const show = canShoot() || G.state === 'wave_complete';
@@ -951,7 +925,7 @@ export function updateWeapons(dt, xr, rHeld, lHeld) {
         pistolL.updateMatrixWorld();
       }
       grp.updateMatrixWorld();
-      drawThrowPreview();
+      updateAimInfo();
     }
   }
   // animações

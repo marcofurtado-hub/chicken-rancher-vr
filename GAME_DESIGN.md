@@ -65,7 +65,7 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 |---|---|---|---|
 | Começar / avançar | gatilho | clique / Espaço | toque |
 | Atirar | gatilho direito (segurar = automático) | clique esquerdo (segurar) | toque / segurar |
-| Arremessar ovo (mão) | balançar o controle (com ajuda de mira) | clique (parábola + arco de prévia) | tocar na nave |
+| Arremessar ovo (mão) | balançar o controle (com ajuda de mira) | clique (parábola física) | tocar na nave |
 | Estilingue / besta | gatilho esquerdo pega a corda, puxa e solta | clique | toque |
 | Pistolas duplas | um gatilho para cada mão | clique (alterna as mãos) | segurar |
 | Trocar arma | A = próxima, X = anterior | 1-9, 0, - e roda | botão 🔄 |
@@ -92,8 +92,8 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 - **Mira exata:** a cada frame um raio sai do centro da tela (`pcAim`) e todas as armas convergem para o ponto
   sob a mira, mesmo saindo do canto da tela.
 - **Arremesso e estilingue** usam a parábola de verdade com força limitada (`solveThrow`, ver 12.21): perto joga leve,
-  longe joga com tudo, fora do alcance o ovo cai antes e a mira fica laranja. Mira à frente de nave em movimento.
-  Arco de prévia em bolinhas só no PC (mouse).
+  longe joga com tudo, fora do alcance o ovo cai antes. Mira à frente de nave em movimento.
+  Nada disso aparece na tela: a mira continua a mesma, só a física fica correta.
 - **Celular:** o ovo vai onde o dedo **toca** (raio a partir do toque, com 0,7 m de folga em volta das naves), não no centro.
 - **Marcador de acerto:** a mira fica vermelha e cresce por um instante a cada acerto.
 - A cadeira anda a 2.6 m/s pela varanda, pela rampa e pelo quintal (mesmas regras do VR).
