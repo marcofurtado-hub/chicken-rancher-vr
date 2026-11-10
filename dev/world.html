@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>World Dev — Chicken Rancher VR 3.0</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; font-family: system-ui, sans-serif; }
+  #ui { position: fixed; left: 10px; top: 10px; z-index: 2; background: rgba(10, 12, 20, .62); color: #fff;
+        padding: 8px 10px; border-radius: 8px; font-size: 12px; line-height: 1.6; user-select: none; }
+  #ui input[type=range] { width: 220px; vertical-align: middle; }
+  #ui button { font-size: 11px; margin: 1px; padding: 2px 6px; border-radius: 4px; border: 0; background: #34405a; color: #fff; cursor: pointer; }
+  #ui button:hover { background: #4b5c80; }
+  #stats { font-family: ui-monospace, monospace; }
+  body.clean #ui { display: none; }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="ui">
+  <div>TOD <input id="tod" type="range" min="0" max="4" step="0.01" value="0"> <b id="todv">0.00</b>
+    <label><input id="auto" type="checkbox"> ciclo</label></div>
+  <div id="views"></div>
+  <div id="stats">…</div>
+</div>
+<script type="module">
+import { THREE, renderer, scene, camera, U } from '../src/render.js';
+import { initWorld, updateWorld, setTOD, nightAmount, groundHeightAt, blockedSeg } from '../src/world.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const t0 = performance.now();
+initWorld();
+const buildMs = performance.now() - t0;
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.12;
+
+// [posição da câmera, alvo]
+const VIEWS = {
+  player: [[0, 1.65, 0], [0, 1.0, 4]],
+  playerWide: [[0, 1.65, 0.2], [-0.6, 2.2, 5]],
+  right: [[0, 1.65, 0], [-4, 1.8, 3]],
+  left: [[0, 1.65, 0], [4, 1.8, 3]],
+  up: [[0, 1.65, 0], [0, 4, 1.5]],
+  back: [[0, 1.65, 0], [0, 1.9, -4]],
+  yard: [[3, 1.6, 15], [-1, 1.2, 0]],
+  overview: [[16, 24, -22], [-2, 0, 10]],
+  barn: [[-4, 3, 6], [-15, 3, 15]],
+  mill: [[5, 3, 9], [15, 6, 19]],
+  far: [[0, 60, -60], [0, 0, 60]],
+};
+function setView(name) {
+  const v = VIEWS[name]; if (!v) return;
+  camera.position.set(...v[0]);
+  controls.target.set(...v[1]);
+  controls.update();
+}
+const vb = document.getElementById('views');
+for (const k of Object.keys(VIEWS)) {
+  const b = document.createElement('button'); b.textContent = k; b.onclick = () => setView(k); vb.appendChild(b);
+}
+
+const todEl = document.getElementById('tod'), todv = document.getElementById('todv'), autoEl = document.getElementById('auto');
+let tod = 0;
+function setT(t) { tod = +t; todEl.value = tod; todv.textContent = tod.toFixed(2); setTOD(tod); }
+todEl.oninput = () => setT(todEl.value);
+
+// parâmetros de URL: ?t=2&view=player&clean=1
+const qp = new URLSearchParams(location.search);
+setView(qp.get('view') || 'player');
+setT(qp.get('t') || 0);
+if (qp.get('clean')) document.body.classList.add('clean');
+
+const statsEl = document.getElementById('stats');
+let acc = 0, frames = 0, fps = 0, calls = 0, tris = 0;
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.1);
+  U.uTime.value += dt;
+  if (autoEl.checked) setT((tod + dt * 0.08) % 4);
+  updateWorld(dt);
+  controls.update();
+  renderer.render(scene, camera);
+  calls = renderer.info.render.calls; tris = renderer.info.render.triangles;
+  frames++; acc += dt;
+  if (acc > 0.5) {
+    fps = frames / acc; frames = 0; acc = 0;
+    statsEl.textContent = `${fps.toFixed(0)} fps · calls ${calls} · tris ${(tris / 1000).toFixed(1)}k · night ${nightAmount().toFixed(2)} · build ${buildMs.toFixed(0)}ms`;
+  }
+});
+
+window.__dev = { setView, setT, VIEWS, camera, controls, scene, renderer, stats: () => ({ fps, calls, tris }), groundHeightAt, blockedSeg };
+</script>
+</body>
+</html>

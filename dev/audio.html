@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chicken Rancher — Audio Lab</title>
+<style>
+  :root { --bg: #17140f; --panel: #241f17; --line: #3a3226; --text: #f1e7d3; --dim: #a8987c; --acc: #f2b33d; --on: #5fbf6b; --bad: #e0584a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, Segoe UI, sans-serif; }
+  h1 { margin: 0 0 4px; font-size: 20px; } h2 { margin: 0 0 8px; font-size: 15px; color: var(--acc); }
+  .sub { color: var(--dim); margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  button { background: #332b20; color: var(--text); border: 1px solid #4b4031; border-radius: 6px; padding: 5px 9px; margin: 2px; cursor: pointer; font: inherit; font-size: 13px; }
+  button:hover { border-color: var(--acc); } button.on { background: #2d4a2f; border-color: var(--on); } button.big { font-size: 15px; padding: 9px 16px; background: #5a4313; border-color: var(--acc); }
+  label { display: flex; gap: 8px; align-items: center; margin: 4px 0; color: var(--dim); } label input[type=range] { flex: 1; }
+  .grp { margin: 6px 0 2px; color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  pre { margin: 0; font-size: 11.5px; color: #d6caa9; white-space: pre-wrap; max-height: 360px; overflow: auto; }
+  canvas { background: #0f0d0a; border: 1px solid var(--line); border-radius: 8px; width: 100%; max-width: 320px; aspect-ratio: 1; display: block; }
+  table { border-collapse: collapse; font-size: 12px; width: 100%; } td, th { border-bottom: 1px solid var(--line); padding: 2px 6px; text-align: right; } td:first-child, th:first-child { text-align: left; }
+  .warn { color: var(--bad); }
+</style>
+</head>
+<body>
+<h1>Chicken Rancher VR 3.0 — Audio Lab</h1>
+<div class="sub">Every button calls the real <code>src/audio.js</code> API. Click "Start audio" first (a user gesture is required). Shift-click an SFX to fire it at a random world position 3–30 m away.</div>
+<div style="margin-bottom:12px">
+  <button class="big" id="start">Start audio</button>
+  <button id="musicToggle">Music: on</button>
+  <button id="heart">Heartbeat: off</button>
+  <button id="hrtf">Spatial: equalpower</button>
+  <label style="display:inline-flex"><input type="checkbox" id="posAll"> all SFX positional (random)</label>
+</div>
+
+<div class="grid">
+  <section>
+    <h2>Music</h2>
+    <div id="modes"></div>
+    <label>Intensity <input type="range" id="intensity" min="0" max="1" step="0.01" value="0"><span id="iv">0</span></label>
+    <label>Tempo <input type="range" id="tempo" min="60" max="180" step="1" value="118"><span id="tv">mode</span><button id="tempoReset">reset</button></label>
+    <div class="grp">Stingers</div><div id="stingers"></div>
+    <div class="grp">Volumes</div>
+    <label>Master <input type="range" id="vMaster" min="0" max="1" step="0.01" value="0.9"></label>
+    <label>Music <input type="range" id="vMusic" min="0" max="1" step="0.01" value="0.45"></label>
+    <label>SFX <input type="range" id="vSfx" min="0" max="1" step="0.01" value="1"></label>
+  </section>
+
+  <section>
+    <h2>Loops</h2>
+    <div id="loops"></div>
+    <label>Pitch (all active) <input type="range" id="lp" min="0.3" max="2" step="0.01" value="1"><span id="lpv">1</span></label>
+    <label>Volume (all active) <input type="range" id="lv" min="0" max="1.5" step="0.01" value="1"></label>
+    <h2 style="margin-top:12px">Spatial demo</h2>
+    <canvas id="cv" width="320" height="320"></canvas>
+    <label>Source <select id="orbitSrc"><option value="ufoHum">ufoHum loop</option><option value="motherHum">motherHum loop</option><option value="beam">beam loop</option><option value="eggSplat">eggSplat every 0.4 s</option><option value="cluck">cluck every 0.7 s</option></select><button id="orbit">Orbit: off</button></label>
+    <label>Radius <input type="range" id="orad" min="1" max="40" step="0.5" value="6"><span id="oradv">6 m</span></label>
+    <label>Speed <input type="range" id="ospd" min="0.05" max="2" step="0.05" value="0.4"></label>
+  </section>
+
+  <section>
+    <h2>Stress / checks</h2>
+    <button id="gat">Gatling 20/s × 5 s (+spin loop)</button>
+    <button id="storm">Storm: 150 random SFX in 2 s</button>
+    <button id="swarm">UFO swarm: 12 hums (5 real)</button>
+    <button id="swarmStop">stop swarm</button>
+    <button id="allSfx">Play every SFX (staggered)</button>
+    <button id="analyze">Offline analysis (peak / RMS)</button>
+    <div class="grp">Live debug (window.__audioDebug())</div>
+    <pre id="dbg">—</pre>
+  </section>
+</div>
+
+<div class="grid" style="margin-top:12px" id="sfxGroups"></div>
+<section style="margin-top:12px"><h2>Offline analysis</h2><div id="ana" class="sub">Not run yet.</div></section>
+
+<script type="module">
+import * as A from '../src/audio.js';
+const { initAudio, sfx, loop, music, stinger, setVolumes, toggleMusic, heartbeat, setListener, setSpatialQuality, SFX_NAMES, LOOP_NAMES, MUSIC_MODES, STINGER_NAMES, __renderOffline } = A;
+const $ = (id) => document.getElementById(id);
+const el = (tag, txt, on) => { const b = document.createElement(tag); b.textContent = txt; if (on) b.onclick = on; return b; };
+const listener = { pos: { x: 0, y: 1.2, z: 0 }, fwd: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } };
+const randPos = () => { const a = Math.random() * Math.PI * 2, r = 3 + Math.random() * 27; return { x: Math.cos(a) * r, y: 1.2 + Math.random() * 8, z: Math.sin(a) * r }; };
+const ensure = () => initAudio();
+
+// ---------- groups ----------
+const GROUPS = {
+  Weapons: ['throw', 'slingPull', 'slingRelease', 'crossbow', 'pistol', 'shotgun', 'gatling', 'launcher', 'homingLaunch', 'laser', 'tesla', 'teslaChain', 'fireworkLaunch', 'fireworkBoom', 'crackle', 'reload', 'weaponSwitch', 'weaponPickup', 'dryFire'],
+  Impacts: ['eggSplat', 'eggHitUfo', 'crit', 'tink', 'shieldTink', 'explosionSmall', 'explosionBig', 'ufoExplode', 'debrisLand', 'hitMarker'],
+  Enemies: ['beamStart', 'gooCharge', 'gooFire', 'gooSplat', 'plasma', 'bombDrop', 'sniperCharge', 'sniperShot', 'siren', 'dive', 'thiefGrab', 'ghostFade', 'shieldUp', 'shieldDown', 'bossSpawn', 'motherSpawn', 'coreExposed', 'bossDeath'],
+  Chickens: ['cluck', 'chirp', 'crow', 'henPanic', 'abducted', 'rescue', 'hatch', 'feathers'],
+  'Player / UI': ['hurt', 'heal', 'bubble', 'land', 'takeoff', 'powerup', 'crateSpawn', 'crateOpen', 'combo', 'multiKill', 'skillOn', 'skillReady', 'denied', 'cardAppear', 'cardPick', 'uiHover', 'uiClick', 'tally', 'newRecord'],
+};
+const grouped = new Set(Object.values(GROUPS).flat());
+const missing = SFX_NAMES.filter((n) => !grouped.has(n));
+if (missing.length) GROUPS.Other = missing;
+let comboLevel = 1;
+for (const [g, names] of Object.entries(GROUPS)) {
+  const s = document.createElement('section'); s.appendChild(el('h2', g));
+  for (const n of names) s.appendChild(el('button', n, (ev) => {
+    ensure();
+    const opts = {};
+    if (ev.shiftKey || $('posAll').checked) opts.pos = randPos();
+    if (n === 'combo') { opts.pitch = 1 + (comboLevel - 1) * 0.06; comboLevel = comboLevel % 10 + 1; }
+    const r = sfx(n, opts);
+    if (!r) console.info('[lab] not played (rate-limited / not ready)', n);
+  }));
+  $('sfxGroups').appendChild(s);
+}
+// ---------- music ----------
+for (const m of MUSIC_MODES) $('modes').appendChild(el('button', m, () => { ensure(); music.setMode(m); [...$('modes').children].forEach((b) => b.classList.toggle('on', b.textContent === m)); }));
+for (const n of STINGER_NAMES) $('stingers').appendChild(el('button', n, () => { ensure(); stinger(n); }));
+$('intensity').oninput = (e) => { music.setIntensity(+e.target.value); $('iv').textContent = e.target.value; };
+$('tempo').oninput = (e) => { music.setTempo(+e.target.value); $('tv').textContent = e.target.value; };
+$('tempoReset').onclick = () => { music.setTempo(null); $('tv').textContent = 'mode'; };
+const vol = () => setVolumes({ master: +$('vMaster').value, music: +$('vMusic').value, sfx: +$('vSfx').value });
+['vMaster', 'vMusic', 'vSfx'].forEach((id) => ($(id).oninput = vol));
+$('start').onclick = () => { ensure(); $('start').textContent = 'Audio running'; $('start').classList.add('on'); };
+$('musicToggle').onclick = () => { ensure(); $('musicToggle').textContent = 'Music: ' + (toggleMusic() ? 'on' : 'off'); };
+let hb = false; $('heart').onclick = () => { ensure(); hb = !hb; heartbeat(hb); $('heart').textContent = 'Heartbeat: ' + (hb ? 'on' : 'off'); $('heart').classList.toggle('on', hb); };
+let hq = false; $('hrtf').onclick = () => { hq = !hq; $('hrtf').textContent = 'Spatial: ' + setSpatialQuality(hq ? 'hrtf' : 'equalpower') + ' (new loops)'; };
+
+// ---------- loops ----------
+const active = new Map();
+for (const n of LOOP_NAMES) {
+  const b = el('button', n, () => {
+    ensure();
+    if (active.has(n)) { active.get(n).stop(0.3); active.delete(n); b.classList.remove('on'); return; }
+    const opts = { pitch: +$('lp').value, vol: +$('lv').value };
+    if (['ufoHum', 'beam', 'motherHum'].includes(n)) opts.pos = { x: 0, y: 6, z: -8 };
+    active.set(n, loop(n, opts)); b.classList.add('on');
+  });
+  $('loops').appendChild(b);
+}
+$('lp').oninput = (e) => { $('lpv').textContent = e.target.value; for (const h of active.values()) h.setPitch(+e.target.value); };
+$('lv').oninput = (e) => { for (const h of active.values()) h.setVol(+e.target.value); };
+
+// ---------- spatial orbit demo ----------
+let orbitOn = false, orbitH = null, orbitAng = 0, orbitLast = 0, orbitPos = { x: 0, y: 1.2, z: -6 };
+$('orad').oninput = (e) => ($('oradv').textContent = e.target.value + ' m');
+$('orbit').onclick = () => {
+  ensure(); orbitOn = !orbitOn; $('orbit').textContent = 'Orbit: ' + (orbitOn ? 'on' : 'off'); $('orbit').classList.toggle('on', orbitOn);
+  if (orbitH) { orbitH.stop(0.3); orbitH = null; }
+  const src = $('orbitSrc').value;
+  if (orbitOn && LOOP_NAMES.includes(src)) orbitH = loop(src, { pos: orbitPos });
+};
+const cv = $('cv'), g = cv.getContext('2d');
+let frameCost = 0, frames = 0;
+function frame(ts) {
+  const c0 = performance.now();
+  setListener(listener.pos, listener.fwd, listener.up);       // gameplay will do this every frame
+  if (orbitOn) {
+    const dt = Math.min(0.05, (ts - (frame.last || ts)) / 1000);
+    orbitAng += dt * +$('ospd').value * Math.PI * 2 / 4;
+    const r = +$('orad').value;
+    orbitPos = { x: Math.cos(orbitAng) * r, y: 1.2 + (orbitH && $('orbitSrc').value !== 'beam' ? 3 : 0), z: Math.sin(orbitAng) * r };
+    if (orbitH) orbitH.setPos(orbitPos);
+    const src = $('orbitSrc').value, every = src === 'eggSplat' ? 400 : 700;
+    if (!orbitH && ts - orbitLast > every) { orbitLast = ts; sfx(src, { pos: orbitPos }); }
+  }
+  frame.last = ts;
+  frameCost += performance.now() - c0; frames++;
+  // draw (top-down, listener in the centre facing up = -z)
+  const W = cv.width, s = W / 2 / 42;
+  g.clearRect(0, 0, W, W); g.strokeStyle = '#3a3226';
+  for (const rr of [3, 10, 25, 40]) { g.beginPath(); g.arc(W / 2, W / 2, rr * s, 0, 7); g.stroke(); g.fillStyle = '#6b5d47'; g.fillText(rr + 'm', W / 2 + rr * s + 2, W / 2 - 2); }
+  g.fillStyle = '#f2b33d'; g.beginPath(); g.moveTo(W / 2, W / 2 - 10); g.lineTo(W / 2 - 6, W / 2 + 6); g.lineTo(W / 2 + 6, W / 2 + 6); g.fill();
+  if (orbitOn) { g.fillStyle = '#5fbf6b'; g.beginPath(); g.arc(W / 2 + orbitPos.x * s, W / 2 + orbitPos.z * s, 6, 0, 7); g.fill(); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---------- stress ----------
+$('gat').onclick = () => {
+  ensure(); const spin = loop('gatlingSpin', { pitch: 0.3 }); let n = 0;
+  const id = setInterval(() => { n++; spin.setPitch(Math.min(1.4, 0.3 + n * 0.03)); sfx('gatling', { pos: { x: 0.3, y: 1.1, z: -0.5 } }); if (n >= 100) { clearInterval(id); spin.stop(0.4); } }, 50);
+};
+$('storm').onclick = () => { ensure(); for (let i = 0; i < 150; i++) setTimeout(() => sfx(SFX_NAMES[Math.floor(Math.random() * SFX_NAMES.length)], { pos: randPos() }), Math.random() * 2000); };
+let swarm = [];
+$('swarm').onclick = () => { ensure(); for (let i = 0; i < 12; i++) swarm.push(loop('ufoHum', { pos: randPos(), pitch: 0.8 + Math.random() * 0.5 })); };
+$('swarmStop').onclick = () => { swarm.forEach((h) => h.stop(0.3)); swarm = []; };
+$('allSfx').onclick = () => { ensure(); SFX_NAMES.forEach((n, i) => setTimeout(() => sfx(n), i * 350)); };
+setInterval(() => {
+  const d = window.__audioDebug();
+  d.frameListenerMs = frames ? +(frameCost / frames).toFixed(4) : 0; frameCost = 0; frames = 0;
+  $('dbg').textContent = JSON.stringify(d, null, 1);
+}, 300);
+
+// ---------- offline analysis ----------
+function stats(buf) {
+  let peak = 0, sum = 0, n = 0, maxWin = 0, last = 0;
+  const L = buf.getChannelData(0), Rr = buf.getChannelData(1), win = Math.floor(buf.sampleRate * 0.1);
+  let ws = 0;
+  for (let i = 0; i < L.length; i++) {
+    const a = Math.max(Math.abs(L[i]), Math.abs(Rr[i])); if (a > peak) peak = a; if (a > 0.001) last = i;
+    const e = (L[i] * L[i] + Rr[i] * Rr[i]) / 2; sum += e; n++;
+    ws += e; if (i >= win) { const o = i - win; ws -= (L[o] * L[o] + Rr[o] * Rr[o]) / 2; }
+    if (i >= win && ws > maxWin) maxWin = ws;
+  }
+  const db = (x) => (x > 0 ? 20 * Math.log10(x) : -Infinity);
+  return { peak: +peak.toFixed(3), peakDb: +db(peak).toFixed(1), rmsDb: +db(Math.sqrt(sum / n)).toFixed(1), loud100msDb: +db(Math.sqrt(maxWin / win)).toFixed(1), tail: +(last / buf.sampleRate).toFixed(2) };
+}
+async function analyzeSfx(name, opts = {}, dur = 3) { return stats(await __renderOffline(dur, () => sfx(name, opts))); }
+async function analyzeMusic(mode, intensity = 1, bars = 8) {
+  // ask the offline instance for its bpm via a quick probe render
+  const bpm = { menu: 88, day: 118, dusk: 96, night: 92, boss: 148, mother: 124, flight: 132, victory: 104, gameover: 70 }[mode];
+  const sec = (bars * 240) / bpm + 1;
+  return stats(await __renderOffline(sec, (m) => { m.setIntensity(intensity, true); m.setMode(mode); }));
+}
+async function analyzeAll() {
+  const out = { sfx: {}, music: {}, extra: {} };
+  for (const n of SFX_NAMES) out.sfx[n] = await analyzeSfx(n, {}, ['motherSpawn', 'bossDeath', 'explosionBig', 'fireworkBoom'].includes(n) ? 5 : 3);
+  for (const m of MUSIC_MODES.filter((x) => x !== 'off')) { out.music[m + '@1'] = await analyzeMusic(m, 1); out.music[m + '@0'] = await analyzeMusic(m, 0); }
+  out.extra['30x explosionBig at once'] = stats(await __renderOffline(4, () => { for (let i = 0; i < 30; i++) sfx('explosionBig', { delay: i * 0.051 }); }));
+  out.extra['gatling 20/s 3s'] = stats(await __renderOffline(3.5, () => { for (let i = 0; i < 60; i++) sfx('gatling', { delay: i * 0.05 }); }));
+  out.extra['day@1 + explosionBig + eggSplat'] = stats(await __renderOffline(6, (m) => { m.setIntensity(1, true); m.setMode('day'); sfx('explosionBig', { delay: 2 }); sfx('eggSplat', { delay: 3 }); }));
+  out.extra['eggSplat @25m'] = stats(await __renderOffline(2, (m, e) => sfx('eggSplat', { pos: { x: 0, y: 1.2, z: -25 } })));
+  out.extra['ufoExplode @25m'] = stats(await __renderOffline(3, () => sfx('ufoExplode', { pos: { x: 0, y: 1.2, z: -25 } })));
+  for (const n of STINGER_NAMES) out.extra['stinger:' + n] = stats(await __renderOffline(4, () => stinger(n)));
+  for (const n of LOOP_NAMES) out.extra['loop:' + n] = stats(await __renderOffline(2, () => loop(n, { pos: { x: 0, y: 1.2, z: -3 } })));
+  return out;
+}
+window.__lab = { analyzeSfx, analyzeMusic, analyzeAll, stats };
+$('analyze').onclick = async () => {
+  $('ana').textContent = 'Rendering…';
+  const r = await analyzeAll();
+  const rows = [];
+  for (const [sec, obj] of Object.entries(r)) for (const [k, s] of Object.entries(obj)) rows.push(`<tr><td>${sec}: ${k}</td><td class="${s.peak > 0.95 ? 'warn' : ''}">${s.peak}</td><td>${s.peakDb}</td><td>${s.rmsDb}</td><td>${s.loud100msDb}</td><td>${s.tail}</td></tr>`);
+  $('ana').innerHTML = `<table><tr><th>render</th><th>peak</th><th>peak dB</th><th>RMS dB</th><th>loudest 100 ms dB</th><th>tail s</th></tr>${rows.join('')}</table>`;
+};
+</script>
+</body>
+</html>

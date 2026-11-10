@@ -1,23 +1,36 @@
-# Chicken Rancher VR 2.0: documento completo do jogo
+# Chicken Rancher VR 3.0: documento completo do jogo
 
 > Bíblia de design e técnica do jogo. Serve para portar as armas e os sistemas para
-> outros jogos e para criar variações do rancho. Todos os números foram tirados do código real
-> (`index.html`, ~5.000 linhas, um arquivo só, Three.js r160 via CDN, sem build).
+> outros jogos e para criar variações do rancho. Todos os números foram tirados do código real.
+> A 3.0 foi refeita do zero em **módulos ES** (`src/*.js`, ~8.000 linhas), Three.js **r186** via CDN, sem build.
 
 - **Jogar:** https://marcofurtado-hub.github.io/chicken-rancher-vr/
+- **Versão 2.1 (arquivo único):** https://marcofurtado-hub.github.io/chicken-rancher-vr/v2/
 - **Versão 1.0 original:** https://marcofurtado-hub.github.io/chicken-rancher-vr/v1/
 - **Repo:** https://github.com/marcofurtado-hub/chicken-rancher-vr
-- **Plataformas:** Meta Quest (WebXR), **PC** (mouse + teclado, com movimento e zoom) e mobile (touch)
+- **Plataformas:** Meta Quest (WebXR), **PC** (mouse + teclado, com movimento e zoom) e celular (toque)
 
 > **Vai usar em outro jogo? Comece pela [seção 12, Sistemas reaproveitáveis](#12-sistemas-reaproveitáveis-receitas-para-outros-jogos):**
 > habilidades estilo Archero, multi-tiro universal, efeitos de impacto, ricochete, companheiro,
-> escudo, vida do jogador, modo PC a partir do VR, HUD móvel no VR e teste por script.
+> escudo, vida do jogador, modo PC a partir do VR, HUD móvel no VR, teste por script e, na 3.0,
+> **visual toon com contorno, personagens instanciados, especial carregado por abates, nota de wave e menu VR de atirar**.
 > As armas estão na **seção 3** (com o guia de portar na 3.6).
 
-**Versão 2.1 (mais difícil e variada):** 12 waves, 11 armas (novo **rojão de fogos**), 11 naves (novas
-**bombardeira**, **sniper** e **ladra**), as naves comuns atiram plasma em você, **habilidades ativas de 8 s**
-com recarga (no lugar das permanentes), **passarinho** que voa sozinho, power-ups de 8 s, **andar livre**
-(joystick ou WASD, descer a rampa da varanda, cair) e a **cadeira de rodas voadora** na batalha final.
+**Versão 3.0 (refeita do zero):**
+- **Engine:** Three.js r186 + WebGL2 (WebGPU dentro do WebXR ainda é experimental no Quest Browser em nov/2026;
+  o IWSDK da Meta exige build com npm sem ganho real para este jogo). Código dividido em 17 módulos.
+- **Visual:** estilo cartoon (MeshToon com rampa de 3–4 tons + luz de contorno + contorno preto por "inverted hull"),
+  cenário novo (casa, celeiro com silo, moinho, milharal, morros, montanhas, lavouras), céu com sol, lua e estrelas discretas,
+  grama e milho balançando no vento (shader), vaga-lumes, lampião e janelas acendendo.
+- **Som:** motor novo com bus de efeitos e música, compressor/limitador, reverb procedural, som 3D (naves zumbem
+  de onde estão), limite de vozes e música procedural por momento (menu, dia, entardecer, noite, chefão, nave-mãe, voo, vitória).
+- **Desempenho:** ovos, galinhas, destroços, respingos, sombras, raios e brilhos desenhados por **instâncias**.
+  Cena cheia (13 naves, noite, gatling): ~60 draw calls e ~145 mil triângulos (o cenário sozinho: 12 calls, 98 mil).
+- **Jogo:** **Chuva de Ovos** (especial carregado por abates), **nota de 1 a 3 estrelas** por wave, ovos que esticam
+  na direção do voo, hit-stop nos golpes grandes, cards que giram ao entrar e crescem quando mirados,
+  **menu VR com botões de conforto** (vinheta, giro suave/em passos) em que se atira, ajustes de volume na tela inicial.
+- Mantém tudo da 2.1: 12 waves, 11 armas, 11 naves, chefões, nave-mãe, habilidades ativas de 8 s, passarinho,
+  andar livre, cadeira voadora e 3 idiomas.
 
 **Idiomas:** português, inglês e finlandês, escolhidos na tela inicial (receita 12.15).
 
@@ -57,6 +70,8 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 | Pistolas duplas | um gatilho para cada mão | clique (alterna as mãos) | segurar |
 | Trocar arma | A = próxima, X = anterior | 1-9, 0, - e roda | botão 🔄 |
 | **Habilidades (3 slots)** | **B**, **Y** e **GRIP direito** | **Q**, **E** e **F** | botões na tela |
+| **Chuva de Ovos** (especial) | **GRIP esquerdo** (ou clique no direcional esquerdo) | **R** | botão redondo 🥚 |
+| Ajustes de conforto | atire nos botões da placa do menu | tela inicial | tela inicial |
 | **Andar** | **joystick esquerdo** (2.4 m/s, para todos os lados) | **WASD / setas** | n/a |
 | Girar / mirar | joystick direito (giro suave) | mouse | arrastar |
 | Voar (cadeira voadora) | olhar = direção · joystick esq. acelera/freia | olhar = direção · W/S acelera/freia | n/a |
@@ -480,76 +495,74 @@ não é permanente**. O card te dá uma **habilidade ativa** que você liga com 
 
 ## 7. VISUAL
 
-**Estilo:** low-poly com flat shading, cores saturadas e tudo procedural (não há nenhuma imagem ou modelo externo).
+**Estilo:** cartoon "low-poly premium": formas grossas e legíveis, cores saturadas, tudo procedural (nenhuma imagem ou modelo externo).
+- **Material toon** (`toon()` em `render.js`): `MeshToonMaterial` com rampa de 3 ou 4 tons (`RAMP3`/`RAMP4`) e cores por vértice.
+  Um `onBeforeCompile` soma **luz de contorno** (rim) `uRimColor × (1 − N·V)³ × uRimStrength`; o ciclo do dia mexe nesses uniforms.
+- **Contorno preto** (`outlineMat` + `outlineGeo`): cópia da malha com `BackSide` e vértices empurrados ao longo da normal
+  (`transformed += normal * largura`). A geometria do contorno é soldada (`mergeVertices`) para não abrir nas quinas.
+  Nas naves, o contorno usa só a **silhueta do casco** (~250 triângulos) em vez da malha detalhada.
+- **Galinhas:** corpo com peito e rabo, cabeça com olhos grandes (brilho no olho), crista, barbela e bico. Pernas andam alternadas,
+  asas batem ao fugir, cabeça bica e olha em volta, achata ao pousar. Galo com rabo verde/roxo, Galinha de Ouro solta estrelinhas.
+- **Naves:** casco de duas cores (lathe), faixa na borda, 10 luzes, aro da cabine e **alienígena saindo da cabine** que te olha.
+  O casco gira (mais rápido à noite), inclina na direção do movimento e balança ao levar tiro. Feixe de abdução com shader
+  (faixas subindo + borda brilhante) e estrelinhas subindo.
+- **Cenário** (`world.js` + `sky.js`): ver a seção 9 para custos. Céu com degradê, sol, lua, nuvens e 200 estrelas fracas;
+  5 momentos (meio-dia, tarde, pôr do sol à frente-direita, crepúsculo, noite enluarada) interpolados por `setTOD(t)`, t ∈ [0, 4].
 
-**Cenário:** casa com varanda, cerca, celeiro com telhado triangular, moinho girando, galinheiro,
-espantalho, fardos de feno, árvores e pinheiros, morros no horizonte, estrada, milharal (~350
-pés instanciados), 1.900 folhas de grama instanciadas, flores e nuvens de cubos.
-
-**Ciclo dia → noite** (`applyTOD`, 5 keyframes interpolados): céu em degradê com halo do sol
-(shader próprio), neblina, cor e intensidade da luz, sol que se põe na frente do jogador,
-lua, estrelas discretas (220, bem fracas), janelas da casa acendendo, lampião da varanda
-e vaga-lumes. Cada wave tem um valor `tod` de 0 a 4.
-
-**Discos voadores:** casco feito por revolução de um perfil (LatheGeometry), domo de vidro com alien
-que sempre olha para você, luzes coloridas girando na borda, barriga brilhante, feixe com textura
-animada e anéis subindo, e anel no chão. **À noite** as luzes ganham halos e giram mais rápido e
-o casco brilha de leve. Cada nave tem sombra no chão que muda de tamanho com a altura.
-
-**Efeitos:**
-- 2 sistemas de partículas em GPU (aditivo e normal), com 1 draw call cada
-- popups 3D de texto que crescem com a distância para continuarem legíveis
-- explosões (esfera + anel de choque)
-- overlays presos na câmera (vinheta vermelha de dano, gosma, flash dourado e vinheta azul de câmera lenta), que funcionam no VR e no desktop
-- banner 3D que segue o olhar devagar
+**Efeitos** (`fx.js`):
+- Partículas em GPU com **atlas de 4 formas** (brilho, estrela, fumaça, gota sólida) e rotação por partícula. 2 sistemas (aditivo e normal).
+- **Ovo frito no chão** como decal instanciado (textura de canvas), destroços de nave instanciados com física,
+  **sombras redondas** instanciadas (qualquer entidade pede uma por frame), **brilhos de um frame** (luzes das naves à noite,
+  halos de projéteis) e **segmentos de luz** instanciados (raios tesla, laser, mira da sniper, cabos da escudeira).
+- Explosões com pool (esfera + anel), popups 3D com fonte cartoon (Lilita One) que estouram e assentam,
+  overlays na câmera (dano, gosma, flash, câmera lenta, bolha, vida baixa, vinheta de conforto) e banner 3D que segue o olhar.
 
 ## 8. ÁUDIO (100% sintetizado com Web Audio)
-- ~50 efeitos feitos de osciladores e ruído filtrado, com limite de repetição para não estourar
-  quando a gatling dispara 20 vezes por segundo.
-- **Música procedural:** country (G-C-D-G) de dia e progressão menor (Em-C-Am-B) à noite, com
-  arpejo e baixo. A bateria entra durante a wave e acelera quando há chefão. O BPM sobe com a wave.
+- `audio.js` (efeitos) + `music.js` (música). Bus de efeitos e de música → compressor/limitador → saída, com envio para reverb procedural.
+- **~80 efeitos** com variação aleatória, limite por nome (a gatling dispara 20/s sem estourar) e limite global de vozes.
+- **Som 3D:** `sfx(nome, { pos })` usa PannerNode; `setListener` segue a cabeça. Só as **4 naves mais próximas** zumbem
+  (`ufoHum`), para poupar CPU no Quest. Loops com alça (`loop()` → `setPos/setPitch/setVol/stop`): feixe, laser, gatling, vento do voo, nave-mãe.
+- **Música procedural** por modo (`menu`, `day`, `dusk`, `night`, `boss`, `mother`, `flight`, `victory`, `gameover`), com intensidade
+  (calma entre waves, banda inteira em combate), BPM que sobe com a wave e **stingers** (início de wave, arma nova, wave limpa, perfeita, vitória, game over).
 - **Vibração:** cada arma tem intensidade e duração próprias. Explosões grandes vibram os dois controles.
 
 ## 9. DESEMPENHO NO QUEST (técnicas reaproveitáveis)
-1. **`bakeStatic(grupo)`:** funde todas as malhas estáticas numa geometria só com cores por vértice.
-   O cenário inteiro vira **1 draw call**. Use também em armas, cadeira, galinhas e nuvens.
-2. **InstancedMesh** para grama, flores e milho.
-3. **Partículas em GPU** com shader próprio. O tamanho do ponto é calculado pela altura do framebuffer do
-   XR, porque o `PointsMaterial` padrão erra o tamanho no VR.
-4. **Geometrias e materiais compartilhados.** Nada de `new SphereGeometry` por partícula
-   (a v1 fazia isso e engasgava).
-5. Antialias ligado, pixel ratio no máximo 1.5 no VR e no mobile (2 no PC), foveation 1 e no máximo 240 projéteis.
+1. **Fundir estáticos** (`bake(grupo)`): primitivas com cor em `userData.c` viram uma `BufferGeometry` com cores por vértice.
+   O cenário inteiro são ~12 draw calls.
+2. **Instâncias para tudo que se repete:** ovos (5 visuais: ovo, flecha, míssil, rojão, ovo gigante), galinhas
+   (cada **parte** é um InstancedMesh: 12 galinhas ≈ 13 draw calls), projéteis inimigos, destroços, respingos, sombras, raios.
+3. **Partículas e brilhos em GPU** com o tamanho do ponto calculado pela altura do framebuffer do XR.
+4. **Nada de luzes reais extras:** 1 direcional + 1 hemisférica. Lampião, janelas e luzes das naves são emissivo + brilho aditivo.
+5. **Sem alocação por frame:** vetores temporários por módulo (`tmpV`), pools e `splice` trocando pelo último.
+6. **Orçamento medido** (Chrome, cena cheia): ~60 draw calls, ~145 mil triângulos, ~0,6 ms de CPU por frame de simulação.
+7. Antialias ligado, pixel ratio no máximo 1.5 no celular (2 no PC), foveation 1, no máximo 260 projéteis.
 
-## 10. ESTRUTURA DO CÓDIGO (`index.html`)
+## 10. ESTRUTURA DO CÓDIGO (`src/`)
 
-| Seção | Funções-chave |
+| Módulo | O que tem |
 |---|---|
-| Config | `WEAPONS`, `WEAPON_ORDER`, `UFO_TYPES`, `WAVES`, `endlessWave` |
-| Render e helpers | `bakeStatic`, `mergeToGeometry`, `box/cyl/sph/cone`, `canvasTex` |
-| Céu e tempo | `applyTOD`, `TOD_KEYS`, `makeCloud`, `updateFireflies` |
-| Efeitos | `Particles`, `sparks`, `fireball`, `smoke`, `spawnBlast`, `spawnEggSplat`, `spawnFriedEggSplat`, `popup`, `makeOverlay` |
-| Áudio | `tone/noise`, `play*`, `musicTick`, `scheduleStep` |
-| Galinhas | `makeChicken`, `spawnChicken`, `updateChickens`, `scareChicken` |
-| Naves | `buildUfoMesh`, `buildMothership`, `spawnRegular`, `spawnBoss`, `spawnMothership`, `update*` (Abductor, Gunner, Kamikaze, Shielder, Boss, Mother) |
-| Gosma e caixas | `fireGoo`, `updateGoos`, `spawnCrate`, `updateCrates` |
-| Armas | `weaponGroup`, `equipWeapon`, `spawnEgg`, `fire*`, `throwEgg`, `fireSlingshotPouch`, `tickLaser`, `fireTesla`, `drawBolt` |
-| Colisão e dano | `rayEllipsoidT`, `castSegment`, `applyHit`, `applyMagnet`, `explodeAt`, `hitPart`, `killUfo` |
-| Pontuação | `registerKill`, `comboMult`, `maybeDropCrate`, `activatePower` |
-| Habilidades (Archero) | `UPGRADES`, `RARITY`, `buildOffer`, `rollRarity`, `showUpgradeCards(kind)`, `chooseUpgrade`, `skillList`, `pendingPicks` |
-| Multi-tiro e efeitos | `volleyDirs`, `volleyCount`, `spawnEgg({volley})`, `applyStatus`, `bounceChain`, `hitPart(..., fx)` |
-| Companheiro e escudo | `updateBuddies`, `setChickenShield` |
-| Vida do jogador | `damagePlayer`, `healPlayer`, `hp/hpMax/invulnT` |
-| Modo PC | `updatePcControls` (WASD, zoom, `pcAim`, marcador de acerto), `ballistic`, `setPaused` |
-| Fluxo | `startWave`, `updateWaveLogic`, `waveComplete`, `enterVictory`, `enterGameOver(reason)`, `resetGame` |
-| Entrada | `onTriggerStart/End`, `pollButtons`, `vrSnap`, `trackHands`, `syncWeapons`, mouse, teclado, touch e grip |
-| HUD | `drawLap` (painel do colo), `updateHtmlHud`, `flockDetail` |
-| Loop | `gameLoop` (cada etapa do frame em ordem) |
+| `render.js` | renderer, cena, câmera, rig, `toon()`, `outlineMat/outlineGeo`, `bake/bakeWith`, primitivas, `canvasTex`, `camPos`, `fitDistance` |
+| `core.js` | estado global `G` (partida, vida, combo, habilidades, ajustes), utilidades, `tmpV` |
+| `config.js` | tabelas: `WEAPONS`, `UFO_TYPES`, `WAVES`, `endlessWave`, `CHICKEN_KINDS`, `SKILLS`, `INSTANTS`, `POWERS`, `WEAPON_TIPS` |
+| `i18n.js` | `tr(pt, en, fi)` |
+| `world.js` + `sky.js` | cenário, céu, ciclo do dia (`setTOD`, `nightAmount`), `groundHeightAt`, `blockedSeg`, `obstacleAt` |
+| `fx.js` | partículas, ovo frito, destroços, explosões, `seg/bolt`, `glow`, `blob`, popups, overlays, banner |
+| `audio.js` + `music.js` | efeitos, loops 3D, música procedural, stingers |
+| `chickens.js` | galinhas instanciadas por parte, comportamento e animação |
+| `ufos.js` | modelos e comportamentos das naves, chefão, nave-mãe, projéteis inimigos, caixas de power-up |
+| `combat.js` | colisão (`castSegment`), `hitPart`, `killUfo`, explosões em área, pontos/combo, power-ups, vida do jogador, `uiTargets` |
+| `weapons.js` | modelos das armas, projéteis instanciados, cada `fire*`, laser, tesla, rojão, **Chuva de Ovos**, arremesso VR |
+| `skills.js` | habilidades ativas, oferta estilo Archero, cards 3D, passarinho |
+| `player.js` | controles VR/PC/toque, vibração, andar/girar/cair, cadeira de rodas, cadeira voadora |
+| `hud.js` | painel do colo (VR), HUD HTML, placa do menu com botões de conforto |
+| `game.js` | máquina de estados, waves, nota da wave, loop principal, ganchos de teste |
+| `main.js` | boot: fontes, botão de VR, tela inicial |
 
-**Ganchos de teste:** `window.__cr` traz `startWave`, `step(n)` (avança n frames sem renderizar),
-`aimAt`, `setHold`, `shoot`, `killAll`, `spawnUfo`, `spawnCrate`, `hitCard`, `hp`, `rig` e outros.
-Com eles dá para rodar a campanha inteira por script (veja a seção 12.11).
+**Ordem de carregamento:** módulos se importam em ciclo (ex.: `combat` ↔ `ufos`). Isso é seguro **desde que nenhum módulo
+use outro no nível de cima do arquivo**. Efeitos que dependem de outros módulos vão para funções `init*()` chamadas no `boot()`.
 
----
+**Ganchos de teste** (`window.__cr`): `startGame`, `startWave`, `step(n, dt, render)`, `aimAt`, `setHold`, `shoot`, `ult`, `killAll`,
+`spawnUfo`, `hitCard`, `useSkill`, `selectWeapon`, `moveRig`, `flight`, `startFlightEvent`, `G`. Com eles a campanha inteira roda por script em ~2 s.
 
 ## 11. COMO CRIAR VARIAÇÕES DO RANCHO
 
@@ -867,3 +880,41 @@ Sem biblioteca e sem arquivo de tradução: cada texto carrega as três línguas
    até caber na largura.
 6. **Plural e ordem das palavras:** monte a frase inteira dentro do `tr`, sem colar pedaços.
    Exemplo: `tr('restam ' + n + ' galinhas', n + ' chickens left', n + ' kanaa jäljellä')`.
+
+### 12.16 Visual toon com contorno barato (qualquer jogo Three.js)
+
+1. `MeshToonMaterial` com `gradientMap` de 3–4 tons (`DataTexture` com `NearestFilter`) e `vertexColors`.
+2. Luz de contorno no `onBeforeCompile`, logo depois de `#include <opaque_fragment>`:
+   `gl_FragColor.rgb += uRimColor * pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0) * uRimStrength;`
+   Use `customProgramCacheKey` para todas as malhas dividirem o mesmo programa.
+3. Contorno: malha filha com `MeshBasicMaterial({ side: BackSide })` e, no vértice, `transformed += normalize(normal) * largura;`.
+   Solde os vértices da geometria do contorno (`mergeVertices` só com posição) para não abrir nas quinas.
+4. Contorne só o que importa (personagens, inimigos, armas). Em inimigos detalhados, contorne só a silhueta.
+
+### 12.17 Personagens instanciados por parte
+
+Para muitos personagens animados iguais (galinhas, zumbis, peixes): **um InstancedMesh por parte** (corpo, cabeça, asas, pernas, detalhes).
+A cada frame, para cada personagem, monte a matriz da raiz (posição, giro, balanço) e multiplique pela matriz local de cada parte
+(cabeça bicando, asa batendo, perna balançando). Partes de cor variável (pele) usam `instanceColor` sobre geometria branca;
+partes de cor fixa (olho, bico) ficam numa malha de "detalhes" sem tingir. 12 galinhas animadas ≈ 13 draw calls.
+
+### 12.18 Especial carregado por abates (Chuva de Ovos)
+
+- Cada abate soma ao medidor: `0.045 + 0.01 × multiplicador do combo` (chefão: +0.25). Cheio = som + popup "PRONTA!".
+- Botão dedicado (GRIP esquerdo no VR, R no PC, botão redondo no celular) com anel de progresso no HUD.
+- Efeito: 4,5 s de ovos gigantes caindo do céu a cada 0,16 s, mirando de preferência em quem está abduzindo; cada um explode
+  em área (3,2 m, 8 de dano). Abre com flash, vibração e um hit-stop curto.
+- Funciona como válvula de escape quando a tela enche e premia jogar bem (o combo carrega mais rápido).
+
+### 12.19 Nota da wave (1 a 3 estrelas)
+
+★ por terminar · ★ por não perder nenhum protegido · ★ por precisão ≥ 45% **e** dano levado ≤ 30.
+Precisão = acertos / tiros (cada chumbo conta). Mostre a nota, a precisão e os abates no banner de fim de wave,
+e solte confete com 3 estrelas. Dá um objetivo extra sem mudar as regras.
+
+### 12.20 Menu VR em que se atira
+
+O menu é **diegético** como os cards: botões 3D registrados em `uiTargets` ({ c, r, active, onHit }). O mesmo `castSegment` dos tiros
+os encontra. No menu e nos cards, um **raio-guia fino** sai do controle e fica verde ao apontar para algo clicável. Gatilho apontando
+para um botão = clica; gatilho apontando para o nada = começa o jogo. Assim, ajustes de conforto (vinheta, giro) ficam
+acessíveis dentro do VR sem tirar o headset.
