@@ -12,7 +12,7 @@ import { chickensAlive, flockCounts } from './chickens.js';
 import { uiTargets } from './combat.js';
 import { skillKey, skillCooldown, SKILL_KEYS_PC, useSkill } from './skills.js';
 import { wheelchair, cycleWeapon, selectWeapon } from './player.js';
-import { fireUltimate, canShoot } from './weapons.js';
+import { fireUltimate, canShoot, aimInfo } from './weapons.js';
 
 const [t0, t1] = tmpV(2);
 const CHICK_EMOJI = { hen: '🐔', rooster: '🐓', chick: '🐥', golden: '🌟' };
@@ -228,6 +228,7 @@ export function updateHtmlHud() {
   skillbarEl.classList.toggle('show', show && G.slots.length > 0);
   crossEl.classList.toggle('show', show && (canShoot() || G.state === 'wave_complete'));
   crossEl.classList.toggle('hit', G.hitMarkT > 0);
+  crossEl.classList.toggle('far', aimInfo.active && !aimInfo.inRange && G.hitMarkT <= 0);
   ultEl.classList.toggle('show', show && G.state !== 'upgrade');
   mSwitch.classList.toggle('show', isTouch && show && G.unlocked.size > 1);
   if (!show) return;

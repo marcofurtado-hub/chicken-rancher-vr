@@ -119,6 +119,8 @@ h1 .v{display:inline-block;font-size:.55em;color:var(--g);transform:rotate(-8deg
 #crosshair::after{top:50%;left:0;right:0;height:2px;transform:translateY(-50%);clip-path:polygon(0 0,35% 0,35% 100%,0 100%,0 0,65% 0,100% 0,100% 100%,65% 100%)}
 #crosshair.hit::before,#crosshair.hit::after{background:#ff4050;box-shadow:0 0 8px #ff4050}
 #crosshair.hit{width:30px;height:30px}
+#crosshair.far{opacity:.55;width:16px;height:16px}
+#crosshair.far::before,#crosshair.far::after{background:#ffb090}
 #m-switch{position:fixed;right:18px;bottom:104px;width:58px;height:58px;border-radius:50%;border:2px solid #fff;background:rgba(14,6,26,.6);color:#fff;font-size:24px;z-index:8;display:none}
 #m-switch.show{display:block}
 #pause{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(10,4,20,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);text-align:center;cursor:pointer;padding:16px}

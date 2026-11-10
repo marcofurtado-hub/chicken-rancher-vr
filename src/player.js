@@ -11,7 +11,7 @@ import { sfx, loop, initAudio, resumeAudio, music, toggleMusic } from './audio.j
 import { castSegment } from './combat.js';
 import { chickens, scareChicken } from './chickens.js';
 import { groundHeightAt, blockedSeg, PORCH_Y } from './world.js';
-import { equipWeapon, onTriggerStart, onTriggerEnd, desktopShoot, isTapWeapon, canShoot, fireUltimate, weaponState } from './weapons.js';
+import { equipWeapon, onTriggerStart, onTriggerEnd, desktopShoot, isTapWeapon, canShoot, fireUltimate, weaponState, targetVel } from './weapons.js';
 import { useSkill } from './skills.js';
 import { handleMenuAdvance, setPaused, resetGame } from './game.js';
 import { lapPanel, startLapGrab, endLapGrab } from './hud.js';
@@ -245,7 +245,37 @@ function updatePcControls(dt) {
   // ponto exato sob a mira: todas as armas convergem para ele
   const dir = camera.getWorldDirection(t3);
   const hit = castSegment(camPos, dir, 80, 0);
-  pcAim.copy(camPos).addScaledVector(dir, hit ? Math.max(hit.t, 1.5) : 40);
+  let t = hit ? Math.max(hit.t, 1.5) : 40;
+  // mirando para baixo: o alvo é o ponto do chão sob a mira (não 40 m dentro da terra)
+  if (!hit && dir.y < -0.02) {
+    let tg = (0 - camPos.y) / dir.y;
+    for (let k = 0; k < 2; k++) tg = (groundHeightAt(camPos.x + dir.x * tg, camPos.z + dir.z * tg) - camPos.y) / dir.y;
+    if (tg > 0.5) t = Math.min(t, tg);
+  }
+  pcAim.copy(camPos).addScaledVector(dir, t);
+  // velocidade do alvo sob a mira (para o arremesso mirar onde ele VAI estar)
+  targetVel(hit, pcAimVel);
+}
+export const pcAimVel = new THREE.Vector3();
+/** Ponto do mundo sob um toque na tela (celular): nave/caixa/gosma sob o dedo, com folga de dedo; senão o chão ou 40 m à frente. */
+const _ray = new THREE.Raycaster(), _ndc = new THREE.Vector2();
+export const tapAim = new THREE.Vector3(), tapAimVel = new THREE.Vector3();
+function aimFromTap(cx, cy) {
+  const r = renderer.domElement.getBoundingClientRect();
+  _ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  _ray.setFromCamera(_ndc, camera);
+  const o = _ray.ray.origin, dir = _ray.ray.direction;
+  let hit = castSegment(o, dir, 80, 0);
+  if (!hit) hit = castSegment(o, dir, 80, 0.7);   // dedo é grosso: aceita tocar perto da nave
+  let t = hit ? Math.max(hit.t, 1.5) : 40;
+  if (!hit && dir.y < -0.02) {
+    let tg = (0 - o.y) / dir.y;
+    for (let k = 0; k < 2; k++) tg = (groundHeightAt(o.x + dir.x * tg, o.z + dir.z * tg) - o.y) / dir.y;
+    if (tg > 0.5) t = Math.min(t, tg);
+  }
+  // com a folga, mira o centro da parte tocada (não a casca inflada)
+  if (hit && hit.kind === 'ufo') tapAim.copy(hit.part.c); else tapAim.copy(o).addScaledVector(dir, t);
+  targetVel(hit, tapAimVel);
 }
 export function applyPcView() { rig.rotation.y = P.yaw; camera.rotation.set(P.pitch, 0, 0); }
 
@@ -305,7 +335,7 @@ addEventListener('mousemove', e => {
 });
 
 // ---------- Toque (celular) ----------
-let touchStartTime = 0, touchMoveDist = 0, lastTX = 0, lastTY = 0, touchId = null;
+let touchStartTime = 0, touchMoveDist = 0, lastTX = 0, lastTY = 0, touchId = null, lastTouchId = null;
 function onTouchStart(e) {
   if (xrActive()) return;
   e.preventDefault();
@@ -337,12 +367,15 @@ function onTouchEnd(e) {
   let mine = false;
   for (const t of e.changedTouches) if (t.identifier === touchId) mine = true;
   if (!mine) return;
-  touchId = null;
+  lastTouchId = touchId; touchId = null;
   const was = P.touchActive;
   P.touchActive = false;
   if (!was) return;
   const tap = performance.now() - touchStartTime < 260 && touchMoveDist < 16;
-  if (tap && canShoot() && isTapWeapon()) desktopShoot();
+  if (tap && canShoot() && isTapWeapon()) {
+    const t = [...e.changedTouches].find(q => q.identifier === lastTouchId);
+    if (t) { aimFromTap(t.clientX, t.clientY); desktopShoot(tapAim, tapAimVel); } else desktopShoot();
+  }
 }
 if (isTouch) {
   const el = renderer.domElement;

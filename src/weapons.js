@@ -2,7 +2,7 @@
 // ARMAS — 11 armas (tudo atira ovo), projéteis instanciados, laser, tesla, rojão
 // e a CHUVA DE OVOS (especial carregado pelos abates).
 // =============================================================================
-import { THREE, scene, camera, camPos, rig, xrActive, toon, outlineMat, outlineGeo, bake, bakeWith, add, box, cyl, sph, cone, torus, lathe, UP, placeSegment } from './render.js';
+import { THREE, scene, camera, camPos, rig, xrActive, isTouch, toon, outlineMat, outlineGeo, bake, bakeWith, add, box, cyl, sph, cone, torus, lathe, UP, placeSegment } from './render.js';
 import { G, clamp, rand, pick, tmpV, playing } from './core.js';
 import { tr } from './i18n.js';
 import { WEAPONS, WEAPON_ORDER } from './config.js';
@@ -11,7 +11,7 @@ import { sfx, loop, stinger } from './audio.js';
 import { ufos, eproj, crates, isAlive, destroyEproj } from './ufos.js';
 import { castSegment, applyHit, hitPart, explodeAt, aoeDamage, forEachAimable, uiTargets, hitStop } from './combat.js';
 import { chickens, scareChicken } from './chickens.js';
-import { CTRL, pulseCtrl, pulseAll, pcAim } from './player.js';
+import { CTRL, pulseCtrl, pulseAll, pcAim, pcAimVel } from './player.js';
 import { groundHeightAt } from './world.js';
 
 const [t0, t1, t2, t3, t4, t5, t6, t7, t8] = tmpV(9);
@@ -636,11 +636,39 @@ function updateCrackles(dt) {
     aoeDamage(c.pos, 2.5, c.dmg);
   }
 }
-function throwEgg(ctrl, vel) {
+export const VR_THROW = { g: 9.8 * 0.35, gScale: 0.35, vmax: 18, cone: 0.28, help: 1.2 };
+const _vrSpec = { g: VR_THROW.g, vmin: 0, vmax: 0, k: 1.3 }, _tv = new THREE.Vector3();
+/** Ajuda de mira do VR: acha a nave mais perto da direção do arremesso que a força do braço alcança. */
+function vrAssist(origin, v, speed, out) {
+  const yaw = Math.atan2(v.x, v.z);
+  let best = null, bestS = Infinity;
+  for (const u of ufos) {
+    if (!isAlive(u)) continue;
+    const pt = u.parts.find(p => p.active && p.kind !== 'armor');
+    if (!pt) continue;
+    const dx = pt.c.x - origin.x, dz = pt.c.z - origin.z, y = pt.c.y - origin.y;
+    const x = Math.hypot(dx, dz);
+    if (x < 1) continue;
+    let dy = Math.atan2(dx, dz) - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    if (Math.abs(dy) > VR_THROW.cone) continue;
+    const vNeed = Math.sqrt(VR_THROW.g * (y + Math.hypot(x, y)));
+    if (vNeed > Math.min(VR_THROW.vmax, speed * VR_THROW.help)) continue;   // o braço não alcança
+    const sc = Math.abs(dy) * 3 + x * 0.02;
+    if (sc < bestS) { bestS = sc; best = { pt, u }; }
+  }
+  if (!best) return false;
+  _vrSpec.vmin = speed * 0.85; _vrSpec.vmax = Math.min(VR_THROW.vmax, speed * VR_THROW.help);
+  solveThrow(origin, best.pt.c, best.u._vel || _tv.set(0, 0, 0), _vrSpec, out);
+  return true;
+}
+export function throwEgg(ctrl, vel) {
   const origin = ctrl.getWorldPosition(t0);
   const sm = vel.length();
   const factor = Math.min(3.0 + sm * 0.6, 9.5);
-  spawnEgg(origin, t1.copy(vel).multiplyScalar(factor), { damage: 1, gravity: true, gScale: 0.35, magnet: 4, volley: true });
+  t1.copy(vel).multiplyScalar(factor);
+  if (t1.length() > VR_THROW.vmax) t1.setLength(VR_THROW.vmax);
+  vrAssist(origin, t1, t1.length(), t1);
+  spawnEgg(origin, t1, { damage: 1, gravity: true, gScale: VR_THROW.gScale, magnet: 2, volley: true });
   sfx('throw', { pitch: rand(0.9, 1.1) });
   pulseCtrl(ctrl, Math.min(0.95, 0.25 + sm * 0.1), 80);
 }
@@ -661,30 +689,121 @@ function fireCrossbowArrow() {
   spawnEgg(pouchMesh.position, pull.normalize().multiplyScalar(CROSSBOW_SPEED), { damage: 2, arrow: true, magnet: 1.5, volley: true });
   sfx('crossbow'); pulseCtrl(CTRL.left, 0.85, 100); pulseCtrl(CTRL.right, 0.5, 70);
 }
-// Velocidade que faz o ovo (com gravidade) cair exatamente no ponto mirado
-function ballistic(o, target, speed, g, out) {
-  const d = t4.copy(target).sub(o);
-  const t = Math.max(0.05, d.length() / speed);
-  out.copy(d).divideScalar(t);
-  out.y += 0.5 * g * t;
-  return out;
+// -----------------------------------------------------------------------------
+// ARREMESSO COM PARÁBOLA DE VERDADE (PC/celular)
+// O braço tem força limitada: perto, joga mais leve; longe, joga com tudo e numa
+// curva mais alta; fora do alcance, o ovo cai antes (somos rancheiros, não canhões).
+// Se a mira está numa nave andando, joga onde ela VAI estar.
+// -----------------------------------------------------------------------------
+export const THROW = {
+  hands: { g: 9.8 * 0.6, gScale: 0.6, vmin: 9, vmax: 15.5, k: 1.3, magnet: 1.5 },
+  slingshot: { g: 9.8, gScale: 1, vmin: 14, vmax: MAX_SHOT_SPEED, k: 1.3, magnet: 1.5 },
+};
+const _hz = new THREE.Vector3(), _aim = new THREE.Vector3();
+/** Resolve a velocidade inicial. Retorna { inRange, T } e escreve a velocidade em out. */
+function solveThrow(o, target, tv, spec, out) {
+  _aim.copy(target);
+  let inRange = true, T = 0;
+  for (let it = 0; it < 3; it++) {
+    const dx = _aim.x - o.x, dz = _aim.z - o.z, y = _aim.y - o.y;
+    const x = Math.max(0.05, Math.hypot(dx, dz));
+    const g = spec.g, r = Math.hypot(x, y);
+    const vNeed = Math.sqrt(g * (y + r));               // menor força que alcança o ponto
+    const v = Math.min(spec.vmax, Math.max(spec.vmin, vNeed * spec.k));
+    let ang;
+    if (vNeed <= spec.vmax) {
+      const v2 = v * v, disc = v2 * v2 - g * (g * x * x + 2 * y * v2);
+      ang = Math.atan2(v2 - Math.sqrt(Math.max(0, disc)), g * x); // curva baixa (mais rápida)
+      inRange = true;
+    } else {
+      ang = Math.PI / 4 + Math.atan2(y, x) / 2;          // força máxima no melhor ângulo: cai antes
+      inRange = false;
+    }
+    _hz.set(dx / x, 0, dz / x);
+    out.copy(_hz).multiplyScalar(v * Math.cos(ang)); out.y = v * Math.sin(ang);
+    T = x / Math.max(0.1, v * Math.cos(ang));
+    if (!inRange || !tv || tv.lengthSq() < 0.01) break;
+    _aim.copy(target).addScaledVector(tv, Math.min(T, 3));  // mira à frente da nave
+  }
+  return { inRange, T };
+}
+// o ovo sai da mão direita (onde ele aparece na tela), então o arco é visto curvando
+const _oq = new THREE.Quaternion();
+function throwOrigin(out) {
+  camera.getWorldQuaternion(_oq);
+  return out.copy(camPos).add(t1.set(0.24, -0.2, -0.6).applyQuaternion(_oq));
+}
+/** Mede a velocidade de cada nave (para os arremessos mirarem à frente dela). */
+const _dv = new THREE.Vector3();
+function trackUfoVel(dt) {
+  if (dt <= 0) return;
+  for (const u of ufos) {
+    if (!u._pv) { u._pv = u.pos.clone(); u._vel = new THREE.Vector3(); continue; }
+    _dv.copy(u.pos).sub(u._pv).divideScalar(dt);
+    if (_dv.lengthSq() < 900) u._vel.lerp(_dv, Math.min(1, dt * 10)); else u._vel.set(0, 0, 0);
+    u._pv.copy(u.pos);
+  }
+}
+/** Velocidade do que está sob a mira (nave ou gosma); zero para o resto. */
+export function targetVel(hit, out) {
+  if (hit && hit.kind === 'ufo' && hit.u._vel) return out.copy(hit.u._vel);
+  if (hit && hit.kind === 'eproj') return out.copy(hit.g.vel);
+  return out.set(0, 0, 0);
+}
+/** Para o HUD/arco de prévia: o arremesso atual alcança a mira? */
+export const aimInfo = { inRange: true, active: false };
+const _po = new THREE.Vector3(), _pv = new THREE.Vector3(), _pp = new THREE.Vector3();
+const ARC_N = 16;
+const arcDots = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.8, depthWrite: false, fog: false }), ARC_N);
+arcDots.frustumCulled = false; arcDots.count = 0; arcDots.renderOrder = 5;
+arcDots.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+scene.add(arcDots);
+const ARC_OK = new THREE.Color(0xffffff), ARC_FAR = new THREE.Color(0xff7a5a), _ac = new THREE.Color(), _iq = new THREE.Quaternion();
+function drawThrowPreview() {
+  aimInfo.active = false;
+  arcDots.count = 0;
+  if (xrActive() || isTouch || !canShoot()) return;
+  const spec = THROW[G.weapon];
+  if (!spec) return;
+  throwOrigin(_po);
+  const r = solveThrow(_po, pcAim, pcAimVel, spec, _pv);
+  aimInfo.active = true; aimInfo.inRange = r.inRange;
+  // pontinhos do arco: até onde ele cai (ou até 2,2 s de voo)
+  const Tend = r.inRange ? r.T : 2.2;
+  let m = 0;
+  for (let k = 2; k <= ARC_N + 1; k++) {
+    const t = Tend * k / (ARC_N + 1);
+    _pp.copy(_po).addScaledVector(_pv, t); _pp.y -= 0.5 * spec.g * t * t;
+    if (_pp.y < groundHeightAt(_pp.x, _pp.z)) break;
+    const f = k / (ARC_N + 1), last = k === ARC_N + 1 && r.inRange;
+    // o tamanho cresce com a distância para continuar visível; o último ponto marca onde cai
+    const sz = (0.022 + 0.016 * f) * Math.max(1, _pp.distanceTo(camPos) * 0.12) * (last ? 1.8 : 1);
+    _m4.compose(_pp, _iq, _s.set(sz, sz, sz));
+    arcDots.setMatrixAt(m, _m4);
+    _ac.copy(r.inRange ? ARC_OK : ARC_FAR).multiplyScalar(0.75 + 0.25 * f);
+    arcDots.setColorAt(m, _ac);
+    m++;
+  }
+  arcDots.count = m;
+  arcDots.instanceMatrix.needsUpdate = true;
+  if (arcDots.instanceColor) arcDots.instanceColor.needsUpdate = true;
 }
 /** Tiro de clique (PC/celular) para as armas de arremesso. */
-export function desktopShoot() {
+export function desktopShoot(aim = pcAim, aimVel = pcAimVel) {
   if (W.cd > 0) return;
-  const dir = camera.getWorldDirection(t1);
-  const o = t0.copy(camPos).addScaledVector(dir, 0.35);
-  o.y -= 0.12;
+  const o = throwOrigin(t0);
   if (G.weapon === 'hands') {
-    spawnEgg(o, ballistic(o, pcAim, 16, 9.8 * 0.6, t2), { damage: 1, gravity: true, gScale: 0.6, magnet: 4, volley: true });
+    solveThrow(o, aim, aimVel, THROW.hands, t2);
+    spawnEgg(o, t2, { damage: 1, gravity: true, gScale: THROW.hands.gScale, magnet: THROW.hands.magnet, volley: true });
     sfx('throw', { pitch: rand(0.9, 1.1) }); W.cd = 0.32 / G.up.rate;
     handsGrp.userData.kick = 1;
   } else if (G.weapon === 'slingshot') {
-    spawnEgg(o, ballistic(o, pcAim, MAX_SHOT_SPEED, 9.8, t2), { damage: 2, gravity: true, magnet: 3, volley: true });
+    solveThrow(o, aim, aimVel, THROW.slingshot, t2);
+    spawnEgg(o, t2, { damage: 2, gravity: true, gScale: THROW.slingshot.gScale, magnet: THROW.slingshot.magnet, volley: true });
     sfx('slingRelease'); W.cd = 0.35 / G.up.rate;
     slingshot.userData.kick = 1;
   } else if (G.weapon === 'crossbow') {
-    spawnEgg(o, t2.copy(pcAim).sub(o).normalize().multiplyScalar(CROSSBOW_SPEED), { damage: 2, arrow: true, magnet: 1.5, volley: true });
+    spawnEgg(o, t2.copy(aim).sub(o).normalize().multiplyScalar(CROSSBOW_SPEED), { damage: 2, arrow: true, magnet: 1.5, volley: true });
     sfx('crossbow'); W.cd = 0.42 / G.up.rate;
     crossbow.userData.kick = 1;
   }
@@ -766,6 +885,8 @@ export function onTriggerEnd(ctrl) {
 
 /** Posiciona as armas (mão no VR, canto da tela no PC) e dispara as automáticas. */
 export function updateWeapons(dt, xr, rHeld, lHeld) {
+  aimInfo.active = false; arcDots.count = 0;
+  trackUfoVel(dt);
   W.cd = Math.max(0, W.cd - dt); W.cdL = Math.max(0, W.cdL - dt); W.cdR = Math.max(0, W.cdR - dt);
   const show = canShoot() || G.state === 'wave_complete';
   const name = G.weapon, grp = GROUPS[name];
@@ -830,6 +951,7 @@ export function updateWeapons(dt, xr, rHeld, lHeld) {
         pistolL.updateMatrixWorld();
       }
       grp.updateMatrixWorld();
+      drawThrowPreview();
     }
   }
   // animações

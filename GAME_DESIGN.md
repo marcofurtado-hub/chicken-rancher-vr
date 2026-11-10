@@ -65,7 +65,7 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 |---|---|---|---|
 | Começar / avançar | gatilho | clique / Espaço | toque |
 | Atirar | gatilho direito (segurar = automático) | clique esquerdo (segurar) | toque / segurar |
-| Arremessar ovo (mão) | balançar o controle | clique (mira balística) | toque |
+| Arremessar ovo (mão) | balançar o controle (com ajuda de mira) | clique (parábola + arco de prévia) | tocar na nave |
 | Estilingue / besta | gatilho esquerdo pega a corda, puxa e solta | clique | toque |
 | Pistolas duplas | um gatilho para cada mão | clique (alterna as mãos) | segurar |
 | Trocar arma | A = próxima, X = anterior | 1-9, 0, - e roda | botão 🔄 |
@@ -91,8 +91,10 @@ idle → wave_intro (3s, banner) → playing → wave_complete (bônus) → upgr
 **Modo PC:**
 - **Mira exata:** a cada frame um raio sai do centro da tela (`pcAim`) e todas as armas convergem para o ponto
   sob a mira, mesmo saindo do canto da tela.
-- **Arremesso e estilingue** usam uma solução balística (`ballistic`): o ovo faz o arco certo para cair no ponto mirado.
-  Isso dá 85% de acerto a 12 m.
+- **Arremesso e estilingue** usam a parábola de verdade com força limitada (`solveThrow`, ver 12.21): perto joga leve,
+  longe joga com tudo, fora do alcance o ovo cai antes e a mira fica laranja. Mira à frente de nave em movimento.
+  Arco de prévia em bolinhas só no PC (mouse).
+- **Celular:** o ovo vai onde o dedo **toca** (raio a partir do toque, com 0,7 m de folga em volta das naves), não no centro.
 - **Marcador de acerto:** a mira fica vermelha e cresce por um instante a cada acerto.
 - A cadeira anda a 2.6 m/s pela varanda, pela rampa e pelo quintal (mesmas regras do VR).
 - Ao perder o foco do mouse o jogo **pausa sozinho**.
@@ -163,7 +165,10 @@ o alvo sem acertar. O acerto escolhido é o de menor `t` (a primeira coisa que o
   velocidade do momento, que já está desacelerando). Isso deixa o arremesso natural.
 - Fator: `min(3 + 0.6·v, 9.5)`. Um swing lento de 2 m/s vira 8 m/s, um forte de 10 m/s vira 95 m/s.
 - Gravidade leve (0.35) e ímã 4 (ajuda a acertar), com um ovo visível em cada mão.
-- Desktop: lança 13 m/s para frente + 1.2 m/s para cima, gravidade 0.6.
+- **VR (3.1):** a força do braço continua mandando, com teto de 18 m/s. Se há uma nave a até 16° da direção do arremesso que essa
+  força alcança (até 1,2× a força do braço), a curva é corrigida para ela, mirando à frente se ela se move (`vrAssist`).
+  Em teste com erro humano simulado de ±9°: 21% → 78% de acerto.
+- PC/celular: parábola com força máxima 15,5 m/s e gravidade 0.6 (ver 12.21).
 
 **2. Estilingue (puxa e solta)**
 - A mão direita segura o estilingue. A mão esquerda chega a **0.32 m** do saquinho, aperta o gatilho e puxa.
@@ -771,14 +776,7 @@ Um jogo VR "parado" vira um bom jogo de PC com 6 peças:
 
 1. **Mira exata (`pcAim`):** a cada frame, um raio do centro da tela encontra o que está sob a mira. Todas as armas
    saem do cano (no canto da tela) e **convergem para esse ponto**. Sem isso os tiros passam paralelos e erram.
-2. **Mira balística** para projéteis com gravidade: calcula a velocidade que faz o arco cair no ponto mirado.
-   Deu 85% de acerto a 12 m.
-   ```js
-   function ballistic(o, alvo, vel, g, out) {
-     const d = alvo.clone().sub(o), t = Math.max(0.05, d.length() / vel);
-     out.copy(d).divideScalar(t); out.y += 0.5 * g * t; return out;   // compensa a queda
-   }
-   ```
+2. **Mira balística** para projéteis com gravidade: a parábola com força limitada da receita 12.21.
 3. **Movimento limitado:** WASD move o rig na direção da câmera, preso numa área (aqui, a varanda). É o "desviar" que
    no VR se faz com o corpo.
    ```js
@@ -918,3 +916,29 @@ O menu é **diegético** como os cards: botões 3D registrados em `uiTargets` ({
 os encontra. No menu e nos cards, um **raio-guia fino** sai do controle e fica verde ao apontar para algo clicável. Gatilho apontando
 para um botão = clica; gatilho apontando para o nada = começa o jogo. Assim, ajustes de conforto (vinheta, giro) ficam
 acessíveis dentro do VR sem tirar o headset.
+
+### 12.21 Arremesso com parábola real e força limitada (3.1)
+
+Problema da versão anterior: o arremesso calculava um arco "no vácuo" sem limite de força e mirava onde a nave **estava**.
+Contra nave em movimento chegava atrasado, e mirando no chão o alvo ficava 40 m dentro da terra.
+
+```js
+// g = gravidade do projétil; vmax = força máxima do braço; k = folga acima da força mínima
+const x = distânciaHorizontal, y = alturaRelativa, r = Math.hypot(x, y);
+const vNeed = Math.sqrt(g * (y + r));                 // menor velocidade que alcança o ponto (ângulo ótimo)
+const v = Math.min(vmax, Math.max(vmin, vNeed * k));  // perto: joga leve · longe: joga com tudo
+if (vNeed <= vmax) {                                  // alcança: curva baixa (chega mais rápido)
+  const v2 = v * v;
+  ang = Math.atan2(v2 - Math.sqrt(v2 * v2 - g * (g * x * x + 2 * y * v2)), g * x);
+} else ang = Math.PI / 4 + Math.atan2(y, x) / 2;       // não alcança: força máxima no melhor ângulo, cai antes
+T = x / (v * Math.cos(ang));                          // tempo de voo
+alvo = alvoOriginal + velocidadeDoAlvo * T;           // repete 3× para mirar à frente
+```
+
+- Velocidade das naves medida por frame (`u._vel`, suavizada); `targetVel(hit)` devolve a do que está sob a mira.
+- Valores: mão `vmin 9, vmax 15.5, k 1.3, g 9.8×0.6, ímã 1.5`; estilingue `vmin 14, vmax 24, g 9.8`.
+- Acerto por arremesso (bot que segue a nave por 0,2 s, waves 1–2): sem mirar à frente 52%, com 72–78%.
+  Celular tocando nas naves com ±12 px de erro de dedo: 72%.
+- `k` maior (1.6) deixou pior (68%): arcos mais altos demoram mais e a nave muda de rumo no caminho.
+- Mira no chão: o raio é cortado onde encontra o terreno (`groundHeightAt`).
+
