@@ -13,7 +13,7 @@
 // (esquerda) em x > 0; o pôr do sol fica à frente-direita (x < 0, z > 0).
 // =============================================================================
 import {
-  THREE, scene, renderer, U, MAT, RAMP3, bake, add, box, cyl, sph, cone, ico, lathe, canvasTex,
+  THREE, scene, renderer, U, MAT, RAMP3, bake, add, box, cyl, sph, cone, ico, lathe, canvasTex, SHADOW_COLOR,
 } from './render.js';
 import { initSky, updateSky, skyU, cloudU, starU } from './sky.js';
 
@@ -251,6 +251,8 @@ function buildTerrain(groundTex) {
   const mat = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: RAMP3 });
   mat.onBeforeCompile = sh => {
     sh.uniforms.uGroundTex = { value: groundTex };
+    sh.uniforms.uAOTex = { value: aoTex };
+    sh.uniforms.uAOTint = { value: AO_TINT };
     sh.uniforms.uFieldCols = { value: fieldCols };
     sh.uniforms.uHedge = { value: new THREE.Color(0x3d7a35) };
     sh.uniforms.uRoad = { value: new THREE.Color(0xc89c66) };
@@ -259,7 +261,8 @@ function buildTerrain(groundTex) {
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvField = aField;\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        uniform sampler2D uGroundTex;
+        uniform sampler2D uGroundTex, uAOTex;
+        uniform vec3 uAOTint;
         uniform vec3 uFieldCols[6];
         uniform vec3 uHedge, uRoad;
         varying float vField;
@@ -295,9 +298,12 @@ function buildTerrain(groundTex) {
         // ---- textura pintada perto da casa ----
         vec4 tx = texture2D(uGroundTex, vec2((p.x + 40.0) / 80.0, 1.0 - (p.y + 26.0) / 80.0));
         base = mix(base, tx.rgb, tx.a);
+        // sombra pintada (AO) com o tom do céu: escurece multiplicando pela cor da sombra
+        float aoA = texture2D(uAOTex, vec2((p.x + 40.0) / 80.0, 1.0 - (p.y + 26.0) / 80.0)).a;
+        base *= mix(vec3(1.0), uAOTint, aoA);
         diffuseColor.rgb *= base;`);
   };
-  mat.customProgramCacheKey = () => 'terrainV1';
+  mat.customProgramCacheKey = () => 'terrainV2';
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'terrain';
   mesh.frustumCulled = false;
@@ -309,19 +315,41 @@ function buildTerrain(groundTex) {
 // caminhos de terra, terra ciscada do galinheiro, canteiros, sombras falsas (AO)
 // =============================================================================
 const PAINT = [];   // [fn(ctx, px, pz, k)] — props registram sua "sombra" aqui
+// Sombras pintadas no chão (debaixo da casa, celeiro, árvores...) vão para uma camada à parte:
+// o shader do chão escurece com o TOM DO CÉU do momento (antes era um verde-escuro fixo).
+const AO_TINT = new THREE.Color(0x30405a);
+let aoTex = null;
 function paintGround() {
   const W = GT.PX, k = W / GT.S;
   const px = x => (x - GT.X0) * k, pz = z => (z - GT.Z0) * k;
-  return canvasTex(W, W, x => {
+  const aoC = document.createElement('canvas'); aoC.width = aoC.height = W / 2;
+  const ao = aoC.getContext('2d');
+  ao.scale(0.5, 0.5);
+  aoTex = new THREE.CanvasTexture(aoC); aoTex.colorSpace = THREE.NoColorSpace;
+  return canvasTex(W, W, x0 => {
+    const x = x0;
     const P = R; R = mulberry32(777);              // pintura com seed própria (não muda o resto)
     const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
     const blob = (wx, wz, r, c, a, hard = 0) => {
+      if (c === AO) return aoBlob(wx, wz, r, a, hard);
       const cx = px(wx), cy = pz(wz), rr = r * k;
       const g = x.createRadialGradient(cx, cy, rr * hard, cx, cy, rr);
       g.addColorStop(0, rgba(c, a)); g.addColorStop(1, rgba(c, 0));
       x.fillStyle = g; x.beginPath(); x.arc(cx, cy, rr, 0, 6.2832); x.fill();
     };
+    const aoBlob = (wx, wz, r, a, hard) => {
+      const cx = px(wx), cy = pz(wz), rr = r * k;
+      const g = ao.createRadialGradient(cx, cy, rr * hard, cx, cy, rr);
+      g.addColorStop(0, `rgba(255,255,255,${a})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ao.fillStyle = g; ao.beginPath(); ao.arc(cx, cy, rr, 0, 6.2832); ao.fill();
+    };
     const softPoly = (pts, c, a, blurM) => {
+      if (c === AO) {
+        ao.save(); ao.shadowColor = `rgba(255,255,255,${a})`; ao.shadowBlur = blurM * k * 0.5; ao.shadowOffsetX = 3000 * 0.5; ao.fillStyle = '#fff';
+        ao.beginPath(); pts.forEach((p, i) => (i ? ao.lineTo(px(p[0]) - 3000, pz(p[1])) : ao.moveTo(px(p[0]) - 3000, pz(p[1]))));
+        ao.closePath(); ao.fill(); ao.restore();
+        return;
+      }
       x.save(); x.shadowColor = rgba(c, a); x.shadowBlur = blurM * k; x.shadowOffsetX = 3000; x.fillStyle = '#000';
       x.beginPath(); pts.forEach((p, i) => (i ? x.lineTo(px(p[0]) - 3000, pz(p[1])) : x.moveTo(px(p[0]) - 3000, pz(p[1]))));
       x.closePath(); x.fill(); x.restore();
@@ -375,8 +403,8 @@ function paintGround() {
     for (const fn of PAINT) fn({ x, px, pz, k, blob, softPoly, rect, rgba, AO, SOIL, SOIL_DK, DIRT, DIRT_DK, DIRT_LT, LAWN_DK });
     // AO da cerca do quintal
     for (const seg of [[-9.6, 18.6, 9.6, 18.6], [-9.6, -3.8, -9.6, 18.6], [9.6, -3.8, 9.6, 18.6], [5.4, -3.8, 9.6, -3.8], [-9.6, -3.8, -5.4, -3.8]]) {
-      x.save(); x.strokeStyle = rgba(AO, 0.22); x.lineWidth = 0.55 * k; x.filter = 'none';
-      x.beginPath(); x.moveTo(px(seg[0]), pz(seg[1])); x.lineTo(px(seg[2]), pz(seg[3])); x.stroke(); x.restore();
+      ao.save(); ao.strokeStyle = 'rgba(255,255,255,0.22)'; ao.lineWidth = 0.55 * k;
+      ao.beginPath(); ao.moveTo(px(seg[0]), pz(seg[1])); ao.lineTo(px(seg[2]), pz(seg[3])); ao.stroke(); ao.restore();
     }
     // 9) florzinhas pintadas no prado (detalhe barato de longe)
     for (let i = 0; i < 2200; i++) {
@@ -1461,6 +1489,7 @@ export function initWorld() {
   setTOD(0);
 }
 
+const _skyMix = new THREE.Color();
 let windmillSpin = 0;
 export function updateWorld(dt) {
   if (!built) return;
@@ -1526,6 +1555,15 @@ export function setTOD(t) {
   sun.position.copy(_lightDir).multiplyScalar(120);
   LC('lightC', sun.color); sun.intensity = L('lightI');
   LC('hemiS', hemi.color); LC('hemiG', hemi.groundColor); hemi.intensity = L('hemiI');
+  // a luz do céu (e com ela o tom das sombras, ver render.js) segue o céu DE VERDADE do momento:
+  // matiz de zênite+horizonte, com o brilho da tabela (não clareia nem escurece a cena)
+  _skyMix.copy(skyU.uZenith.value).lerp(skyU.uHorizon.value, 0.4);
+  const lumOf = c => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const hl = lumOf(hemi.color), sl = Math.max(1e-4, lumOf(_skyMix));
+  hemi.color.lerp(_tmpC.copy(_skyMix).multiplyScalar(hl / sl), 0.75);
+  // manchas de sombra no chão: o mesmo tom, bem escuro
+  SHADOW_COLOR.copy(_skyMix).multiplyScalar(0.07 / sl);
+  AO_TINT.copy(_skyMix).multiplyScalar(0.2 / sl);   // multiplicador do chão na sombra: ~20% de luz, matiz do céu
   LC('rimC', U.uRimColor.value); U.uRimStrength.value = L('rimS');
   // nuvens
   LC('cLit', cloudU.uLit.value); LC('cShade', cloudU.uShade.value); cloudU.uLightDir.value.copy(_lightDir);

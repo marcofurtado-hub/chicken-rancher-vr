@@ -7,6 +7,28 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 
 export { THREE };
 
+// ---------- Sombra entonada pelo céu (vale para TODO material toon) ----------
+// Na faixa de sombra do toon, a luz troca de matiz: sai a cor do sol, entra a cor do céu
+// do momento (a luz hemisférica, que o ciclo do dia faz seguir o céu), com o MESMO brilho.
+// Resultado: sombra azulada ao meio-dia, lilás/rosada no pôr do sol, azul-escura à noite.
+const SKY_SHADOW_TINT = 0.95;   // 0 = sombra da cor do sol · 1 = sombra bem da cor do céu
+THREE.ShaderChunk.lights_toon_pars_fragment = THREE.ShaderChunk.lights_toon_pars_fragment.replace(
+  'vec3 irradiance = getGradientIrradiance( geometryNormal, directLight.direction ) * directLight.color;',
+  `vec3 gi = getGradientIrradiance( geometryNormal, directLight.direction );
+	vec3 lc = directLight.color;
+	#if NUM_HEMI_LIGHTS > 0
+	{
+		vec3 sky = hemisphereLights[ 0 ].skyColor;
+		vec3 W = vec3( 0.2126, 0.7152, 0.0722 );
+		vec3 skyTone = sky * ( dot( lc, W ) / max( dot( sky, W ), 1e-4 ) );   // matiz do céu, brilho do sol
+		lc = mix( lc, skyTone, clamp( ( 1.0 - gi.r ) * ${SKY_SHADOW_TINT.toFixed(2)}, 0.0, 1.0 ) );
+	}
+	#endif
+	vec3 irradiance = gi * lc;`
+);
+/** Cor das sombras projetadas (manchas no chão): o céu do momento, escurecido. world.setTOD atualiza. */
+export const SHADOW_COLOR = new THREE.Color(0x101828);
+
 export const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 // ---------- Renderer ----------
@@ -268,7 +290,8 @@ export const TEX = {
   }),
   shadow: canvasTex(64, 64, (x, w, h) => {
     const g = x.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
-    g.addColorStop(0, 'rgba(0,0,0,0.55)'); g.addColorStop(0.6, 'rgba(0,0,0,0.25)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    // branca com alfa: a cor vem do material (SHADOW_COLOR, tom do céu)
+    g.addColorStop(0, 'rgba(255,255,255,0.62)'); g.addColorStop(0.6, 'rgba(255,255,255,0.3)'); g.addColorStop(1, 'rgba(255,255,255,0)');
     x.fillStyle = g; x.fillRect(0, 0, w, h);
   }),
   ring: canvasTex(128, 128, (x, w, h) => {

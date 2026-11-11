@@ -503,6 +503,12 @@ não é permanente**. O card te dá uma **habilidade ativa** que você liga com 
 **Estilo:** cartoon "low-poly premium": formas grossas e legíveis, cores saturadas, tudo procedural (nenhuma imagem ou modelo externo).
 - **Material toon** (`toon()` em `render.js`): `MeshToonMaterial` com rampa de 3 ou 4 tons (`RAMP3`/`RAMP4`) e cores por vértice.
   Um `onBeforeCompile` soma **luz de contorno** (rim) `uRimColor × (1 − N·V)³ × uRimStrength`; o ciclo do dia mexe nesses uniforms.
+- **Sombras com o tom do céu (3.3):** o chunk `lights_toon_pars_fragment` é trocado globalmente em `render.js`. Na faixa de
+  sombra do toon, a cor da luz troca de matiz para a do céu **com o mesmo brilho** (`skyTone = céu × lum(sol)/lum(céu)`,
+  mistura `(1 − rampa) × 0.95`). O céu vem da luz hemisférica, que o `setTOD` faz seguir o zênite+horizonte reais do momento.
+  Resultado: sombra azulada ao meio-dia, lilás no pôr do sol, azul-escura à noite (antes: marrom/laranja, a cor do sol).
+  As manchas de sombra no chão (`SHADOW_COLOR`) e as sombras pintadas sob casa/celeiro/árvores (camada `aoTex`, multiplicada
+  por `AO_TINT` no shader do chão) usam o mesmo tom. Custo: zero draw calls, ~6 operações por pixel.
 - **Contorno preto** (`outlineMat` + `outlineGeo`): cópia da malha com `BackSide` e vértices empurrados ao longo da normal
   (`transformed += normal * largura`). A geometria do contorno é soldada (`mergeVertices`) para não abrir nas quinas.
   Nas naves, o contorno usa só a **silhueta do casco** (~250 triângulos) em vez da malha detalhada.

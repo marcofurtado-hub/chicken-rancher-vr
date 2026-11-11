@@ -3,7 +3,7 @@
 // popups de texto 3D, overlays presos na câmera e o banner 3D.
 // Tudo com pool e poucas draw calls (Quest 2).
 // =============================================================================
-import { THREE, scene, camera, renderer, camPos, fitDistance, canvasTex, roundRect, TEX, FONT, FONT_UI, toon, UP } from './render.js';
+import { THREE, scene, camera, renderer, camPos, fitDistance, canvasTex, roundRect, TEX, FONT, FONT_UI, toon, UP, SHADOW_COLOR } from './render.js';
 import { rand, clamp, tmpV } from './core.js';
 
 const _c = new THREE.Color();
@@ -603,6 +603,7 @@ const blobMesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-
   new THREE.MeshBasicMaterial({ map: TEX.shadow, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 }), BLOB_MAX);
 blobMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 blobMesh.count = 0; blobMesh.frustumCulled = false; blobMesh.renderOrder = 1;
+blobMesh.material.color = SHADOW_COLOR;   // sombra no chão com o tom do céu do momento (world.setTOD atualiza)
 scene.add(blobMesh);
 let blobN = 0;
 /** Sombra redonda no chão em (x, y, z) com diâmetro d. Chame todo frame enquanto quiser a sombra. */
