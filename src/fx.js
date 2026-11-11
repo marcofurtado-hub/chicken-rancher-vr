@@ -599,8 +599,15 @@ function updateBanner(dt) {
 
 // ---------- Sombras de chão (blob) — qualquer entidade pede uma por frame ----------
 const BLOB_MAX = 64;
-const blobMesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
-  new THREE.MeshBasicMaterial({ map: TEX.shadow, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 }), BLOB_MAX);
+// Sombra no chão em MULTIPLY: destino × cor. Fora da mancha a cor vira branco (não muda nada).
+const BLOB_MAT = new THREE.MeshBasicMaterial({ map: TEX.shadow, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1,
+  blending: THREE.MultiplyBlending, premultipliedAlpha: true, toneMapped: false, fog: false });
+BLOB_MAT.onBeforeCompile = sh => {
+  sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>',
+    'gl_FragColor = vec4( mix( vec3( 1.0 ), diffuse, clamp( diffuseColor.a * 1.25, 0.0, 1.0 ) ), 1.0 );');
+};
+BLOB_MAT.customProgramCacheKey = () => 'blobMultiply';
+const blobMesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), BLOB_MAT, BLOB_MAX);
 blobMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 blobMesh.count = 0; blobMesh.frustumCulled = false; blobMesh.renderOrder = 1;
 blobMesh.material.color = SHADOW_COLOR;   // sombra no chão com o tom do céu do momento (world.setTOD atualiza)

@@ -7,26 +7,26 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 
 export { THREE };
 
-// ---------- Sombra entonada pelo céu (vale para TODO material toon) ----------
-// Na faixa de sombra do toon, a luz troca de matiz: sai a cor do sol, entra a cor do céu
-// do momento (a luz hemisférica, que o ciclo do dia faz seguir o céu), com o MESMO brilho.
-// Resultado: sombra azulada ao meio-dia, lilás/rosada no pôr do sol, azul-escura à noite.
-const SKY_SHADOW_TINT = 0.95;   // 0 = sombra da cor do sol · 1 = sombra bem da cor do céu
+// ---------- Sombra entonada pelo céu, em MULTIPLY (vale para TODO material toon) ----------
+// Na faixa de sombra do toon, a luz é MULTIPLICADA pela cor do céu do momento (como uma camada
+// "multiplicar"): a sombra fica mais escura e saturada no tom do céu — azul ao meio-dia,
+// lilás no pôr do sol, azul-escura à noite. O céu vem da luz hemisférica (segue o céu real).
+// O tom é normalizado pelo canal mais forte, então só escurece o que o céu "não tem".
+const SKY_SHADOW_TINT = 1.0;   // 0 = sem tom · 1 = faixa mais escura multiplicada 100% pela cor do céu
 THREE.ShaderChunk.lights_toon_pars_fragment = THREE.ShaderChunk.lights_toon_pars_fragment.replace(
   'vec3 irradiance = getGradientIrradiance( geometryNormal, directLight.direction ) * directLight.color;',
   `vec3 gi = getGradientIrradiance( geometryNormal, directLight.direction );
-	vec3 lc = directLight.color;
+	vec3 irradiance = gi * directLight.color;
 	#if NUM_HEMI_LIGHTS > 0
 	{
 		vec3 sky = hemisphereLights[ 0 ].skyColor;
-		vec3 W = vec3( 0.2126, 0.7152, 0.0722 );
-		vec3 skyTone = sky * ( dot( lc, W ) / max( dot( sky, W ), 1e-4 ) );   // matiz do céu, brilho do sol
-		lc = mix( lc, skyTone, clamp( ( 1.0 - gi.r ) * ${SKY_SHADOW_TINT.toFixed(2)}, 0.0, 1.0 ) );
+		vec3 tint = mix( vec3( 1.0 ), sky / max( max( sky.r, sky.g ), max( sky.b, 1e-4 ) ), 0.7 );   // cor do céu (canal mais forte = 1), 70% saturada
+		float sh = clamp( ( 1.0 - gi.r ) * 1.75 * ${SKY_SHADOW_TINT.toFixed(2)}, 0.0, 1.0 );  // 0 no claro · 1 na faixa escura
+		irradiance *= mix( vec3( 1.0 ), tint, sh );                                // multiply
 	}
-	#endif
-	vec3 irradiance = gi * lc;`
+	#endif`
 );
-/** Cor das sombras projetadas (manchas no chão): o céu do momento, escurecido. world.setTOD atualiza. */
+/** Multiplicador das sombras projetadas (manchas no chão): tom do céu escurecido. world.setTOD atualiza. */
 export const SHADOW_COLOR = new THREE.Color(0x101828);
 
 export const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);

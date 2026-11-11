@@ -1557,13 +1557,15 @@ export function setTOD(t) {
   LC('hemiS', hemi.color); LC('hemiG', hemi.groundColor); hemi.intensity = L('hemiI');
   // a luz do céu (e com ela o tom das sombras, ver render.js) segue o céu DE VERDADE do momento:
   // matiz de zênite+horizonte, com o brilho da tabela (não clareia nem escurece a cena)
-  _skyMix.copy(skyU.uZenith.value).lerp(skyU.uHorizon.value, 0.4);
+  _skyMix.copy(skyU.uZenith.value).lerp(skyU.uHorizon.value, 0.15);   // a sombra pega a cor do ALTO do céu (o que ilumina a sombra)
   const lumOf = c => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   const hl = lumOf(hemi.color), sl = Math.max(1e-4, lumOf(_skyMix));
-  hemi.color.lerp(_tmpC.copy(_skyMix).multiplyScalar(hl / sl), 0.75);
+  hemi.color.lerp(_tmpC.copy(_skyMix).multiplyScalar(hl / sl), 0.92);
   // manchas de sombra no chão: o mesmo tom, bem escuro
-  SHADOW_COLOR.copy(_skyMix).multiplyScalar(0.07 / sl);
-  AO_TINT.copy(_skyMix).multiplyScalar(0.2 / sl);   // multiplicador do chão na sombra: ~20% de luz, matiz do céu
+  // multiplicador das manchas de sombra: tom do céu (canal mais forte = 1) × escuridão
+  const mx = Math.max(_skyMix.r, _skyMix.g, _skyMix.b, 1e-4);
+  SHADOW_COLOR.copy(_skyMix).multiplyScalar(0.22 / mx);
+  AO_TINT.copy(_skyMix).multiplyScalar(0.42 / mx);   // sombra pintada no chão: multiply pelo tom do céu
   LC('rimC', U.uRimColor.value); U.uRimStrength.value = L('rimS');
   // nuvens
   LC('cLit', cloudU.uLit.value); LC('cShade', cloudU.uShade.value); cloudU.uLightDir.value.copy(_lightDir);

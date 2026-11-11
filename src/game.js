@@ -9,7 +9,7 @@ import { updateFx, clearFx, showBanner, hideBanner, popup, ov, fxAdd, randDir, s
 import { sfx, loop, music, stinger, setListener, heartbeat, initAudio } from './audio.js';
 import { initWorld, updateWorld, setTOD, nightAmount } from './world.js';
 import { chickens, spawnInitialFlock, clearChickens, chickensAlive, spawnChicken, removeChicken, respawnChicken, setChickenShield, updateChickens, drawChickens, INITIAL_FLOCK } from './chickens.js';
-import { ufos, spawnRegular, spawnBoss, spawnMothership, updateUfos, refreshAllParts, updateEproj, updateCrates, clearUfos, isAlive, aliveRegulars, stopAllHums, spawnCrate, fireEnemy, EP_DEF } from './ufos.js';
+import { ufos, spawnRegular, spawnBoss, spawnMothership, updateUfos, refreshAllParts, updateEproj, updateCrates, clearUfos, isAlive, aliveRegulars, stopAllHums, spawnCrate, fireEnemy, EP_DEF, crates } from './ufos.js';
 import { castSegment, resetCombo, healPlayer, hitStop, killUfo } from './combat.js';
 import { updateProjectiles, clearProjectiles, equipWeapon, updateWeapons, trackHands, setLaser, desktopShoot, fireUltimate, projs, aimInfo, THROW, throwEgg, spawnEgg } from './weapons.js';
 import { updateSkills, refreshUp, resetSkillsForWave, showUpgradeCards, clearCards, updateCards, cards, updateBirds, clearBirds, useSkill, buildOffer, spawnBirds } from './skills.js';
@@ -389,7 +389,7 @@ export function boot() {
     setHold: v => { playerInput.mouseDown = v; },
     aimAt: p => { const d = new THREE.Vector3().copy(p).sub(camPos).normalize(); playerInput.yaw = Math.atan2(-d.x, -d.z); playerInput.pitch = Math.asin(clamp(d.y, -1, 1)); applyPcView(); },
     flight, startFlightEvent, rig, shoot: desktopShoot, ult: fireUltimate,
-    projs, pcAim, pcAimVel, updateProjectiles, clearProjectiles, camPos, camera, renderer, scene, aimInfo, THROW, throwEgg, quality: QUALITY,
+    projs, pcAim, pcAimVel, updateProjectiles, clearProjectiles, camPos, camera, renderer, scene, aimInfo, THROW, throwEgg, quality: QUALITY, spawnCrate, crates,
     step: (n, dt = 1 / 30, render = false) => { skipRender = !render; for (let i = 0; i < n; i++) gameLoop(0, null, dt); skipRender = false; },
   };
 }
