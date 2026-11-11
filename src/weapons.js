@@ -636,39 +636,12 @@ function updateCrackles(dt) {
     aoeDamage(c.pos, 2.5, c.dmg);
   }
 }
-export const VR_THROW = { g: 9.8 * 0.35, gScale: 0.35, vmax: 18, cone: 0.28, help: 1.2 };
-const _vrSpec = { g: VR_THROW.g, vmin: 0, vmax: 0, k: 1.3 }, _tv = new THREE.Vector3();
-/** Ajuda de mira do VR: acha a nave mais perto da direção do arremesso que a força do braço alcança. */
-function vrAssist(origin, v, speed, out) {
-  const yaw = Math.atan2(v.x, v.z);
-  let best = null, bestS = Infinity;
-  for (const u of ufos) {
-    if (!isAlive(u)) continue;
-    const pt = u.parts.find(p => p.active && p.kind !== 'armor');
-    if (!pt) continue;
-    const dx = pt.c.x - origin.x, dz = pt.c.z - origin.z, y = pt.c.y - origin.y;
-    const x = Math.hypot(dx, dz);
-    if (x < 1) continue;
-    let dy = Math.atan2(dx, dz) - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
-    if (Math.abs(dy) > VR_THROW.cone) continue;
-    const vNeed = Math.sqrt(VR_THROW.g * (y + Math.hypot(x, y)));
-    if (vNeed > Math.min(VR_THROW.vmax, speed * VR_THROW.help)) continue;   // o braço não alcança
-    const sc = Math.abs(dy) * 3 + x * 0.02;
-    if (sc < bestS) { bestS = sc; best = { pt, u }; }
-  }
-  if (!best) return false;
-  _vrSpec.vmin = speed * 0.85; _vrSpec.vmax = Math.min(VR_THROW.vmax, speed * VR_THROW.help);
-  solveThrow(origin, best.pt.c, best.u._vel || _tv.set(0, 0, 0), _vrSpec, out);
-  return true;
-}
+// VR: igual à 2.1 — a força do braço manda (sem teto), ovo rápido e quase reto, ímã 4.
 export function throwEgg(ctrl, vel) {
   const origin = ctrl.getWorldPosition(t0);
   const sm = vel.length();
   const factor = Math.min(3.0 + sm * 0.6, 9.5);
-  t1.copy(vel).multiplyScalar(factor);
-  if (t1.length() > VR_THROW.vmax) t1.setLength(VR_THROW.vmax);
-  vrAssist(origin, t1, t1.length(), t1);
-  spawnEgg(origin, t1, { damage: 1, gravity: true, gScale: VR_THROW.gScale, magnet: 2, volley: true });
+  spawnEgg(origin, t1.copy(vel).multiplyScalar(factor), { damage: 1, gravity: true, gScale: 0.35, magnet: 4, volley: true });
   sfx('throw', { pitch: rand(0.9, 1.1) });
   pulseCtrl(ctrl, Math.min(0.95, 0.25 + sm * 0.1), 80);
 }
@@ -833,8 +806,9 @@ export function trackHands(dt) {
   for (const [h, ctrl] of [[handTrack.L, CTRL.left], [handTrack.R, CTRL.right]]) {
     h.vel.copy(ctrl.position).sub(h.prev).multiplyScalar(idt).applyQuaternion(rq);
     h.prev.copy(ctrl.position);
-    h.hist.push(h.vel.clone());
-    if (h.hist.length > VEL_HISTORY) h.hist.shift();
+    // histórico sem alocar (reaproveita os vetores que saem)
+    const v = h.hist.length >= VEL_HISTORY ? h.hist.shift() : new THREE.Vector3();
+    h.hist.push(v.copy(h.vel));
   }
   if (G.weapon !== 'hands' || !canShoot() || G.state === 'idle') return;
   const T = 2.0, cd = 0.38 / G.up.rate;

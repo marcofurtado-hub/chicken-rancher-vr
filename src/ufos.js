@@ -135,6 +135,8 @@ function makeBeam(hex) {
   m.renderOrder = 4; m.visible = false; m.frustumCulled = false;
   return m;
 }
+// um feixe escondido fica sempre na cena: o shader dele é compilado no aquecimento, não na 1ª abdução
+scene.add(makeBeam(0xffffff));
 const GROUND_RING_GEO = new THREE.RingGeometry(0.4, 0.62, 32).rotateX(-Math.PI / 2);
 const BUBBLE_GEO = new THREE.IcosahedronGeometry(1, 2);
 const BUBBLE_MAT = new THREE.MeshBasicMaterial({ color: 0x70b0ff, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
@@ -224,7 +226,9 @@ export function removeUfo(u) {
   if (u.hpBar) { scene.remove(u.hpBar); u.hpBar = null; }
   if (u.bubble) { scene.remove(u.bubble); u.bubble = null; }
   dropLinks(u);
-  if (u.bodyMat) u.bodyMat.dispose();
+  if (u.beamLoop) { u.beamLoop.stop(0.2); u.beamLoop = null; }
+  if (u.hum) { u.hum.stop(0.3); u.hum = null; }
+  // (não chamar bodyMat.dispose(): liberaria o shader e a próxima nave recompilaria — engasgo no Quest)
   if (u.target && u.target.abductor === u && u.target.state === 'abducting') { u.target.state = 'safe'; u.target.abductor = null; u.target.fallVel = 0; }
 }
 export function clearUfos() {
@@ -252,7 +256,7 @@ export function spawnRegular(typeKey, fromPos = null) {
   u.speed = w.speed * T.speed;
   u.beamTime = w.beamTime * T.beam;
   u.descendH = w.close ? 2.5 : (typeKey === 'zippy' || typeKey === 'mini' ? 3.4 : typeKey === 'tank' ? 4.6 : 4.0);
-  addPart(u, u.group, { ellip: [0.6 * sw + 0.08, 0.3 * sw + 0.08, 0.6 * sw + 0.08] });
+  addPart(u, u.group, { r: Math.max(0.45, 0.55 * sw + 0.1) });   // esfera da 2.1 (a elipse achatada da 3.0 tinha ~30% menos área)
   const gp = u.pos;
   if (fromPos) gp.copy(fromPos);
   else if (w.close) gp.set(rand(-4, 4), rand(12, 16), rand(5, 10));
@@ -875,13 +879,24 @@ function drawUfo(u, dt, night) {
 }
 
 // Zumbido 3D das naves: só as 4 mais próximas tocam (economia de CPU no Quest)
+let humT = 0;
+const _near = [];
 function updateHums(dt) {
-  const near = ufos.filter(u => isAlive(u) && u.kind === 'ufo').sort((a, b) => a.pos.distanceToSquared(camPos) - b.pos.distanceToSquared(camPos)).slice(0, 4);
-  for (const h of humSlots) if (!near.includes(h.u)) { h.l.stop(0.3); h.dead = true; }
-  humSlots = humSlots.filter(h => !h.dead);
-  for (const u of near) {
-    let h = humSlots.find(q => q.u === u);
-    if (!h) { h = { u, l: loop('ufoHum', { pos: u.pos, vol: 0.5 }) }; humSlots.push(h); }
+  // escolhe as 4 mais próximas só 4×/s (antes: filtrar+ordenar todo quadro) e com folga de 15%
+  // para duas naves à mesma distância não ficarem trocando o som (cada troca recriava ~12 nós de áudio)
+  humT -= dt;
+  if (humT <= 0) {
+    humT = 0.25;
+    _near.length = 0;
+    for (const u of ufos) if (u.kind === 'ufo' && isAlive(u)) { u._hd = u.pos.distanceToSquared(camPos); _near.push(u); }
+    for (const h of humSlots) if (isAlive(h.u)) h.u._hd *= 0.72;   // quem já toca tem preferência
+    _near.sort((a, b) => a._hd - b._hd);
+    if (_near.length > 4) _near.length = 4;
+    for (let i = humSlots.length - 1; i >= 0; i--) { const h = humSlots[i]; if (!_near.includes(h.u)) { h.l.stop(0.3); humSlots.splice(i, 1); } }
+    for (const u of _near) if (!humSlots.some(q => q.u === u)) humSlots.push({ u, l: loop('ufoHum', { pos: u.pos, vol: 0.5 }) });
+  }
+  for (const h of humSlots) {
+    const u = h.u;
     h.l.setPos(u.pos);
     h.l.setPitch(0.8 + 0.4 / Math.max(0.6, u.scaleW) + (u.state === 'dive' ? 0.6 : 0));
   }

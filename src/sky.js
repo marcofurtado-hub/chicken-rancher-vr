@@ -86,7 +86,9 @@ const skyMat = new THREE.ShaderMaterial({
   fog: false,
 });
 const skyMesh = new THREE.Mesh(new THREE.SphereGeometry(SKY_R, 40, 20), skyMat);
-skyMesh.renderOrder = -10;
+// desenhado DEPOIS do cenário opaco: o teste de profundidade descarta os pixels cobertos
+// (antes o céu era pintado na tela inteira e o chão por cima — o dobro de pixels no Quest)
+skyMesh.renderOrder = 1000;
 skyMesh.frustumCulled = false;
 skyMesh.name = 'sky';
 
@@ -238,7 +240,7 @@ function buildClouds(rnd) {
   });
   cloudMesh = new THREE.Mesh(merged, mat);
   cloudMesh.frustumCulled = false;
-  cloudMesh.renderOrder = -8;
+  cloudMesh.renderOrder = 999;   // depois do cenário, antes da cúpula
   cloudMesh.name = 'clouds';
   return cloudMesh;
 }

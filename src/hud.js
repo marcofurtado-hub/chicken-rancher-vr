@@ -49,7 +49,21 @@ export function endLapGrab(c) {
   save('cr3_lap', [p.x, p.y, p.z]);
   return true;
 }
+// assinatura do que o painel mostra: só redesenha (e sobe 1,3 MB para a GPU) quando algo muda
+let lapSig = '';
+function lapSignature() {
+  const ultFull = G.ult >= 1;
+  let sg = chickensAlive() + '|' + flockDetail() + '|' + G.score + '|' + (G.combo >= 2 ? comboMult() + ':' + Math.floor(clamp(G.comboT / comboWindow(), 0, 1) * 26) : '') +
+    '|' + G.wave + G.state + '|' + G.weapon + '|' + Math.ceil(G.hp) + '/' + G.hpMax + '|' +
+    (G.ultActive > 0 ? 'A' + Math.floor(G.ultActive * 8) : ultFull ? 'F' + (Math.floor(G.time * 4) % 2) : Math.floor(G.ult * 100)) + '|' + (lapHintT > 0 ? 1 : 0);
+  for (const q of powerList()) sg += q[0] + q[2];
+  for (const sl of G.slots) sg += '|' + sl.lv + (sl.active > 0 ? 'a' + Math.ceil(sl.active) + ':' + Math.floor(sl.active / SKILL_DUR * 20) : sl.cd > 0 ? 'c' + Math.ceil(sl.cd) : 'r');
+  return sg;
+}
 function drawLap() {
+  const sg = lapSignature();
+  if (sg === lapSig) return;
+  lapSig = sg;
   const x = lapCtx, W = 768, H = 430;
   x.clearRect(0, 0, W, H);
   roundRect(x, 6, 6, W - 12, H - 12, 34);

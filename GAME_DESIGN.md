@@ -165,9 +165,9 @@ o alvo sem acertar. O acerto escolhido é o de menor `t` (a primeira coisa que o
   velocidade do momento, que já está desacelerando). Isso deixa o arremesso natural.
 - Fator: `min(3 + 0.6·v, 9.5)`. Um swing lento de 2 m/s vira 8 m/s, um forte de 10 m/s vira 95 m/s.
 - Gravidade leve (0.35) e ímã 4 (ajuda a acertar), com um ovo visível em cada mão.
-- **VR (3.1):** a força do braço continua mandando, com teto de 18 m/s. Se há uma nave a até 16° da direção do arremesso que essa
-  força alcança (até 1,2× a força do braço), a curva é corrigida para ela, mirando à frente se ela se move (`vrAssist`).
-  Em teste com erro humano simulado de ±9°: 21% → 78% de acerto.
+- **VR (3.2):** igual à 2.1 — a força do braço manda, sem teto (um balanço normal sai a ~40 m/s), gravidade 0.35, ímã 4.
+  Um teto de 18 m/s + correção de mira (`vrAssist`) foi testado na 3.1 e **removido**: o ovo ficava lento e "roubado"
+  para outra nave, e o jogo perdia a graça. Lição: no VR, o arremesso tem que obedecer ao braço.
 - PC/celular: parábola com força máxima 15,5 m/s e gravidade 0.6 (ver 12.21).
 
 **2. Estilingue (puxa e solta)**
@@ -541,6 +541,21 @@ não é permanente**. O card te dá uma **habilidade ativa** que você liga com 
 5. **Sem alocação por frame:** vetores temporários por módulo (`tmpV`), pools e `splice` trocando pelo último.
 6. **Orçamento medido** (Chrome, cena cheia): ~60 draw calls, ~145 mil triângulos, ~0,6 ms de CPU por frame de simulação.
 7. Antialias ligado, pixel ratio no máximo 1.5 no celular (2 no PC), foveation 1, no máximo 260 projéteis.
+8. **Aquecimento de shaders no boot (`warmupShaders`, 3.2):** cria um exemplar de cada nave, chefão, nave-mãe, caixa,
+   tiro inimigo, projétil, card, banner e efeito, deixa tudo visível por um instante, chama `renderer.compile()` +
+   `initTexture()` e limpa. Antes, **28 shaders** eram compilados no meio da partida (cada um trava 0,1–0,5 s no Quest);
+   agora são **0**. Regras que mantêm isso: nunca `material.dispose()` em coisa que volta (descartar libera o shader e
+   a próxima recompila); `setColorAt(0, branco)` logo ao criar InstancedMesh que usa cor por instância; um feixe
+   escondido fica sempre na cena.
+9. **Céu e nuvens desenhados por último** entre os opacos (`renderOrder` 999/1000, profundidade no far plane): o teste
+   de profundidade descarta os pixels cobertos pelo cenário. Antes o céu era pintado na tela inteira e o chão por cima.
+10. **Qualidade automática no VR (`quality.js`):** mede o intervalo real entre os quadros do headset; abaixo da taxa do
+    aparelho por 1,2 s, desce um nível (grama 100→60→35→15%, flores, milho, teto de partículas e tamanho máximo do
+    ponto). Com folga por 20 s, sobe de volta; se cair logo depois de subir, não tenta mais aquele nível.
+11. **Sem trabalho à toa por quadro:** o painel do colo só redesenha (1,3 MB para a GPU) quando algum número muda;
+    no máximo 4 textos novos por quadro; zumbidos das naves escolhidos 4×/s com folga (sem recriar nós de áudio);
+    `setPos`/`setVol`/`setPitch` dos loops ignoram mudanças imperceptíveis; histórico da mão sem alocar.
+12. **Sem hit-stop no VR:** a cabeça continua se mexendo e o mundo "travado" parece queda de quadros.
 
 ## 10. ESTRUTURA DO CÓDIGO (`src/`)
 

@@ -968,14 +968,18 @@ class LoopHandle {
     this.pos = opts.pos ? { x: opts.pos.x, y: opts.pos.y, z: opts.pos.z } : null;
     this.vol = opts.vol ?? 1; this.pitch = opts.pitch ?? 1; this.v = null; this.alive = true;
   }
+  // As três ignoram mudanças imperceptíveis: o jogo chama isso todo quadro, e cada
+  // setTargetAtTime vira trabalho na thread de áudio (pesado no Quest).
   setPos(p) {
     if (!p) return;
     if (!this.pos) this.pos = { x: 0, y: 0, z: 0 };
-    this.pos.x = p.x; this.pos.y = p.y; this.pos.z = p.z;
-    if (this.v && this.v.pn) setPannerPos(this.v.pn, p);
+    const q = this.pos, dx = p.x - q.x, dy = p.y - q.y, dz = p.z - q.z;
+    if (dx * dx + dy * dy + dz * dz < 1e-4 && this.posSent) return;
+    q.x = p.x; q.y = p.y; q.z = p.z;
+    if (this.v && this.v.pn) { setPannerPos(this.v.pn, p); this.posSent = true; }
   }
-  setVol(x) { this.vol = x; if (this.v) this.v.out.gain.setTargetAtTime(this.level(), this.v.ctx.currentTime, 0.05); }
-  setPitch(p) { this.pitch = p; if (this.v) { const t = this.v.ctx.currentTime; for (const [P, b] of this.v.pp) P.setTargetAtTime(b * p, t, 0.05); } }
+  setVol(x) { if (Math.abs(x - this.vol) < 0.004) return; this.vol = x; if (this.v) this.v.out.gain.setTargetAtTime(this.level(), this.v.ctx.currentTime, 0.05); }
+  setPitch(p) { if (Math.abs(p - this.pitch) < 0.004) return; this.pitch = p; if (this.v) { const t = this.v.ctx.currentTime; for (const [P, b] of this.v.pp) P.setTargetAtTime(b * p, t, 0.05); } }
   stop(fade = 0.15) {
     if (!this.alive) return;
     this.alive = false;

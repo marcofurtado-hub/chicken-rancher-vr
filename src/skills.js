@@ -206,7 +206,7 @@ function wrapText(ctx, text, x, y, maxW, lh, stroke, color) {
 }
 export function clearCards() {
   for (const c of cards) {
-    scene.remove(c.mesh); c.mesh.material.map.dispose(); c.mesh.material.dispose();
+    scene.remove(c.mesh); c.mesh.material.map.dispose();   // material fica: descartar liberaria o shader
     const i = uiTargets.indexOf(c.target); if (i >= 0) uiTargets.splice(i, 1);
   }
   cards.length = 0;
@@ -263,7 +263,7 @@ export function chooseUpgrade(card) {
   sparks(card.mesh.position, R.hex, card.upg.rar === 'epico' ? 50 : 30, 5, 0.08, 0.9); twinkle(card.mesh.position, R.hex, 10, 0.7, 0.2, 0.9); pulseAll(0.6, 150);
   if (card.upg.rar === 'epico') confetti(card.mesh.position, 40, 4);
   popupStack([[msg, R.col, 1.3, 1.8]].concat(hint ? [[hint, '#ffffff', 0.8, 1.8]] : []), t0.copy(card.mesh.position).setY(card.mesh.position.y + 0.9));
-  leaveT = 1.3;
+  leaveT = 1.2;
 }
 /** aimRay: { o, d } da mira atual, para destacar o card mirado. */
 export function updateCards(dt, aimO, aimD) {

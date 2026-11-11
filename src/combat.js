@@ -2,7 +2,7 @@
 // COMBATE — colisão (swept segment contra elipsoides), dano, efeitos de impacto,
 // morte das naves, pontos/combo, power-ups e a vida do jogador.
 // =============================================================================
-import { THREE, camPos } from './render.js';
+import { THREE, camPos, xrActive } from './render.js';
 import { G, clamp, rand, pick, tmpV, comboMult, comboWindow, playing, MAX_CHICKENS } from './core.js';
 import { tr } from './i18n.js';
 import { UFO_TYPES, POWERS, CHICKEN_KINDS } from './config.js';
@@ -221,7 +221,8 @@ export function killUfo(u, hitPos) {
 }
 
 /** Congela o jogo por um instante: peso nos golpes grandes. */
-export function hitStop(t) { G.hitStop = Math.max(G.hitStop, t); }
+// no VR a cabeça continua se mexendo e o mundo "trava": parece queda de quadros. Só no PC/celular.
+export function hitStop(t) { if (xrActive()) return; G.hitStop = Math.max(G.hitStop, t); }
 
 // ---------- Pontos e combo ----------
 export function addScore(pts, pos, text, color = '#ffd040', size = 1) {
@@ -325,11 +326,11 @@ export function damagePlayer(amount, label, color) {
   popupAhead('-' + dmg + ' ❤️ ' + label, color, 1.1);
   if (G.hp <= 0) enterGameOver('player');
 }
-export function healPlayer(n, pos) {
+export function healPlayer(n, quiet = false) {
   const before = G.hp;
   G.hp = Math.min(G.hpMax, G.hp + n);
   const got = Math.round(G.hp - before);
-  if (got > 0) { sfx('heal'); flashScreen(0xff6080, 0.3); popupAhead('+' + got + ' ❤️', '#ff7090', 1); }
+  if (got > 0 && !quiet) { sfx('heal'); flashScreen(0xff6080, 0.3); popupAhead('+' + got + ' ❤️', '#ff7090', 1); }
   return got;
 }
 export function gooHitPlayer() {

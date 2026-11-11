@@ -4,18 +4,19 @@
 import { THREE, renderer, scene, camera, rig, camPos, camDir, U, xrActive, isTouch, updateCamWorld } from './render.js';
 import { G, clamp, rand, pick, shuffle, fmt, tmpV, save, playing, comboWindow, MAX_CHICKENS } from './core.js';
 import { tr } from './i18n.js';
-import { WEAPONS, WEAPON_ORDER, WAVES, UFO_TYPES, WEAPON_TIPS, getWave } from './config.js';
-import { updateFx, clearFx, showBanner, hideBanner, popup, ov, fxAdd, randDir, sparks, confetti, seg, glow, SHAPE } from './fx.js';
+import { WEAPONS, WEAPON_ORDER, WAVES, UFO_TYPES, WEAPON_TIPS, getWave, POWERS } from './config.js';
+import { updateFx, clearFx, showBanner, hideBanner, popup, ov, fxAdd, randDir, sparks, confetti, seg, glow, SHAPE, friedEgg, debrisBurst, blast, bolt, smoke, fireball, feathers } from './fx.js';
 import { sfx, loop, music, stinger, setListener, heartbeat, initAudio } from './audio.js';
 import { initWorld, updateWorld, setTOD, nightAmount } from './world.js';
 import { chickens, spawnInitialFlock, clearChickens, chickensAlive, spawnChicken, removeChicken, respawnChicken, setChickenShield, updateChickens, drawChickens, INITIAL_FLOCK } from './chickens.js';
-import { ufos, spawnRegular, spawnBoss, spawnMothership, updateUfos, refreshAllParts, updateEproj, updateCrates, clearUfos, isAlive, aliveRegulars, stopAllHums } from './ufos.js';
+import { ufos, spawnRegular, spawnBoss, spawnMothership, updateUfos, refreshAllParts, updateEproj, updateCrates, clearUfos, isAlive, aliveRegulars, stopAllHums, spawnCrate, fireEnemy, EP_DEF } from './ufos.js';
 import { castSegment, resetCombo, healPlayer, hitStop, killUfo } from './combat.js';
-import { updateProjectiles, clearProjectiles, equipWeapon, updateWeapons, trackHands, setLaser, desktopShoot, fireUltimate, projs, aimInfo, THROW, throwEgg, VR_THROW } from './weapons.js';
-import { updateSkills, refreshUp, resetSkillsForWave, showUpgradeCards, clearCards, updateCards, cards, updateBirds, clearBirds, useSkill, buildOffer } from './skills.js';
+import { updateProjectiles, clearProjectiles, equipWeapon, updateWeapons, trackHands, setLaser, desktopShoot, fireUltimate, projs, aimInfo, THROW, throwEgg, spawnEgg } from './weapons.js';
+import { updateSkills, refreshUp, resetSkillsForWave, showUpgradeCards, clearCards, updateCards, cards, updateBirds, clearBirds, useSkill, buildOffer, spawnBirds } from './skills.js';
 import { updatePlayer, resetPlayer, flight, flightActive, startFlightEvent, clearFlightChair, CTRL, applyPcView, playerInput, lockPointer, moveRig, selectWeapon, pcAim, pcAimVel } from './player.js';
 import { updateHud, drawSign, updateStartBest, waveLabel, initHud } from './hud.js';
 import { groundHeightAt } from './world.js';
+import { qualityFrame, Q as QUALITY } from './quality.js';
 
 const [t0, t1, t2] = tmpV(3);
 const W = { queue: [], spawnT: 0, spawned: 0, total: 0, bossSpawned: false, fwT: 0 };
@@ -94,7 +95,7 @@ function waveComplete() {
     if (c.kind === 'chick' && (c.state === 'wandering' || c.state === 'pecking')) { c.waves++; if (c.waves >= 2) growChick(c); }
   }
   if (G.waveLost === 0 && chickensAlive() < MAX_CHICKENS) { respawnChicken('chick'); extra.push('🐣'); sfx('hatch'); }
-  const healed = healPlayer(15);
+  const healed = healPlayer(15, true);
   if (healed > 0) extra.push('❤️ +' + healed);
   const last = G.wave === WAVES.length - 1;
   showBanner(last ? tr('VOCÊ VENCEU!', 'YOU WIN!', 'VOITIT!') : tr('WAVE COMPLETA!', 'WAVE COMPLETE!', 'AALTO SELVITETTY!'), lines.join(' · '), extra.join(' · '), '#8dff4a', 3.4);
@@ -181,7 +182,7 @@ export function handleMenuAdvance(ctrl) {
   }
   if (G.state === 'game_over') { if (G.stateT > 1.5) resetGame(); return true; }
   if (G.state === 'victory') { if (G.stateT > 2) startEndless(); return true; }
-  if (G.state === 'wave_complete') { if (G.stateT > 1.2) advanceFromComplete(); return true; }
+  if (G.state === 'wave_complete') { if (G.stateT > 1.2 && !flightActive()) advanceFromComplete(); return true; }
   return false;
 }
 const _q = new THREE.Quaternion();
@@ -209,7 +210,7 @@ function updateWaveLogic(edt) {
     }
     if (!W.queue.length && (!w.boss || W.bossSpawned) && !ufos.some(u => !u.removed && (u.kind !== 'ufo' || isAlive(u)) && u.state !== 'escaping')) waveComplete();
   }
-  if (G.state === 'wave_complete' && G.stateT > 3.6) advanceFromComplete();
+  if (G.state === 'wave_complete' && G.stateT > 3.4 && !flightActive()) advanceFromComplete();   // cards só depois de pousar
 }
 
 // ---------- Música conforme o momento ----------
@@ -256,6 +257,7 @@ let skipRender = false, beatOn = false;
 export function gameLoop(time, xrFrame, forcedDt) {
   if (G.paused && forcedDt == null) { clock.getDelta(); renderer.render(scene, camera); return; }
   const dt = forcedDt != null ? forcedDt : Math.min(clock.getDelta(), 0.05);
+  if (forcedDt == null) qualityFrame(time);
   G.time += dt; G.stateT += dt;
   U.uTime.value += dt;
   updateCamWorld();
@@ -320,6 +322,50 @@ export function gameLoop(time, xrFrame, forcedDt) {
 // =============================================================================
 // BOOT
 // =============================================================================
+// -----------------------------------------------------------------------------
+// AQUECIMENTO DE SHADERS: cria um exemplar de tudo que aparece no jogo (cada nave,
+// chefão, nave-mãe, caixas, tiros inimigos, projéteis, cards, banner, efeitos) e
+// compila/sobe tudo para a GPU AGORA, atrás da tela inicial. Sem isso o Quest
+// compilava ~28 shaders no meio da partida (cada um trava a imagem por 0,1–0,5 s).
+// -----------------------------------------------------------------------------
+function warmupShaders() {
+  const t0 = performance.now();
+  const P = new THREE.Vector3(0, 6, 14);
+  try {
+    G.waveDef = WAVES[WAVES.length - 1];
+    for (const k of Object.keys(UFO_TYPES)) if (UFO_TYPES[k].role !== 'boss') spawnRegular(k, P);
+    spawnBoss(100);
+    spawnMothership();
+    for (const k of Object.keys(POWERS)) spawnCrate(k, P);
+    for (const k of Object.keys(EP_DEF)) fireEnemy(k, P);
+    for (const o of [{}, { arrow: true }, { rocket: true }, { firework: true }, { giant: true }]) spawnEgg(P, new THREE.Vector3(0, 0, 1), o);
+    G.state = 'upgrade'; showUpgradeCards(); G.state = 'idle';
+    showBanner('WARMUP', 'x', 'x');
+    popup('100', P);
+    spawnBirds(2, 1);
+    sparks(P, 0xffffff, 4); smoke(P, 2); fireball(P, 1); feathers(P, 2);
+    friedEgg(P); debrisBurst(P, 0xffffff, 2); blast(P, 1, 0xffffff);
+    seg(P, new THREE.Vector3(0, 7, 14), 0.02, 0xffffff, 0.1); bolt(P, new THREE.Vector3(1, 7, 14));
+    for (const k of Object.keys(ov)) ov[k] = 1;
+    updateFx(1 / 60);
+    refreshAllParts();
+  } catch (e) { console.warn('[warmup]', e); }
+  // tudo visível por um instante (compile() pega até o que está escondido, mas o render garante o resto)
+  const hidden = [];
+  scene.traverse(o => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+  renderer.compile(scene, camera);
+  scene.traverse(o => {
+    const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+    for (const m of ms) for (const k of ['map', 'gradientMap', 'alphaMap']) if (m[k] && m[k].isTexture) renderer.initTexture(m[k]);
+  });
+  renderer.render(scene, camera);
+  for (const o of hidden) o.visible = false;
+  for (const k of Object.keys(ov)) ov[k] = 0;
+  hideBanner();
+  resetGame();
+  console.info('[warmup] shaders prontos em', Math.round(performance.now() - t0), 'ms ·', renderer.info.programs.length, 'programas');
+}
+
 export function boot() {
   initWorld();
   initHud();
@@ -331,6 +377,7 @@ export function boot() {
   drawSign();
   updateStartBest();
   setTOD(0);
+  warmupShaders();
   amb.wind = loop('wind', { vol: 0.25 });
   amb.crickets = loop('crickets', { vol: 0 });
   renderer.setAnimationLoop(gameLoop);
@@ -342,7 +389,7 @@ export function boot() {
     setHold: v => { playerInput.mouseDown = v; },
     aimAt: p => { const d = new THREE.Vector3().copy(p).sub(camPos).normalize(); playerInput.yaw = Math.atan2(-d.x, -d.z); playerInput.pitch = Math.asin(clamp(d.y, -1, 1)); applyPcView(); },
     flight, startFlightEvent, rig, shoot: desktopShoot, ult: fireUltimate,
-    projs, pcAim, pcAimVel, updateProjectiles, clearProjectiles, camPos, camera, aimInfo, THROW, throwEgg, VR_THROW,
+    projs, pcAim, pcAimVel, updateProjectiles, clearProjectiles, camPos, camera, renderer, scene, aimInfo, THROW, throwEgg, quality: QUALITY,
     step: (n, dt = 1 / 30, render = false) => { skipRender = !render; for (let i = 0; i < n; i++) gameLoop(0, null, dt); skipRender = false; },
   };
 }

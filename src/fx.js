@@ -11,6 +11,8 @@ const [v0, v1, v2, v3] = tmpV(4);
 
 // ---------- Escala dos pontos (corrige o tamanho no VR) ----------
 export const pointScale = { value: 600 };
+export const maxPoint = { value: 4096 };
+const FXQ = { level: 0, cap: 1 };
 export function updatePointScale() {
   let h = renderer.domElement.height, p11 = camera.projectionMatrix.elements[5];
   if (renderer.xr.isPresenting) {
@@ -21,6 +23,8 @@ export function updatePointScale() {
     if (xc && xc.cameras && xc.cameras[0]) p11 = xc.cameras[0].projectionMatrix.elements[5] || p11;
   }
   pointScale.value = h * 0.5 * p11;
+  // no VR um ponto não passa de ~30% da altura da imagem (menos ainda com qualidade reduzida)
+  maxPoint.value = renderer.xr.isPresenting ? h * [0.3, 0.22, 0.16, 0.12][FXQ.level] : 4096;
 }
 
 // ---------- Atlas de formas das partículas (2x2) ----------
@@ -54,12 +58,13 @@ export const SHAPE = { glow: 0, star: 1, smoke: 2, solid: 3 };
 
 const PARTICLE_VS = `
 attribute float psize; attribute float palpha; attribute vec3 pcolor; attribute float pshape; attribute float prot;
-uniform float uScale;
+uniform float uScale, uMaxPt;
 varying vec3 vColor; varying float vAlpha; varying float vShape; varying float vRot;
 void main(){
   vColor = pcolor; vAlpha = palpha; vShape = pshape; vRot = prot;
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = psize * uScale / max(0.05, -mv.z);
+  // limite de tamanho: fumaça colada no rosto cobria meia tela (muito pixel no Quest)
+  gl_PointSize = min(psize * uScale / max(0.05, -mv.z), uMaxPt);
   gl_Position = projectionMatrix * mv;
 }`;
 const PARTICLE_FS = `
@@ -92,7 +97,7 @@ class Particles {
     ['position', 'pcolor', 'psize', 'palpha', 'pshape', 'prot'].forEach((k, i) => g.setAttribute(k, this.attrs[i]));
     g.setDrawRange(0, 0);
     const mat = new THREE.ShaderMaterial({
-      uniforms: { uScale: pointScale, uAtlas: { value: ATLAS } },
+      uniforms: { uScale: pointScale, uMaxPt: maxPoint, uAtlas: { value: ATLAS } },
       vertexShader: PARTICLE_VS, fragmentShader: PARTICLE_FS,
       transparent: true, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
     });
@@ -103,7 +108,7 @@ class Particles {
   }
   /** grav: m/s² · drag: 1/s · grow: multiplica o tamanho no fim · shape: SHAPE.* · spin: rad/s */
   spawn(x, y, z, vx, vy, vz, color, size, life, grav = 0, drag = 0, grow = 0, alpha = 1, shape = 0, spin = 0) {
-    if (this.n >= this.max) return;
+    if (this.n >= this.max * FXQ.cap) return;
     const i = this.n++, i3 = i * 3;
     this.pos[i3] = x; this.pos[i3 + 1] = y; this.pos[i3 + 2] = z;
     this.vel[i3] = vx; this.vel[i3 + 1] = vy; this.vel[i3 + 2] = vz;
@@ -141,6 +146,8 @@ class Particles {
   }
   clear() { this.n = 0; this.points.geometry.setDrawRange(0, 0); }
 }
+/** Qualidade automática do VR: menos partículas e pontos menores (0 = tudo · 3 = mínimo). */
+export function setFxQuality(q) { FXQ.level = q; FXQ.cap = [1, 0.6, 0.42, 0.3][q]; updatePointScale(); }
 export const fxAdd = new Particles(1800, true, 7);     // brilhos, faíscas, fogo
 export const fxAlpha = new Particles(1200, false, 6);  // fumaça, pedaços de ovo, penas, confete
 
@@ -271,6 +278,7 @@ function updateSplats(dt) {
 // ---------- Destroços instanciados (pedaços de nave) ----------
 const DEBRIS_MAX = 90;
 const debrisMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), toon({ vertexColors: false }), DEBRIS_MAX);
+debrisMesh.setColorAt(0, new THREE.Color(1, 1, 1));   // cria a cor por instância já (evita variante de shader nova no meio do jogo)
 debrisMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 debrisMesh.count = 0; debrisMesh.frustumCulled = false;
 scene.add(debrisMesh);
@@ -407,7 +415,10 @@ for (let i = 0; i < 22; i++) {
   scene.add(sp);
   pops.push({ sp, ctx: c.getContext('2d'), tex, life: 0, ml: 1, active: false, size: 1, vy: 0.6 });
 }
+let popsThisFrame = 0;
 export function popup(text, pos, color = '#ffd040', size = 1, life = 1.1) {
+  // no máximo 4 textos novos por quadro (cada um redesenha um canvas e sobe a textura)
+  if (++popsThisFrame > 4) return;
   let p = pops.find(q => !q.active);
   if (!p) p = pops.reduce((a, b) => (a.life / a.ml > b.life / b.ml ? a : b));
   const ctx = p.ctx;
@@ -435,6 +446,7 @@ export function popupAhead(text, color, size = 1.2, life = 1.2) {
   popup(text, v1.copy(camPos).addScaledVector(v0, 1.6), color, size, life);
 }
 function updatePops(dt) {
+  popsThisFrame = 0;
   for (const p of pops) {
     if (!p.active) continue;
     p.life += dt;

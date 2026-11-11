@@ -1157,8 +1157,13 @@ function cornGeo() {
   return geoFrom(P, Cc);
 }
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _c = new THREE.Color();
+const VEG = {};
+const _shufR = mulberry32(777);   // embaralha a ordem (não muda o visual): cortar o fim da lista = rarear por igual
 function instanced(geo, mat, list, name) {
+  for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(_shufR() * (i + 1)); const t = list[i]; list[i] = list[j]; list[j] = t; }
   const im = new THREE.InstancedMesh(geo, mat, list.length);
+  im.userData.full = list.length;
+  VEG[name] = im;
   list.forEach((it, i) => {
     _p.set(it.x, it.y || 0, it.z);
     _e.set(it.tx || 0, it.ry || 0, it.tz || 0); _q.setFromEuler(_e);
@@ -1171,6 +1176,15 @@ function instanced(geo, mat, list, name) {
   im.frustumCulled = false;
   im.name = name;
   return im;
+}
+/** Qualidade automática do VR: rareia grama/flores/milho (0 = tudo · 3 = mínimo). */
+const VEG_Q = { grass: [1, 0.6, 0.35, 0.15], flowers: [1, 0.5, 0.2, 0], corn: [1, 0.85, 0.65, 0.5] };
+export function setVegQuality(q) {
+  for (const k in VEG_Q) {
+    const im = VEG[k]; if (!im) continue;
+    const n = Math.round(im.userData.full * VEG_Q[k][q]);
+    im.count = n; im.visible = n > 0;
+  }
 }
 // zonas sem grama
 const pathX = z => 0.42 * Math.sin((z - 1.7) * 0.33);

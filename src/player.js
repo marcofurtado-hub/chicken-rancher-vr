@@ -11,7 +11,7 @@ import { sfx, loop, initAudio, resumeAudio, music, toggleMusic } from './audio.j
 import { castSegment } from './combat.js';
 import { chickens, scareChicken } from './chickens.js';
 import { groundHeightAt, blockedSeg, PORCH_Y } from './world.js';
-import { equipWeapon, onTriggerStart, onTriggerEnd, desktopShoot, isTapWeapon, canShoot, fireUltimate, weaponState, targetVel } from './weapons.js';
+import { equipWeapon, onTriggerStart, onTriggerEnd, desktopShoot, isTapWeapon, canShoot, fireUltimate, weaponState, targetVel, canUlt } from './weapons.js';
 import { useSkill } from './skills.js';
 import { handleMenuAdvance, setPaused, resetGame } from './game.js';
 import { lapPanel, startLapGrab, endLapGrab } from './hud.js';
@@ -52,9 +52,9 @@ for (const c of [c1, c2]) {
   c.addEventListener('squeezestart', () => {
     if (lapPanel.visible && c.getWorldPosition(t0).distanceTo(lapPanel.getWorldPosition(t1)) < 0.3) { startLapGrab(c); pulseCtrl(c, 0.4, 40); return; }
     if (c === CTRL.right) useSkill(2);
-    else fireUltimate();
+    else c.userData.squeezeT = performance.now();   // esquerdo: segurar 0,3 s solta a Chuva de Ovos (se carregada)
   });
-  c.addEventListener('squeezeend', () => { if (endLapGrab(c)) pulseCtrl(c, 0.2, 30); });
+  c.addEventListener('squeezeend', () => { c.userData.squeezeT = 0; if (endLapGrab(c)) pulseCtrl(c, 0.2, 30); });
 }
 function triggerHeld(ctrl) {
   const s = ctrl.userData.src;
@@ -91,7 +91,6 @@ function pollButtons() {
       if (pressed && !btnPrev.get(key)) {
         if (idx === 4) cycleWeapon(right ? 1 : -1);
         else if (idx === 5) useSkill(right ? 0 : 1);
-        else if (idx === 3 && !right) fireUltimate();   // clique no direcional esquerdo também solta a chuva
       }
       btnPrev.set(key, pressed);
     }
@@ -558,14 +557,21 @@ export function updatePlayer(dt) {
   P.moving = false;
   P.turning = Math.max(0, P.turning - dt);
   if (!xr) updatePcControls(dt);
-  else { vrLocomotion(dt); if (!flightActive()) vrTurn(dt); pollButtons(); }
+  else {
+    vrLocomotion(dt); vrTurn(dt); pollButtons();   // girar com o direcional vale também no voo (como na 2.1)
+    const L = CTRL.left;
+    if (L && L.userData.squeezeT && performance.now() - L.userData.squeezeT > 300) {
+      L.userData.squeezeT = 0;
+      if (canUlt()) fireUltimate();   // sem carga: não faz nada (nada de aviso na cara)
+    }
+  }
   updateRigHeight(dt);
   updateFlight(dt, xr);
   // a cadeira acompanha o corpo (no VR, para onde a cabeça aponta)
   if (xr) {
     const cw = camera.getWorldDirection(t0); cw.y = 0;
     if (cw.lengthSq() > 1e-3) { cw.normalize(); wheelchair.rotation.y = Math.atan2(-cw.x, -cw.z) - Math.PI - rig.rotation.y; }
-    wheelchair.position.set(camera.position.x, 0, camera.position.z);
+    wheelchair.position.set(0, 0, 0);   // fixa sob o corpo (como na 2.1): inclinar para ler o painel não o empurra
   } else { wheelchair.rotation.y = Math.PI; wheelchair.position.set(0, 0, 0); }
   ov.move = xr && G.settings.vignette && (P.moving || P.turning > 0 || flightActive()) ? 1 : 0;
   held.r = xr ? triggerHeld(CTRL.right) : (P.mouseDown || P.touchActive);
