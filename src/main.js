@@ -7,6 +7,7 @@ import { G, saveSettings } from './core.js';
 import { initAudio, setVolumes } from './audio.js';
 import { boot, startGame, setTestWave } from './game.js';
 import { lockPointer, openWavePick } from './player.js';
+import { playerName, setPlayerName, refreshHtmlRanking } from './ranking.js';
 
 // Botão "ENTRAR NO VR" (só aparece se o navegador suporta)
 if ('xr' in navigator) {
@@ -40,6 +41,15 @@ bindRange('set-music', 'music', applyVol);
 bindRange('set-sfx', 'sfx', applyVol);
 bindToggle('set-vig', () => S.vignette, () => { S.vignette = !S.vignette; });
 bindToggle('set-turn', () => S.turn === 'snap', () => { S.turn = S.turn === 'snap' ? 'smooth' : 'snap'; });
+
+// Nome do jogador (vai para o ranking local e mundial)
+const nameEl = document.getElementById('pname');
+if (nameEl) {
+  const saved = localStorage.getItem('cr_name');
+  if (saved) { try { nameEl.value = JSON.parse(saved) || ''; } catch (e) {} }
+  nameEl.addEventListener('input', () => setPlayerName(nameEl.value));
+  for (const ev of ['click', 'keydown', 'keyup', 'mousedown', 'touchstart']) nameEl.addEventListener(ev, e => e.stopPropagation());
+}
 
 // Jogar no PC / celular
 const startEl = document.getElementById('start');

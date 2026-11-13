@@ -8,7 +8,7 @@ import { tr } from './i18n.js';
 import { UFO_TYPES, POWERS, CHICKEN_KINDS } from './config.js';
 import { sparks, fireball, blast, popup, popupStack, popupAhead, eggBurst, feathers, bolt, flashScreen, ov, debrisBurst, showBanner, confetti, twinkle } from './fx.js';
 import { sfx, stinger } from './audio.js';
-import { ufos, eproj, crates, isAlive, removeUfo, removeCrate, destroyEproj, spawnRegular, stopBeam, exposeCore, drawHpBar, spawnCrate, EP_DEF, CRATE_RX, CRATE_RY, bossSubDown } from './ufos.js';
+import { ufos, eproj, crates, isAlive, removeUfo, removeCrate, destroyEproj, spawnRegular, stopBeam, exposeCore, drawHpBar, spawnCrate, EP_DEF, CRATE_RX, CRATE_RY } from './ufos.js';
 import { chickens, chickensAlive, removeChicken, respawnChicken, scareChicken, INITIAL_FLOCK } from './chickens.js';
 import { pulseAll } from './player.js';
 import { enterGameOver, clearQueue } from './game.js';
@@ -87,12 +87,14 @@ export function aoeDamage(pos, R, dmg) {
   for (const u of ufos.slice()) {
     if (!isAlive(u)) continue;
     let bestP = null, bd = Infinity;
-    for (const p of u.parts) {
+    for (const p of u.parts.slice()) {
       if (!p.active || p.kind === 'armor') continue;
       const d = p.c.distanceTo(pos) - (p.ellip ? p.ellip[1] : p.r);
-      if (d < R && d < bd) { bd = d; bestP = p; }
+      if (d >= R) continue;
+      if (p.kind === 'sub') { hitPart(u, p, dmg, p.c.clone(), false); n++; if (!isAlive(u)) break; continue; }
+      if (d < bd) { bd = d; bestP = p; }
     }
-    if (bestP) { hitPart(u, bestP, dmg, bestP.c.clone(), false); n++; }
+    if (bestP && isAlive(u)) { hitPart(u, bestP, dmg, bestP.c.clone(), false); n++; }
   }
   for (const g of eproj) if (!g.dead && g.pos.distanceTo(pos) < R) destroyEproj(g, true);
   for (const cr of crates.slice()) if (cr.c.distanceTo(pos) < R + CRATE_RX) collectCrate(cr);
@@ -135,31 +137,31 @@ export function hitPart(u, part, dmg, pos, fx = true) {
     if (G.time - u.lastPop > 1.4) { popup(tr('ESCUDO!', 'SHIELD!', 'SUOJA!'), pos, '#80c0ff', 0.8, 0.8); u.lastPop = G.time; }
     return;
   }
-  // peças de chefe (placas do Couraçado, drones do Escudeiro): têm vida própria
+  // gancho da peça: o chefe decide o que acontece (ex.: tentáculo solta a galinha). true = já tratou
+  if (part.onHit && part.onHit(u, part, dmg, pos, fx)) { if (fx) { G.waveHits++; G.hitMarkT = 0.12; } return; }
+  // peças de chefe com vida própria (balões, gomos, abelhas, nuvens...)
   if (part.kind === 'sub') {
     if (fx) { G.waveHits++; G.hitMarkT = 0.12; }
     part.hp -= dmg; part.flashT = 0.1;
-    sparks(pos, 0xc0d0ff, 5, 3); sfx('tink', { pos });
+    sparks(pos, 0xffffff, 5, 3); sfx('eggHitUfo', { pos });
     if (part.hp <= 0) {
-      part.active = false; part.obj.visible = false;
-      fireball(part.c, 0.6); debrisBurst(part.c, 0x9aa0b0, 8, 3); sfx('explosionSmall', { pos: part.c }); pulseAll(0.5, 80);
-      addScore(300, part.c, '+300', '#c0d0ff', 1);
-      bossSubDown(u, part);
+      part.active = false;
+      if (!part.keepVisible) part.obj.visible = false;
+      fireball(part.c, 0.5); sfx('explosionSmall', { pos: part.c }); pulseAll(0.5, 80);
+      addScore(200, part.c, '+200', '#ffe080', 0.9);
+      if (part.onDown) part.onDown(u, part);
     }
     return;
   }
-  // chefe protegido (placas ou escudo de drones): o corpo não toma dano
+  // chefe protegido (olho fechado, escudo da colmeia...): o corpo não toma dano
   if (u.invuln) {
     sparks(pos, u.invuln === 'shield' ? 0x70b0ff : 0xffe080, 5, 3); sfx(u.invuln === 'shield' ? 'shieldTink' : 'tink', { pos });
-    if (G.time - u.lastPop > 1.4) {
-      popup(u.invuln === 'shield' ? tr('ESCUDO! ACERTE OS DRONES', 'SHIELD! HIT THE DRONES', 'SUOJA! AMMU DROONIT') : tr('BLINDADO! QUEBRE AS PLACAS', 'ARMORED! BREAK THE PLATES', 'PANSSAROITU! RIKO LEVYT'), pos, '#cccccc', 0.9, 1);
-      u.lastPop = G.time;
-    }
+    if (G.time - u.lastPop > 1.4) { popup(u.invulnMsg || tr('PROTEGIDO!', 'PROTECTED!', 'SUOJATTU!'), pos, '#dddddd', 0.9, 1); u.lastPop = G.time; }
     return;
   }
   if (part.kind === 'armor') {
     sparks(pos, 0xffe080, 5, 3); sfx('tink', { pos });
-    if (G.time - u.lastPop > 1.6) { popup(tr('BLINDADO!', 'ARMORED!', 'PANSSAROITU!'), pos, '#cccccc', 0.9, 0.8); u.lastPop = G.time; }
+    if (G.time - u.lastPop > 1.6) { popup(u.armorMsg || tr('BLINDADO!', 'ARMORED!', 'PANSSAROITU!'), pos, '#cccccc', 0.9, 0.8); u.lastPop = G.time; }
     return;
   }
   if (fx) {
@@ -184,6 +186,7 @@ export function hitPart(u, part, dmg, pos, fx = true) {
     return;
   }
   u.hp -= dmg * part.mult;
+  if (u.onDamaged) u.onDamaged(u, dmg * part.mult, part);
   u.flashT = 0.09;
   u.wobble = Math.min(1, (u.wobble || 0) + 0.5);
   if (part.mult > 1) {
@@ -195,13 +198,6 @@ export function hitPart(u, part, dmg, pos, fx = true) {
   sfx('eggHitUfo', { pos }); pulseAll(0.2, 30);
   sparks(pos, 0xffd040, 3, 3, 0.05, 0.4);
   if (u.hpBar) drawHpBar(u);
-  if (u.kind === 'boss') {
-    while (u.minionMarks.length && u.hp / u.maxHp <= u.minionMarks[0]) {
-      u.minionMarks.shift();
-      for (let k = 0; k < 2; k++) spawnRegular(pick(['saucer', 'zippy']), t0.copy(u.pos).add(t1.set(rand(-1.5, 1.5), -0.6, rand(-1.5, 1.5))));
-      popup(tr('REFORÇOS!', 'REINFORCEMENTS!', 'VAHVISTUKSIA!'), u.pos, '#ff8080', 1.2);
-    }
-  }
 }
 
 export function killUfo(u, hitPos) {
@@ -209,6 +205,7 @@ export function killUfo(u, hitPos) {
   const wasBeaming = (u.state === 'beaming' || u.state === 'grab' || u.state === 'flee') && u.target && u.target.state === 'abducting' && u.target.abductor === u;
   const prog = wasBeaming ? (u.state === 'beaming' ? u.beamElapsed / u.beamDur : 0.8) : 0;
   if (wasBeaming) rescueChicken(u.target);
+  for (const c of chickens) if (c.state === 'abducting' && c.abductor === u) rescueChicken(c);
   stopBeam(u);
   if (u.links && u.links.length) { for (const t of u.links) if (t.shieldedBy === u) t.shieldedBy = null; u.links.length = 0; }
   G.waveKills++;
@@ -236,8 +233,7 @@ export function killUfo(u, hitPos) {
   if (u.kind === 'boss') {
     blast(pos, 4, 0xff8030); pulseAll(0.95, 250); hitStop(0.25); confetti(pos, 50, 5);
     sfx('bossDeath', { pos });
-    const twinLeft = u.bid === 'gemeos' && ufos.some(o => o !== u && o.bid === 'gemeos' && isAlive(o));
-    showBanner(twinLeft ? tr('FALTA O OUTRO GÊMEO!', 'ONE TWIN LEFT!', 'TOINEN KAKSONEN JÄLJELLÄ!') : (u.D ? u.D.name + ' ' : '') + tr('DERROTADO!', 'DEFEATED!', 'KUKISTETTU!'), '', '', '#ffd040', 2.2);
+    showBanner((u.D ? u.D.name + ' ' : '') + tr('DERROTADO!', 'DEFEATED!', 'KUKISTETTU!'), '', '', '#ffd040', 2.2);
   } else pulseAll(0.45, 80);
   if (u.typeKey === 'splitter') {
     for (let k = 0; k < 2; k++) spawnRegular('mini', t0.copy(pos).add(t1.set(k ? 0.7 : -0.7, 0.2, 0)));

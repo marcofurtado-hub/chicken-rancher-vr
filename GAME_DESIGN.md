@@ -16,21 +16,39 @@
 > **visual toon com contorno, personagens instanciados, especial carregado por abates, nota de wave e menu VR de atirar**.
 > As armas estão na **seção 3** (com o guia de portar na 3.6).
 
-**Branch `chefes-e-final` (teste) — 12 waves, um chefe por wave e um final:**
-- **12 waves** de novo (8 armas de ovo até a wave 8). Quantidade de naves entre a 3.0 e a 3.4.
-- **Um chefe diferente por wave (2 a 11)**, `BOSSES` em `config.js`, lógica em `updateBoss` (`ufos.js`). Cada um ensina
-  uma mecânica: Grandão (ponto fraco vermelho) · Turbo (arrancadas) · Atirador (leque de gosma, não abduz) ·
-  Couraçado (4 placas com vida; corpo blindado até quebrar) · Semeador (solta kamikazes) · Gêmeos (vira dois na
-  metade) · Escudeiro (3 drones em órbita mantêm um escudo; voltam depois de 11 s) · Fantasma (some e reaparece em
-  outro lugar) · Bombardeiro (passes rasantes com bombas e círculo de aviso) · Ladrão-Mor (rouba galinha e foge; volta).
-  Peças com vida própria são partes `kind: 'sub'`; com o corpo protegido (`u.invuln`), o raio prefere a peça.
-- **Final** (`ending.js`, depois da nave-mãe): câmera lenta no mundo (`G.finaleSlow` escala o `dt` de galinhas,
-  efeitos, naves e cenário); nave da paz de 26 m pousa no fundo do quintal; comporta desce em diagonal até a grama;
-  fumaça iluminada com 3 SILHUETAS enormes (planos com textura recortada); a fumaça baixa e são 3 alienzinhos de
-  bandeira branca descendo a rampa → "ELES VIERAM EM PAZ" → créditos com 7 desenhos 2D feitos em canvas (eles
-  ajudando no rancho) num painel 3D na frente do jogador (funciona no VR) → vitória. Gatilho/clique pula os créditos.
-  Tudo é criado escondido no boot (`prepareFinale`) para os shaders já virem compilados.
-- **Testar:** `?wave=13`, botão **FIM** no seletor (PC: digitar OVOS) ou **B+Y** no menu VR até "VER O FINAL".
+**Branch `chefes-e-final` (teste) — 10 waves, 10 chefes diferentes e ranking — vale por cima de tudo abaixo:**
+- **10 waves**, cada uma com um **chefe de corpo e mecânica próprios** (`src/bosses.js`; vida/nome/dica em `BOSSES`
+  de `config.js`). O chefe chega quando ~45% das naves comuns da wave já apareceram. A wave 10 termina em **VITÓRIA**
+  e mostra o ranking. Saíram a nave-mãe, o final da paz e os créditos (`ending.js` apagado) e o modo infinito do fluxo.
+- **Os 10 chefes** (um por wave, na ordem):
+  1. **Zepelim** — 3 balões coloridos seguram a gôndola; estourar os 3 derruba. Abduz com feixe.
+  2. **Olhão** — olho gigante que só toma dano de pálpebra aberta; puxa a galinha com o olhar, tiro na pupila solta.
+  3. **Centopeia** — 9 gomos com vida própria seguem a cabeça; cabeça blindada até acabarem os gomos; mergulha e carrega.
+  4. **Polvo Espacial** — 4 tentáculos (correntes de bolas instanciadas) agarram galinhas; tiro no tentáculo solta.
+  5. **Minhocão** — anda por baixo da terra (montinho), treme e sobe mordendo; tiro na boca faz cuspir.
+  6. **Tempestade** — máquina escondida numa nuvem de 9 tufos que rebrotam; raio no jogador (aviso no chão; abrir um
+     tufo durante a carga faz o raio falhar) e tornado que suga galinha.
+  7. **Mágico** — cartola com 2 ilusões (1 de vida); o de verdade tem os olhos brilhando; embaralha de lugar.
+  8. **Colmeia** — 12 abelhas mantêm um escudo; com menos de 4, a colmeia fica exposta; esquadrão carrega galinha.
+  9. **Colheitadeira** — veículo de chão, frente blindada; tanques vermelhos são o ponto fraco e afogam o motor,
+     abrindo a gaiola. Dá arrancadas.
+  10. **Galozilla** — galo-robô gigante atrás da cerca: peito abre (núcleo ×3) pra lançar ovos-bomba, pintinhos-robô
+      roubam galinhas, laser dos olhos (acertar a crista cancela) e canto que chama naves. 3 fases.
+- **Como um chefe é montado** (receita reaproveitável): `base(id)` cria a entidade (esconde o corpo de nave), `piece()`
+  monta malhas toon com contorno, `instanced()` desenha peças repetidas, `addPart()` cria as áreas de acerto
+  (`body`, `crit`, `armor`, `sub` = peça com vida própria, `tent`), `part.onHit`/`part.onDown`/`u.onDamaged` são os
+  ganchos de regra e `u.deadFn` a morte especial. Galinha presa: `hold/drop/eat` (o chefe move `c.pos`).
+- **Justo em toda plataforma:** no celular não dá para andar, então todo ataque no jogador pode ser cancelado ou
+  derrubado a tiros (raio, laser, bombas, cartas).
+- **Vida dos chefes acompanha o poder de fogo:** `vida = base × (dano × cadência × ovos)^0,7`, para a luta não virar
+  um piscar de olhos com muita melhoria de ataque (quem investe em ataque ainda mata mais rápido).
+- **Ranking** (`src/ranking.js`): nome do jogador (campo no menu, `cr_name`), lista deste aparelho (`cr3_scores` no
+  localStorage) e lista do mundo via Firestore REST, sem SDK (`src/leaderboard-config.js`; vazio = "em breve").
+  Painel 3D depois da vitória/derrota (acompanha a câmera fora do VR) + cartão no menu. Regras em `firestore.rules`.
+  Modo de teste de wave não grava pontuação.
+- **Testar:** `?wave=N` (1 a 10), seletor secreto (PC: digitar OVOS · celular: 5 toques no título · VR: B+Y no menu).
+- **Medição com robô** (mira com erro e 70% do tempo atirando): campanha em ~8 min, chefes de 11 a 60 s, Galozilla
+  ~40 s; 0 shaders compilados no meio do jogo (46 programas, todos aquecidos no boot).
 
 **Versão 3.4 (mais curta, mais simples, tudo é ovo) — vale por cima das tabelas antigas abaixo:**
 - **8 waves** (antes 12) e ~1/3 das naves, chegando mais rápido. Tabela em `src/config.js` (`WAVES`). Chefão pequeno na 3,

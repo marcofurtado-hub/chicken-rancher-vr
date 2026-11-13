@@ -9,7 +9,7 @@ import { updateFx, clearFx, showBanner, hideBanner, popup, popupAhead, ov, fxAdd
 import { sfx, loop, music, stinger, setListener, heartbeat, initAudio } from './audio.js';
 import { initWorld, updateWorld, setTOD, nightAmount } from './world.js';
 import { chickens, spawnInitialFlock, clearChickens, chickensAlive, spawnChicken, removeChicken, respawnChicken, setChickenShield, updateChickens, drawChickens, INITIAL_FLOCK } from './chickens.js';
-import { ufos, spawnRegular, spawnBoss, spawnMothership, updateUfos, refreshAllParts, updateEproj, updateCrates, clearUfos, isAlive, aliveRegulars, stopAllHums, spawnCrate, fireEnemy, EP_DEF, crates } from './ufos.js';
+import { ufos, spawnRegular, spawnBoss, updateUfos, refreshAllParts, updateEproj, updateCrates, clearUfos, isAlive, aliveRegulars, stopAllHums, spawnCrate, fireEnemy, EP_DEF, crates } from './ufos.js';
 import { castSegment, resetCombo, healPlayer, hitStop, killUfo } from './combat.js';
 import { updateProjectiles, clearProjectiles, equipWeapon, updateWeapons, trackHands, setLaser, desktopShoot, fireUltimate, projs, aimInfo, THROW, throwEgg, spawnEgg } from './weapons.js';
 import { updateSkills, refreshUp, resetSkillsForWave, showUpgradeCards, clearCards, updateCards, cards, updateBirds, clearBirds, useSkill, buildOffer, spawnBirds, grantRandomUpgrades } from './skills.js';
@@ -17,7 +17,8 @@ import { updatePlayer, resetPlayer, flight, flightActive, startFlightEvent, clea
 import { updateHud, drawSign, updateStartBest, waveLabel, initHud } from './hud.js';
 import { groundHeightAt } from './world.js';
 import { qualityFrame, Q as QUALITY } from './quality.js';
-import { startFinale, updateFinale, finaleSkip, clearFinale, prepareFinale } from './ending.js';
+import { submitScore, showRanking, hideRanking, rankingShown, updateRanking, fetchWorld, refreshHtmlRanking } from './ranking.js';
+import { BOSSES, BOSS_ORDER } from './config.js';
 
 const [t0, t1, t2] = tmpV(3);
 const W = { queue: [], spawnT: 0, spawned: 0, total: 0, bossSpawned: false, fwT: 0 };
@@ -60,7 +61,8 @@ export function startWave(idx) {
   resetSkillsForWave();
   G.state = 'wave_intro'; G.stateT = 0;
   const title = w.endless ? tr('INFINITO ', 'ENDLESS ', 'LOPUTON ') + (w.n + 1) : tr('WAVE ', 'WAVE ', 'AALTO ') + (idx + 1) + '/' + WAVES.length;
-  const sub = idx === WAVES.length - 1 ? tr('BATALHA FINAL · NAVE-MÃE', 'FINAL BATTLE · MOTHERSHIP', 'LOPPUTAISTELU · EMOALUS') : (w.boss ? tr('⚠ TEM CHEFÃO NESSA WAVE ⚠', '⚠ BOSS IN THIS WAVE ⚠', '⚠ TÄSSÄ AALLOSSA ON POMO ⚠') : (w.endless ? tr('ATÉ ONDE VOCÊ AGUENTA?', 'HOW LONG CAN YOU LAST?', 'KUINKA KAUAN KESTÄT?') : tr('PREPARE-SE', 'GET READY', 'VALMISTAUDU')));
+  const BD = w.boss && BOSSES[w.boss];
+  const sub = BD ? (idx === WAVES.length - 1 ? tr('BATALHA FINAL · ', 'FINAL BATTLE · ', 'LOPPUTAISTELU · ') : tr('⚠ CHEFÃO: ', '⚠ BOSS: ', '⚠ POMO: ')) + BD.name : tr('PREPARE-SE', 'GET READY', 'VALMISTAUDU');
   const l3 = newWeapon ? tr('NOVA ARMA: ', 'NEW WEAPON: ', 'UUSI ASE: ') + WEAPONS[newWeapon].icon + ' ' + WEAPONS[newWeapon].label : '';
   const T = w.intro && w.intro !== 'saucer' ? UFO_TYPES[w.intro] : null;
   let l4 = newWeapon ? WEAPON_TIPS[newWeapon][xrActive() ? 0 : 1] : '';
@@ -104,7 +106,7 @@ function waveComplete() {
   if (stars === 3) confetti(t0.copy(camPos).add(t1.copy(camDir).multiplyScalar(3)), 60, 4);
 }
 function advanceFromComplete() {
-  if (G.wave === WAVES.length - 1) { startFinale(enterVictory); return; }   // nave-mãe caiu: vem o FINAL
+  if (G.wave === WAVES.length - 1) { enterVictory(); return; }   // wave 10 vencida: VITÓRIA + ranking
   G.pendingPicks = 0;   // 1 melhoria por wave (agora quase toda wave tem chefe)
   showUpgradeCards(G.wave === 0 ? 'first' : 'normal');
 }
@@ -118,29 +120,24 @@ function finalizeScore() {
 function enterVictory() {
   G.state = 'victory'; G.stateT = 0;
   finalizeScore();
-  showBanner(tr('VITÓRIA!', 'VICTORY!', 'VOITTO!'), tr('PONTOS: ', 'SCORE: ', 'PISTEET: ') + fmt(G.score) + (G.newRecord ? tr(' · 🏆 NOVO RECORDE!', ' · 🏆 NEW RECORD!', ' · 🏆 UUSI ENNÄTYS!') : ''), tr('GATILHO = MODO INFINITO', 'TRIGGER = ENDLESS MODE', 'LIIPAISIN = LOPUTON TILA'), '#ffd040', 999, 0, tr('você salvou o galinheiro!', 'you saved the coop!', 'pelastit kanalan!'));
+  if (!G.testWave) submitScore(G.score, WAVES.length, true);
+  showBanner(tr('VITÓRIA!', 'VICTORY!', 'VOITTO!'), tr('você salvou o galinheiro!', 'you saved the coop!', 'pelastit kanalan!'), tr('PONTOS: ', 'SCORE: ', 'PISTEET: ') + fmt(G.score), '#ffd040', 2.8);
   stinger('victory');
   if (G.newRecord) setTimeout(() => sfx('newRecord'), 1200);
-}
-function startEndless() {
-  hideBanner();
-  while (chickensAlive() < INITIAL_FLOCK.length) respawnChicken('hen');
-  showUpgradeCards('boss');
 }
 export function enterGameOver(reason = 'chickens') {
   if (G.state === 'game_over') return;
   G.state = 'game_over'; G.stateT = 0;
   setLaser(false);
   finalizeScore();
-  const reached = G.wave < WAVES.length ? tr('chegou na wave ', 'reached wave ', 'pääsit aaltoon ') + (G.wave + 1) : tr('infinito ', 'endless ', 'loputon ') + (G.wave - WAVES.length + 1);
+  if (!G.testWave) submitScore(G.score, Math.min(G.wave + 1, WAVES.length), false);
   const why = reason === 'player' ? tr('VOCÊ FOI DERROTADO! ❤️ 0', 'YOU WERE DEFEATED! ❤️ 0', 'HÄVISIT! ❤️ 0') : tr('LEVARAM TODAS AS GALINHAS!', 'THEY TOOK ALL THE CHICKENS!', 'KAIKKI KANAT VIETIIN!');
-  const again = xrActive() ? tr('aperte o gatilho pra recomeçar', 'pull the trigger to restart', 'aloita alusta liipaisimella') : (isTouch ? tr('toque pra recomeçar', 'tap to restart', 'napauta aloittaaksesi alusta') : tr('clique pra recomeçar', 'click to restart', 'klikkaa aloittaaksesi alusta'));
-  showBanner(tr('GAME OVER', 'GAME OVER', 'PELI OHI'), why, (G.newRecord ? tr('🏆 NOVO RECORDE! ', '🏆 NEW RECORD! ', '🏆 UUSI ENNÄTYS! ') : '') + tr('PONTOS: ', 'SCORE: ', 'PISTEET: ') + fmt(G.score), '#ff4040', 999, 0, reached + ' · ' + again);
+  showBanner(tr('GAME OVER', 'GAME OVER', 'PELI OHI'), why, tr('PONTOS: ', 'SCORE: ', 'PISTEET: ') + fmt(G.score), '#ff4040', 2.8);
   stinger('gameOver');
   heartbeat(false);
 }
 export function resetGame() {
-  clearFinale();
+  hideRanking();
   clearUfos(); stopAllHums();
   clearProjectiles();
   clearCards();
@@ -170,10 +167,6 @@ export function startGame() {
   initAudio();
   const s = document.getElementById('start');
   if (s && s.style.display !== 'none') { s.style.display = 'none'; lockPointer(); }
-  if (G.testWave === WAVES.length) {   // código secreto: ver o FINAL direto
-    startWave(WAVES.length - 1); clearQueue(); clearUfos();
-    startFinale(enterVictory); return;
-  }
   const w0 = Math.min(Math.max(0, G.testWave | 0), WAVES.length - 1);
   if (w0 > 0) grantRandomUpgrades(w0);
   startWave(w0);
@@ -181,14 +174,13 @@ export function startGame() {
 }
 /** Código secreto: escolhe a wave inicial (0 = normal). */
 export function setTestWave(n) {
-  const N = WAVES.length + 1;   // 0..11 = waves · 12 = o FINAL
+  const N = WAVES.length;
   G.testWave = ((n % N) + N) % N;
   drawSign();
   const pick = document.getElementById('wavepick');
   if (pick) for (const b of pick.querySelectorAll('button')) b.classList.toggle('on', +b.dataset.w === G.testWave);
   const lab = document.getElementById('wavepick-label');
-  if (lab) lab.textContent = G.testWave === WAVES.length ? tr('🧪 MODO TESTE: ver o FINAL', '🧪 TEST MODE: watch the ENDING', '🧪 TESTITILA: katso LOPPU')
-    : G.testWave ? tr('🧪 MODO TESTE: começa na wave ', '🧪 TEST MODE: starts at wave ', '🧪 TESTITILA: alkaa aallosta ') + (G.testWave + 1) + tr(' (recorde não conta)', ' (best score not saved)', ' (ennätystä ei tallenneta)') : tr('🧪 escolha a wave inicial', '🧪 pick the starting wave', '🧪 valitse aloitusaalto');
+  if (lab) lab.textContent = G.testWave ? tr('🧪 MODO TESTE: começa na wave ', '🧪 TEST MODE: starts at wave ', '🧪 TESTITILA: alkaa aallosta ') + (G.testWave + 1) + tr(' (recorde não conta)', ' (best score not saved)', ' (ennätystä ei tallenneta)') : tr('🧪 escolha a wave inicial', '🧪 pick the starting wave', '🧪 valitse aloitusaalto');
 }
 /** Gatilho / clique / espaço fora de combate. Retorna true se consumiu o input. */
 export function handleMenuAdvance(ctrl) {
@@ -200,9 +192,8 @@ export function handleMenuAdvance(ctrl) {
     }
     startGame(); return true;
   }
-  if (G.state === 'finale') { finaleSkip(); return true; }
-  if (G.state === 'game_over') { if (G.stateT > 1.5) resetGame(); return true; }
-  if (G.state === 'victory') { if (G.stateT > 2) startEndless(); return true; }
+  if (G.state === 'game_over') { if (G.stateT > 4) resetGame(); return true; }
+  if (G.state === 'victory') { if (G.stateT > 4) resetGame(); return true; }
   if (G.state === 'wave_complete') { if (G.stateT > 1.2 && !flightActive()) advanceFromComplete(); return true; }
   return false;
 }
@@ -226,8 +217,7 @@ function updateWaveLogic(edt) {
     }
     if (w.flight && !flight.done && G.stateT > 8) startFlightEvent();
     if (w.boss && !W.bossSpawned) {
-      if (w.boss === 'mothership') { if (G.stateT > 2.5) { spawnMothership(); W.bossSpawned = true; } }
-      else if (W.spawned >= Math.ceil(W.total * 0.45)) { spawnBoss(w.boss); W.bossSpawned = true; }
+      if (W.spawned >= Math.ceil(W.total * 0.45)) { spawnBoss(w.boss); W.bossSpawned = true; }
     }
     if (!W.queue.length && (!w.boss || W.bossSpawned) && !ufos.some(u => !u.removed && (u.kind !== 'ufo' || isAlive(u)) && u.state !== 'escaping')) waveComplete();
   }
@@ -238,8 +228,7 @@ function updateWaveLogic(edt) {
 let musicMode = '';
 function updateMusic() {
   let mode = 'menu', inten = 0.3;
-  if (G.state === 'finale') mode = G.finaleMusic || 'victory';
-  else if (G.state === 'victory') mode = 'victory';
+  if (G.state === 'victory') mode = 'victory';
   else if (G.state === 'game_over') mode = 'gameover';
   else if (G.state !== 'idle') {
     mode = G.tod < 1.6 ? 'day' : G.tod < 3.2 ? 'dusk' : 'night';
@@ -298,9 +287,7 @@ export function gameLoop(time, xrFrame, forcedDt) {
   ov.bubble = G.up.bubble ? 1 : 0;
   const targetScale = Math.min(G.power.slow > 0 ? 0.5 : 1, G.up.slowSkill);   // câmera lenta: metade da velocidade
   G.timeScale += (targetScale - G.timeScale) * Math.min(1, dt * 5);
-  // no final, tudo anda em câmera lenta (G.finaleSlow) enquanto a nave gigante desce
-  const sdt = dt * (1 - 0.85 * (G.finaleSlow || 0));
-  let edt = sdt * G.timeScale;
+  let edt = dt * G.timeScale;
   if (G.hitStop > 0) { G.hitStop -= dt; edt *= 0.08; }
   if (G.comboT > 0) { G.comboT -= dt; if (G.comboT <= 0) resetCombo(); }
 
@@ -310,19 +297,20 @@ export function gameLoop(time, xrFrame, forcedDt) {
     G.tod += clamp(G.todTarget - G.tod, -dt * rate, dt * rate);
   }
   setTOD(G.tod);
-  updateWorld(sdt);
+  updateWorld(dt);
   updateMusic();
-  if (G.state === 'finale') updateFinale(dt);
+  if ((G.state === 'victory' || G.state === 'game_over') && !rankingShown() && G.stateT > 2.9) showRanking(G.state === 'victory' ? 'win' : 'lose');
+  updateRanking();
 
   if (xr) trackHands(dt);
   updateWeapons(dt, xr, held.r, held.l);
   updateWaveLogic(edt);
-  updateChickens(sdt, ufos);
-  updateUfos(sdt, edt);
+  updateChickens(dt, ufos);
+  updateUfos(dt, edt);
   refreshAllParts();
   updateEproj(dt, edt);
   updateCrates(dt, edt);
-  updateProjectiles(sdt);
+  updateProjectiles(dt);
   // mira (para destacar cards) + raio-guia do controle no menu e nas cartas
   let aimO = null, aimD = null;
   if (G.state === 'upgrade' || G.state === 'idle') {
@@ -339,7 +327,7 @@ export function gameLoop(time, xrFrame, forcedDt) {
   drawChickens();
   if (G.state === 'victory') celebrate(dt);
 
-  updateFx(sdt);
+  updateFx(dt);
   updateHud(dt);
   if (!skipRender) renderer.render(scene, camera);
 }
@@ -359,10 +347,8 @@ function warmupShaders() {
   try {
     G.waveDef = WAVES[WAVES.length - 1];
     for (const k of Object.keys(UFO_TYPES)) if (UFO_TYPES[k].role !== 'boss') spawnRegular(k, P);
-    for (const id of ['couracado', 'escudeiro', 'semeador', 'ladrao', 'fantasma']) spawnBoss({ id, hp: 50 }, P, true);
-    prepareFinale();
-    spawnBoss(100);
-    spawnMothership();
+    for (const id of BOSS_ORDER) spawnBoss(id, true);
+    updateUfos(1 / 60, 1 / 60);   // um quadro de cada chefe (instâncias, efeitos)
     for (const k of Object.keys(POWERS)) spawnCrate(k, P);
     for (const k of Object.keys(EP_DEF)) fireEnemy(k, P);
     for (const o of [{}, { arrow: true }, { rocket: true }, { firework: true }, { giant: true }]) spawnEgg(P, new THREE.Vector3(0, 0, 1), o);
@@ -405,6 +391,7 @@ export function boot() {
   updateStartBest();
   setTOD(0);
   warmupShaders();
+  refreshHtmlRanking(); fetchWorld();
   amb.wind = loop('wind', { vol: 0.25 });
   amb.crickets = loop('crickets', { vol: 0 });
   renderer.setAnimationLoop(gameLoop);
@@ -416,7 +403,7 @@ export function boot() {
     setHold: v => { playerInput.mouseDown = v; },
     aimAt: p => { const d = new THREE.Vector3().copy(p).sub(camPos).normalize(); playerInput.yaw = Math.atan2(-d.x, -d.z); playerInput.pitch = Math.asin(clamp(d.y, -1, 1)); applyPcView(); },
     flight, startFlightEvent, rig, shoot: desktopShoot, ult: fireUltimate,
-    projs, pcAim, pcAimVel, updateProjectiles, clearProjectiles, camPos, camera, renderer, scene, aimInfo, THROW, throwEgg, quality: QUALITY, spawnCrate, crates, finale: () => startFinale(enterVictory), spawnBoss,
+    projs, pcAim, pcAimVel, updateProjectiles, clearProjectiles, camPos, camera, renderer, scene, aimInfo, THROW, throwEgg, quality: QUALITY, spawnCrate, crates, spawnBoss, showRanking, submitScore, clearQueue,
     step: (n, dt = 1 / 30, render = false) => { skipRender = !render; for (let i = 0; i < n; i++) gameLoop(0, null, dt); skipRender = false; },
   };
 }
