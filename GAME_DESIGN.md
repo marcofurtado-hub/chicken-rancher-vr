@@ -18,22 +18,23 @@
 
 **Branch `chefes-e-final` (teste) — 10 waves, 10 chefes diferentes e ranking — vale por cima de tudo abaixo:**
 - **10 waves**, cada uma com um **chefe de corpo e mecânica próprios** (`src/bosses.js`; vida/nome/dica em `BOSSES`
-  de `config.js`). O chefe chega quando ~45% das naves comuns da wave já apareceram. A wave 10 termina em **VITÓRIA**
-  e mostra o ranking. Saíram a nave-mãe, o final da paz e os créditos (`ending.js` apagado) e o modo infinito do fluxo.
-- **Os 10 chefes** (um por wave, na ordem):
-  1. **Zepelim** — 3 balões coloridos seguram a gôndola; estourar os 3 derruba. Abduz com feixe.
-  2. **Olhão** — olho gigante que só toma dano de pálpebra aberta; puxa a galinha com o olhar, tiro na pupila solta.
-  3. **Centopeia** — 9 gomos com vida própria seguem a cabeça; cabeça blindada até acabarem os gomos; mergulha e carrega.
-  4. **Polvo Espacial** — 4 tentáculos (correntes de bolas instanciadas) agarram galinhas; tiro no tentáculo solta.
-  5. **Minhocão** — anda por baixo da terra (montinho), treme e sobe mordendo; tiro na boca faz cuspir.
-  6. **Tempestade** — máquina escondida numa nuvem de 9 tufos que rebrotam; raio no jogador (aviso no chão; abrir um
-     tufo durante a carga faz o raio falhar) e tornado que suga galinha.
-  7. **Mágico** — cartola com 2 ilusões (1 de vida); o de verdade tem os olhos brilhando; embaralha de lugar.
-  8. **Colmeia** — 12 abelhas mantêm um escudo; com menos de 4, a colmeia fica exposta; esquadrão carrega galinha.
-  9. **Colheitadeira** — veículo de chão, frente blindada; tanques vermelhos são o ponto fraco e afogam o motor,
-     abrindo a gaiola. Dá arrancadas.
-  10. **Galozilla** — galo-robô gigante atrás da cerca: peito abre (núcleo ×3) pra lançar ovos-bomba, pintinhos-robô
-      roubam galinhas, laser dos olhos (acertar a crista cancela) e canto que chama naves. 3 fases.
+  de `config.js`). O chefe **só chega no FIM da wave**, depois que todas as naves comuns foram embora. A wave 10
+  termina em **VITÓRIA** e mostra o ranking. Saíram a nave-mãe, o final da paz e os créditos (`ending.js` apagado) e
+  o modo infinito do fluxo.
+- **Os 10 chefes são naves e alienígenas** (nada de balão, cartola, abelha ou galo). Os ids internos ainda são os
+  antigos (entre parênteses):
+  1. **Batedor** (`zepelim`) — disco de reconhecimento com 3 cristais de energia; estourar os 3 derruba.
+  2. **Vigia** (`olhao`) — olho de réptil numa casca de metal; só toma dano aberto; puxa a galinha com o olhar.
+  3. **Comboio** (`centopeia`) — nave-chefe puxando 9 vagões (mini discos); destrua os vagões, depois a nave.
+  4. **Cérebro-Lula** (`polvo`) — alienígena de cérebro à mostra com 4 tentáculos; tiro no tentáculo solta a galinha.
+  5. **Broca** (`minhocao`) — máquina-verme que anda por baixo da terra e sobe mordendo; tiro na boca faz cuspir.
+  6. **Cristal** (`tempestade`) — máquina escondida num aglomerado de 9 cristais que rebrotam; raio no jogador
+     (quebrar um cristal durante a carga faz o raio falhar) e funil que suga galinha.
+  7. **Miragem** (`magico`) — nave-prisma com 2 hologramas; a de verdade tem os olhos brilhando; troca de lugar.
+  8. **Rainha** (`colmeia`) — nave-ninho com 12 zangões (mini caças) que mantêm um escudo e carregam galinha.
+  9. **Ceifador** (`colheitadeira`) — ceifadeira flutuante, frente blindada; tanques vermelhos afogam o motor.
+  10. **Imperador** (`galozilla`) — alienígena gigante num robô atrás da cerca: peito abre (núcleo ×3), mini-aliens
+      roubam galinhas, laser dos olhos (acertar o cérebro cancela) e rugido que chama naves. 3 fases.
 - **Como um chefe é montado** (receita reaproveitável): `base(id)` cria a entidade (esconde o corpo de nave), `piece()`
   monta malhas toon com contorno, `instanced()` desenha peças repetidas, `addPart()` cria as áreas de acerto
   (`body`, `crit`, `armor`, `sub` = peça com vida própria, `tent`), `part.onHit`/`part.onDown`/`u.onDamaged` são os

@@ -132,39 +132,47 @@ function boomDeath(dur, R, H) {
 // =============================================================================
 // 1 · ZEPELIM
 // =============================================================================
-const BAG_COLS = [0xe84040, 0xffd040, 0x40a0f0];
+const BAG_COLS = [0x5effd0, 0xff4fd8, 0xb6ff3a];
 function mkZepelim(u) {
-  piece(u, 'zep_gondola', g => {
-    box(g, 1.7, 0.5, 0.75, 0x8a5a30, 0, 0.3, 0); box(g, 1.85, 0.08, 0.9, 0x5a3a1c, 0, 0.58, 0);
-    for (const k of [-0.5, 0, 0.5]) box(g, 0.26, 0.2, 0.8, 0x9fe8ff, k, 0.34, 0);
-    for (const sx of [-0.7, 0.7]) for (const sz of [-0.3, 0.3]) cyl(g, 0.02, 0.02, 0.95, 5, 0x3a2a1a, sx, 1.02, sz);
-    box(g, 4.0, 0.1, 0.5, 0x6a4a2a, 0, 1.46, 0);
-    box(g, 0.08, 1.0, 0.8, 0xd83a30, 2.45, 2.3, 0); box(g, 0.8, 0.08, 1.0, 0xd83a30, 2.4, 2.3, 0);
-    alienHead(g, 0.25, 0.78, 0.2, 1);
+  // casco de arraia com o piloto na cabine aberta e 3 células de energia em cima
+  piece(u, 'sc_hull', g => {
+    sph(g, 1, 0x9aa4c0, 0, 0.3, 0, 18, 10).scale.set(2.1, 0.42, 1.05);
+    sph(g, 1, 0x5a6278, 0, 0.1, 0, 18, 8).scale.set(1.5, 0.5, 0.8);
+    torus(g, 0.5, 0.09, 6, 16, 0x5effd0, 0, -0.38, 0).rotation.x = PI / 2;
+    for (const sx of [-1, 1]) {
+      const w = box(g, 1.5, 0.09, 0.75, 0x7a84a0, sx * 2.0, 0.34, -0.3); w.rotation.y = sx * 0.5; w.rotation.z = -sx * 0.16;
+      sph(g, 0.13, 0xff4fd8, sx * 2.62, 0.47, -0.62, 8, 6);
+      cone(g, 0.18, 0.5, 6, 0x5a6278, sx * 1.1, 0.3, -1.0).rotation.x = -PI / 2;
+    }
+    for (let k = -3; k <= 3; k++) sph(g, 0.075, 0x5effd0, k * 0.55, 0.3, 1.0 - Math.abs(k) * 0.075, 6, 4);
+    sph(g, 0.46, 0x2a2f3e, 0.0, 0.6, 0.3, 12, 8).scale.y = 0.6;
+    alienHead(g, 0.0, 0.95, 0.34, 1.35);
+    for (let k = -1; k <= 1; k++) cyl(g, 0.34, 0.42, 0.5, 8, 0x5a6278, k * 1.35, 0.78, -0.15);   // soquetes dos cristais
   });
-  u.prop = piece(u, 'zep_prop', g => { box(g, 0.06, 1.0, 0.14, 0xd0d0d8, 0, 0, 0); box(g, 0.06, 0.14, 1.0, 0xd0d0d8, 0, 0, 0); sph(g, 0.09, 0x404048, 0, 0, 0, 8, 6); });
-  u.prop.position.set(-1.0, 0.32, 0);
+  u.prop = piece(u, 'sc_turbine', g => { for (let k = 0; k < 3; k++) box(g, 0.9, 0.09, 0.06, 0xd0d0d8, 0, 0, 0).rotation.z = k * PI / 3; sph(g, 0.12, 0x5effd0, 0, 0, 0, 8, 6); });
+  u.prop.position.set(0, 0.34, -1.08);
   const bagHp = 4 + Math.floor(G.wave * 0.8);
   u.bags = [];
   for (let k = 0; k < 3; k++) {
-    const m = piece(u, 'zep_bag' + k, g => {
-      sph(g, 1, BAG_COLS[k], 0, 0, 0, 18, 12).scale.set(1.02, 0.92, 0.92);
-      box(g, 0.34, 0.3, 0.05, 0xfff4e0, 0.2, 0.25, 0.86); box(g, 0.3, 0.26, 0.05, 0x7a4a2a, -0.35, -0.2, 0.84);   // remendos
-      torus(g, 0.93, 0.03, 4, 18, 0x3a2a1a, 0, 0, 0);
+    const m = piece(u, 'sc_cell' + k, g => {   // cristal de energia preso por garras
+      ico(g, 0.5, BAG_COLS[k], 0, 0, 0, 0).scale.set(1, 1.7, 1);
+      for (let c = 0; c < 3; c++) { const a = c * 2.094 + 0.5; const q = cone(g, 0.09, 0.7, 4, 0xd0d0d8, Math.cos(a) * 0.46, -0.45, Math.sin(a) * 0.46); q.rotation.z = Math.cos(a) * 0.35; q.rotation.x = -Math.sin(a) * 0.35; }
+      torus(g, 0.4, 0.07, 5, 12, 0x8a94a8, 0, -0.72, 0).rotation.x = PI / 2;
     });
-    m.position.set((k - 1) * 1.5, 2.4, 0);
-    const part = addPart(u, m, { r: 0.95, kind: 'sub', hp: bagHp, maxHp: bagHp, onDown: zepPop });
+    m.position.set((k - 1) * 1.35, 1.72, -0.15);
+    const part = addPart(u, m, { r: 0.8, kind: 'sub', hp: bagHp, maxHp: bagHp, onDown: zepPop });
     u.bags.push({ m, part });
   }
-  addPart(u, anchor(u.group, 0, 0.35, 0), { ellip: [0.95, 0.35, 0.5], kind: 'armor' });
-  u.armorMsg = tr('ESTOURE OS BALÕES!', 'POP THE BALLOONS!', 'PUHKAISE PALLOT!');
+  addPart(u, anchor(u.group, 0, 0.3, 0), { ellip: [2.0, 0.45, 1.0], kind: 'armor' });
+  u.armorMsg = tr('ESTOURE OS CRISTAIS!', 'POP THE CRYSTALS!', 'PUHKAISE KRISTALLIT!');
   u.pos.set(rand(-6, 6), 20, 26);
   u.hover.set(rand(-2, 2), 5.0, 7.5);
   u.speed = 1.3; u.beamTime = G.waveDef.beamTime * 1.1; u.descendH = 3.6; u.afterBeam = 'rising';
   u.state = 'entering'; u.idleT = 3; u.tilt = 0;
+  u.group.rotation.y = PI;   // a frente (cabine) fica virada para a varanda
 }
 function zepPop(u, part) {
-  confetti(part.c, 16, 3); popup('POU!', part.c, '#ffe080', 1.2);
+  confetti(part.c, 16, 3); popup('ZAP!', part.c, '#ffe080', 1.2);
   u.hp -= 1; u.tilt += (Math.random() < 0.5 ? -1 : 1) * 0.1;
   u.hover.y = Math.max(3.4, u.hover.y - 0.8); u.descendH = Math.max(2.8, u.descendH - 0.4); u.speed *= 0.85;
   if (u.state === 'beaming') { drop(u, u.target); stopBeam(u); u.state = 'rising'; }
@@ -172,7 +180,7 @@ function zepPop(u, part) {
 }
 function upZepelim(u, dt, edt) {
   const gp = u.pos;
-  u.prop.rotation.x += dt * 22;
+  u.prop.rotation.z += dt * 14;
   for (const b of u.bags) if (b.part.active) { b.part.flashT = Math.max(0, (b.part.flashT || 0) - dt); b.m.scale.setScalar(1 + b.part.flashT * 1.5 + Math.sin(u.age * 2 + b.m.position.x) * 0.012); }
   u.group.rotation.z = u.tilt + Math.sin(u.age * 1.3) * 0.03;
   if (u.state === 'entering') { if (moveToward(gp, u.hover, 5 * edt)) { u.state = 'hover'; u.idleT = 2.5; } return; }
@@ -194,19 +202,21 @@ function upZepelim(u, dt, edt) {
 const EYE_S = 1.5;   // tamanho geral do olho
 function mkOlhao(u) {
   piece(u, 'eye_ball', g => {
-    sph(g, 1.3, 0xf6f2ea, 0, 0, 0, 24, 16);
-    cyl(g, 0.62, 0.62, 0.1, 24, 0x2f7be0, 0, 0, 1.19).rotation.x = PI / 2;
-    cyl(g, 0.45, 0.45, 0.1, 24, 0x60c8ff, 0, 0, 1.22).rotation.x = PI / 2;
-    cyl(g, 0.27, 0.27, 0.1, 20, 0x08080c, 0, 0, 1.26).rotation.x = PI / 2;
-    sph(g, 0.08, 0xffffff, 0.13, 0.13, 1.3, 8, 6);
-    for (let k = 0; k < 6; k++) { const a = k * 1.05 + 0.3; const v = box(g, 0.03, 0.5, 0.03, 0xe05050, Math.cos(a) * 1.05, Math.sin(a) * 1.05, 0.55); v.rotation.z = a + PI / 2; v.rotation.y = 0.5; }
-    for (let k = 0; k < 6; k++) sph(g, 0.42 - k * 0.055, k % 2 ? 0xd06a8a : 0xe888a0, Math.sin(k * 0.9) * 0.15, -0.1 * k, -1.35 - k * 0.42, 10, 8);   // nervo (cauda)
+    sph(g, 1.3, 0xe6f2c0, 0, 0, 0, 24, 16);
+    cyl(g, 0.66, 0.66, 0.1, 24, 0xff8a18, 0, 0, 1.19).rotation.x = PI / 2;
+    cyl(g, 0.5, 0.5, 0.1, 24, 0xffd040, 0, 0, 1.22).rotation.x = PI / 2;
+    const p = cyl(g, 0.34, 0.34, 0.1, 20, 0x08080c, 0, 0, 1.26); p.rotation.x = PI / 2; p.scale.x = 0.36;   // pupila em fenda
+    sph(g, 0.08, 0xffffff, 0.2, 0.2, 1.28, 8, 6);
+    for (let k = 0; k < 6; k++) { const a = k * 1.05 + 0.3; const v = box(g, 0.03, 0.5, 0.03, 0x58c878, Math.cos(a) * 1.05, Math.sin(a) * 1.05, 0.55); v.rotation.z = a + PI / 2; v.rotation.y = 0.5; }
+    for (const [ax, ay] of [[0, 0.1], [0.55, -0.3], [-0.55, -0.3]]) for (let k = 0; k < 6; k++) sph(g, 0.32 - k * 0.04, k % 2 ? 0x3c4254 : 0x6a7288, ax * (1 + k * 0.3) + Math.sin(k * 0.9 + ax * 3) * 0.12, ay * (1 + k * 0.3) - k * 0.06, -1.3 - k * 0.42, 8, 6);   // cabos
   });
   const lid = (key, flip) => {
     const m = piece(u, key, g => {
-      const h = new THREE.Mesh(new THREE.SphereGeometry(1.38, 24, 10, 0, PI * 2, 0, PI / 2)); h.userData.c = 0x7a3aa0; if (flip) h.rotation.z = PI; g.add(h);
-      const rim = torus(g, 1.38, 0.07, 6, 28, 0x5a2a80, 0, 0, 0); rim.rotation.x = PI / 2;
-      for (let k = -2; k <= 2; k++) { const c = cone(g, 0.05, 0.3, 5, 0x2a1238, k * 0.3, flip ? -0.02 : 0.02, 1.36 - Math.abs(k) * 0.06); c.rotation.x = flip ? PI * 0.62 : PI * 0.38; }   // cílios
+      const h = new THREE.Mesh(new THREE.SphereGeometry(1.38, 24, 10, 0, PI * 2, 0, PI / 2)); h.userData.c = 0x7a84a0; if (flip) h.rotation.z = PI; g.add(h);
+      const rim = torus(g, 1.38, 0.08, 6, 28, 0x5effd0, 0, 0, 0); rim.rotation.x = PI / 2;
+      for (let k = -3; k <= 3; k++) { const c = cone(g, 0.07, 0.34, 4, 0xd0d0d8, k * 0.26, flip ? -0.02 : 0.02, 1.36 - Math.abs(k) * 0.07); c.rotation.x = flip ? PI * 0.62 : PI * 0.38; }   // dentes de metal
+      for (let k = 0; k < 5; k++) { const a = (k - 2) * 0.5; sph(g, 0.07, 0x8a94a8, Math.sin(a) * 1.0, (flip ? -1 : 1) * 0.95, Math.cos(a) * 0.4, 6, 4); }   // rebites
+      if (!flip) { cyl(g, 0.04, 0.04, 0.7, 5, 0x8a94a8, 0, 1.7, -0.2); sph(g, 0.13, 0xff4fd8, 0, 2.1, -0.2, 8, 6); }   // antena
     });
     return m;
   };
@@ -278,18 +288,17 @@ function upOlhao(u, dt, edt) {
 const CEN_N = 9, CEN_STEP = 8, CEN_D = 0.13;
 function mkCentopeia(u) {
   piece(u, 'cen_head', g => {
-    sph(g, 0.72, 0x2f8a3a, 0, 0, 0, 14, 10);
-    for (const sx of [-1, 1]) {
-      const m = cone(g, 0.13, 0.7, 6, 0xffd040, sx * 0.32, -0.18, 0.75); m.rotation.x = PI / 2; m.rotation.z = -sx * 0.5;
-      sph(g, 0.17, 0xffe040, sx * 0.3, 0.26, 0.52, 10, 8); sph(g, 0.08, 0x101018, sx * 0.32, 0.28, 0.66, 8, 6);
-      const a = cyl(g, 0.02, 0.02, 0.7, 5, 0x1f5a26, sx * 0.25, 0.75, 0.2); a.rotation.z = -sx * 0.4; sph(g, 0.06, 0xff4040, sx * 0.39, 1.07, 0.2, 6, 4);
-    }
-    box(g, 0.9, 0.12, 0.6, 0x1f5a26, 0, 0.6, -0.1);
+    lathe(g, [[0.001, -0.3], [0.5, -0.26], [0.95, -0.05], [1.0, 0.04], [0.6, 0.2], [0.001, 0.26]], 18, 0x4a5268);
+    torus(g, 0.98, 0.05, 5, 20, 0xff9030, 0, 0, 0).rotation.x = PI / 2;
+    sph(g, 0.5, 0x2a2f3e, 0, 0.26, 0.1, 12, 8).scale.y = 0.7;
+    alienHead(g, 0, 0.66, 0.2, 1.6, 0xf08a3a);
+    for (const sx of [-1, 1]) { const m = cone(g, 0.12, 0.8, 6, 0xd0d0d8, sx * 0.45, -0.1, 1.15); m.rotation.x = PI / 2; m.rotation.z = -sx * 0.45; sph(g, 0.12, 0xff3030, sx * 0.72, 0.08, 0.62, 8, 6); }
   });
-  u.I = instanced(u, 'cen_seg', g => {
-    sph(g, 0.55, 0xffffff, 0, 0, 0, 12, 8);
-    box(g, 0.7, 0.1, 0.5, 0xb8b8b8, 0, 0.5, 0);
-    for (const sx of [-1, 1]) { const l = cone(g, 0.07, 0.6, 5, 0x404040, sx * 0.62, -0.3, 0); l.rotation.z = sx * 2.2; }
+  u.I = instanced(u, 'cen_seg', g => {   // vagão: mini disco (a cor vem por instância)
+    lathe(g, [[0.001, -0.2], [0.34, -0.16], [0.62, -0.02], [0.62, 0.04], [0.36, 0.13], [0.001, 0.16]], 14, 0xffffff);
+    sph(g, 0.27, 0xe8e8e8, 0, 0.15, 0, 10, 6).scale.y = 0.75;
+    torus(g, 0.63, 0.035, 4, 14, 0x707070, 0, 0.01, 0).rotation.x = PI / 2;
+    for (const sx of [-1, 1]) sph(g, 0.07, 0x505050, sx * 0.5, -0.12, 0, 6, 4);
   }, CEN_N, 0.03);
   const segHp = 12 + G.wave;
   u.segs = [];
@@ -298,9 +307,9 @@ function mkCentopeia(u) {
     const part = addPart(u, a, { r: 0.6, kind: 'sub', hp: segHp, maxHp: segHp, onDown: cenSegDown, keepVisible: true });
     u.segs.push({ a, part, col: i % 2 });
   }
-  addPart(u, u.group, { r: 0.78 });
+  addPart(u, u.group, { r: 0.95 });
   u.invuln = 'armor';
-  u.invulnMsg = tr('DESTRUA OS GOMOS PRIMEIRO!', 'DESTROY THE SEGMENTS FIRST!', 'TUHOA JAOKKEET ENSIN!');
+  u.invulnMsg = tr('DESTRUA OS VAGÕES PRIMEIRO!', 'DESTROY THE PODS FIRST!', 'TUHOA VAUNUT ENSIN!');
   u.pos.set(-16, 9, 28);
   u.trail = []; u.tau = rand(0, 6); u.spd = 4.4; u.speedK = 1; u.mode = 'path'; u.traitT = 6; u.carryT = 0;
   u.dir = new THREE.Vector3(1, 0, 0);
@@ -314,7 +323,7 @@ function cenSegDown(u, part) {
   u.mode = 'path'; u.traitT = Math.max(u.traitT, 4);
   if (!u.segs.length) {
     u.invuln = null; u.speedK = 1.7;
-    showBanner(tr('CABEÇA EXPOSTA!', 'HEAD EXPOSED!', 'PÄÄ PALJAANA!'), tr('acabe com ela!', 'finish it!', 'viimeistele se!'), '', '#ffd040', 2);
+    showBanner(tr('NAVE-CHEFE EXPOSTA!', 'LEAD SHIP EXPOSED!', 'JOHTOALUS PALJAANA!'), tr('acabe com ela!', 'finish it!', 'viimeistele se!'), '', '#ffd040', 2);
   }
 }
 function upCentopeia(u, dt, edt) {
@@ -360,7 +369,7 @@ function upCentopeia(u, dt, edt) {
     t3.copy(tr0[prev] || gp).sub(p);
     if (t3.lengthSq() > 1e-6) _q.setFromUnitVectors(Z_AX, t3.normalize()); else _q.identity();
     const f = 1 + s.part.flashT * 8, sc = 1 + s.part.flashT * 1.5 + Math.sin(u.age * 6 + i) * 0.03;
-    if (s.col) iPut(I, p, _q, sc, sc, sc, 1.0 * f, 0.5 * f, 0.12 * f); else iPut(I, p, _q, sc, sc, sc, 0.25 * f, 0.72 * f, 0.3 * f);
+    if (s.col) iPut(I, p, _q, sc, sc, sc, 0.3 * f, 0.85 * f, 0.75 * f); else iPut(I, p, _q, sc, sc, sc, 0.72 * f, 0.36 * f, 0.9 * f);
   }
   iEnd(I);
   if (!u.segs.length && Math.random() < 0.4) smoke(gp, 1, 0x602020, 0.3, 0.5, 0.2);
@@ -372,11 +381,14 @@ function upCentopeia(u, dt, edt) {
 const POL_T = 4, POL_B = 10, PS = 1.4;   // PS = tamanho geral do polvo
 function mkPolvo(u) {
   piece(u, 'pol_head', g => {
-    lathe(g, [[0.001, 0], [0.85, 0], [0.98, 0.18], [1.18, 0.5], [1.32, 1.0], [1.25, 1.55], [0.95, 2.12], [0.5, 2.45], [0.001, 2.55]], 20, 0x8a4ad0);
-    for (let k = 0; k < 9; k++) { const a = k * 2.4, y = 1.2 + (k % 4) * 0.33; const r = y > 2 ? 0.75 : 1.2; sph(g, 0.13 + (k % 3) * 0.04, 0xb88af0, Math.cos(a) * r, y, Math.sin(a) * r * 0.98 - 0.05, 8, 6); }
-    for (const sx of [-1, 1]) { sph(g, 0.36, 0xffffff, sx * 0.5, 0.95, 1.05, 12, 10); sph(g, 0.17, 0x101018, sx * 0.5, 0.95, 1.36, 10, 8); }
-    cone(g, 0.25, 0.4, 8, 0xffb040, 0, -0.12, 0).rotation.x = PI;
-    torus(g, 0.86, 0.15, 6, 16, 0x6a34a8, 0, 0.05, 0).rotation.x = PI / 2;
+    lathe(g, [[0.001, 0], [0.85, 0], [0.98, 0.18], [1.18, 0.5], [1.32, 1.0], [1.25, 1.55], [1.05, 1.9], [0.001, 1.95]], 20, 0x58c878);
+    for (let k = 0; k < 11; k++) { const a = k * 2.4, r = k < 4 ? 0.3 : 0.72, y = k < 4 ? 2.4 : 2.05 + (k % 3) * 0.1; sph(g, 0.4 - (k % 3) * 0.04, k % 2 ? 0xf08ab0 : 0xf7a4c4, Math.cos(a) * r, y, Math.sin(a) * r, 8, 6); }   // cérebro à mostra
+    torus(g, 1.07, 0.1, 6, 20, 0x8a94a8, 0, 1.88, 0).rotation.x = PI / 2;
+    for (const sx of [-1, 1]) { sph(g, 0.36, 0xfff0a0, sx * 0.5, 0.95, 1.05, 12, 10); sph(g, 0.17, 0x101018, sx * 0.5, 0.95, 1.36, 10, 8).scale.x = 0.45; }
+    sph(g, 0.2, 0xfff0a0, 0, 1.5, 1.1, 10, 8); sph(g, 0.09, 0x101018, 0, 1.5, 1.28, 8, 6);   // terceiro olho
+    for (let k = -2; k <= 2; k++) cone(g, 0.06, 0.22, 5, 0xffffff, k * 0.14, 0.42, 1.22 - Math.abs(k) * 0.03).rotation.x = PI;
+    torus(g, 0.86, 0.15, 6, 16, 0x3c4254, 0, 0.05, 0).rotation.x = PI / 2;
+    for (let k = 0; k < 4; k++) { const a = k * PI / 2; cone(g, 0.2, 0.42, 6, 0xff9030, Math.cos(a) * 0.45, -0.2, Math.sin(a) * 0.45).rotation.x = PI; }
   });
   u.I = instanced(u, 'ball', g => sph(g, 1, 0xffffff, 0, 0, 0, 10, 8), POL_T * POL_B, 0.08);
   u.tents = [];
@@ -473,8 +485,8 @@ function upPolvo(u, dt, edt) {
       const s = j / (POL_B - 1), a = (1 - s) * (1 - s), b = 2 * s * (1 - s), c = s * s;
       t3.set(t0.x * a + t2.x * b + T.tip.x * c, t0.y * a + t2.y * b + T.tip.y * c, t0.z * a + t2.z * b + T.tip.z * c);
       const r = j === POL_B - 1 ? 0.42 : lerp(0.5, 0.28, s);
-      if (j === POL_B - 1) iPut(I, t3, QI, r, r, r, (red ? 1.6 : 1.0) * fl, 0.5 * fl, 0.7 * fl);
-      else iPut(I, t3, QI, r, r, r, (j % 2 ? 0.5 : 0.6) * fl, 0.28 * fl, (j % 2 ? 0.8 : 0.95) * fl);
+      if (j === POL_B - 1) iPut(I, t3, QI, r, r, r, (red ? 1.6 : 1.0) * fl, (red ? 0.3 : 0.6) * fl, 0.2 * fl);
+      else iPut(I, t3, QI, r, r, r, (j % 2 ? 0.24 : 0.34) * fl, (j % 2 ? 0.6 : 0.78) * fl, (j % 2 ? 0.4 : 0.48) * fl);
       if (j === 5) T.midA.position.copy(t3);
     }
     T.tipA.position.copy(T.tip);
@@ -492,12 +504,14 @@ function mkMinhocao(u) {
     for (let k = 0; k < 7; k++) { const a = k * 0.9; ico(g, 0.12 + (k % 3) * 0.05, 0x8a8478, Math.cos(a) * 0.85, 0.12, Math.sin(a) * 0.85); }
   });
   u.worm = new THREE.Group(); u.group.add(u.worm);
-  piece(u, 'worm_body', g => {
-    for (let k = 0; k < 6; k++) sph(g, 0.8 - k * 0.035, k % 2 ? 0xe87a5a : 0xf2a070, 0, 0.35 + k * 0.55, 0, 14, 8).scale.y = 0.62;
-    torus(g, 0.52, 0.15, 6, 14, 0xc8503a, 0, 3.32, 0).rotation.x = PI / 2;
-    cyl(g, 0.46, 0.3, 0.3, 12, 0x30101a, 0, 3.22, 0);
-    for (let t = 0; t < 8; t++) { const a = t / 8 * PI * 2; const c = cone(g, 0.075, 0.32, 5, 0xfff4e0, Math.cos(a) * 0.42, 3.48, Math.sin(a) * 0.42); c.rotation.z = Math.cos(a) * 0.5; c.rotation.x = -Math.sin(a) * 0.5; }
-    for (const sx of [-1, 1]) { cyl(g, 0.03, 0.03, 0.4, 5, 0xc8503a, sx * 0.45, 3.2, 0.5).rotation.x = 0.5; sph(g, 0.1, 0x101018, sx * 0.45, 3.4, 0.6, 8, 6); }
+  piece(u, 'worm_body', g => {   // máquina-verme: anéis de metal, janela do piloto e boca de garras
+    for (let k = 0; k < 6; k++) { cyl(g, 0.74 - k * 0.03, 0.8 - k * 0.03, 0.5, 14, k % 2 ? 0x3c4254 : 0x6a7288, 0, 0.3 + k * 0.52, 0); torus(g, 0.78 - k * 0.03, 0.05, 5, 14, k % 2 ? 0xff9030 : 0x2a2f3e, 0, 0.56 + k * 0.52, 0).rotation.x = PI / 2; }
+    sph(g, 0.36, 0x9fe8ff, 0, 2.2, 0.42, 10, 8); torus(g, 0.38, 0.06, 5, 12, 0x8a94a8, 0, 2.2, 0.62);
+    alienHead(g, 0, 2.16, 0.7, 1.05, 0xb07af0);
+    torus(g, 0.52, 0.15, 6, 14, 0x8a94a8, 0, 3.32, 0).rotation.x = PI / 2;
+    cyl(g, 0.46, 0.3, 0.3, 12, 0xff3020, 0, 3.22, 0);
+    for (let t = 0; t < 6; t++) { const a = t / 6 * PI * 2; const c = cone(g, 0.13, 0.62, 4, 0xd0d0d8, Math.cos(a) * 0.5, 3.6, Math.sin(a) * 0.5); c.rotation.z = Math.cos(a) * 0.45; c.rotation.x = -Math.sin(a) * 0.45; }
+    for (const sx of [-1, 1]) { cyl(g, 0.03, 0.03, 0.5, 5, 0x8a94a8, sx * 0.62, 3.1, 0.45).rotation.z = -sx * 0.6; sph(g, 0.1, 0xff3030, sx * 0.78, 3.32, 0.45, 8, 6); }
   }, u.worm);
   u.wParts = [
     addPart(u, anchor(u.worm, 0, 1.0, 0), { ellip: [0.82, 1.0, 0.82] }),
@@ -583,7 +597,10 @@ function mkTempestade(u) {
     cone(g, 0.4, 0.4, 10, 0x7a8498, 0, -0.78, 0);
     alienHead(g, 0, 0.05, -0.62, 0.9);
   });
-  u.I = instanced(u, 'puff', g => ico(g, 1, 0xffffff, 0, 0, 0, 1), PUFFS.length, 0.07);
+  u.I = instanced(u, 'puff', g => {   // cristal alienígena (a cor vem por instância)
+    ico(g, 0.82, 0xffffff, 0, 0, 0, 0);
+    for (const [x, y, z, rx, rz] of [[0, 0.75, 0, 0, 0], [0.6, 0.3, 0.2, 0, -1.0], [-0.55, 0.25, -0.3, 0.3, 1.0], [0.1, -0.7, 0.1, PI, 0], [0, 0.2, 0.7, 1.2, 0]]) { const c = cone(g, 0.3, 0.9, 5, 0xe8e8e8, x, y, z); c.rotation.x = rx; c.rotation.z = rz; }
+  }, PUFFS.length, 0.07);
   const hp = 6 + Math.floor(G.wave * 0.6);
   u.puffs = PUFFS.map((o, i) => {
     const a = new THREE.Object3D();
@@ -625,7 +642,7 @@ function upTempestade(u, dt, edt) {
     const br = 1 + Math.sin(u.age * 1.4 + P.o[0] * 3) * 0.04;
     P.a.position.set(gp.x + P.o[0] * br, gp.y + P.o[1] * br, gp.z + P.o[2] * br);
     P.part.flashT = Math.max(0, (P.part.flashT || 0) - dt);
-    if (P.part.active) { const s = P.o[3] * P.k * (1 + P.part.flashT), f = P.sh + P.part.flashT * 4; iPut(I, P.a.position, QI, s * 1.1, s * 0.85, s, f, f * 1.05, f * 1.25); }
+    if (P.part.active) { const s = P.o[3] * P.k * (1 + P.part.flashT), f = P.sh + P.part.flashT * 4; iPut(I, P.a.position, QI, s * 1.1, s * 0.85, s, f * 1.7, f * 0.75, f * 2.5); }
   }
   iEnd(I);
   if (u.state === 'entering') return;
@@ -672,15 +689,13 @@ const okChickenOrHeld = (u, c) => okChicken(c) || holds(u, c);
 // 7 · MÁGICO
 // =============================================================================
 const HAT_SLOTS = [[-7, 6, 11], [-3.5, 7.6, 13], [0, 6, 10], [3.5, 7.6, 13], [7, 6, 11], [0, 8.6, 14.5]];
-const hatGeo = g => {
-  cyl(g, 1.25, 1.25, 0.1, 24, 0x16161c, 0, 0.05, 0);
-  cyl(g, 0.72, 0.78, 1.35, 20, 0x16161c, 0, 0.78, 0);
-  cyl(g, 0.8, 0.8, 0.22, 20, 0xd82840, 0, 0.3, 0);
-  ico(g, 0.17, 0xffd040, 0, 0.3, 0.82);
-  lathe(g, [[0.001, -0.45], [0.5, -0.4], [0.95, -0.2], [1.15, 0]], 20, 0x4a2a7a);
-  torus(g, 1.25, 0.05, 5, 24, 0xffd040, 0, 0.0, 0).rotation.x = PI / 2;
-  for (const sx of [-1, 1]) { sph(g, 0.2, 0xffffff, sx * 1.6, 0.25, 0.3, 10, 8); cyl(g, 0.14, 0.17, 0.12, 8, 0xe8e8f0, sx * 1.6, 0.05, 0.3); sph(g, 0.09, 0x101018, sx * 0.3, -0.14, 0.86, 8, 6); }
-  const w = cyl(g, 0.03, 0.03, 0.9, 6, 0x101014, 1.85, 0.62, 0.3); w.rotation.z = -0.5; sph(g, 0.06, 0xffffff, 2.07, 1.0, 0.3, 6, 4);
+const hatGeo = g => {   // nave-prisma: os hologramas usam a mesma geometria
+  cone(g, 1.25, 1.3, 4, 0x3aa8b8, 0, 0.72, 0).rotation.y = PI / 4;
+  const bot = cone(g, 1.25, 0.75, 4, 0x2a2f3e, 0, -0.3, 0); bot.rotation.x = PI; bot.rotation.y = PI / 4;
+  torus(g, 1.3, 0.07, 5, 24, 0xff4fd8, 0, 0.07, 0).rotation.x = PI / 2;
+  ico(g, 0.2, 0xffd040, 0, 1.5, 0, 0);
+  sph(g, 0.55, 0x9fe8ff, 0, -0.12, 0.45, 14, 10);
+  for (const sx of [-1, 1]) { sph(g, 0.12, 0x08080c, sx * 0.3, -0.14, 0.88, 8, 6); ico(g, 0.22, 0xff4fd8, sx * 1.75, 0.1, 0.2, 0); torus(g, 0.3, 0.04, 4, 12, 0x8a94a8, sx * 1.75, 0.1, 0.2).rotation.x = PI / 2; }
 };
 function mkMagico(u) {
   piece(u, 'hat', hatGeo);
@@ -708,7 +723,7 @@ function mkMagico(u) {
 function hatPoof(p) { smoke(p, 6, 0xe8e0f8, 0.7, 0.8, 0.4); _c.setHex(0xffd040); for (let k = 0; k < 10; k++) fxAdd.spawn(p.x, p.y + 0.4, p.z, rand(-2, 2), rand(0, 3), rand(-2, 2), _c, 0.09, 0.7, 4, 0.5, 0, 1, SHAPE.star, 6); }
 function decoyDown(u, part) {
   hatPoof(part.c); confetti(part.c, 14, 3);
-  popup(tr('ERA ILUSÃO!', 'AN ILLUSION!', 'SE OLI HARHA!'), part.c, '#d0a0ff', 1.1);
+  popup(tr('ERA HOLOGRAMA!', 'A HOLOGRAM!', 'SE OLI HOLOGRAMMI!'), part.c, '#d0a0ff', 1.1);
 }
 function hatShuffle(u) {
   if (u.state === 'beaming') { drop(u, u.target); stopBeam(u); }
@@ -753,17 +768,20 @@ function upMagico(u, dt, edt) {
 const BEE_N = 12;
 function mkColmeia(u) {
   piece(u, 'hive', g => {
-    lathe(g, [[0.001, -1.3], [0.7, -1.25], [1.15, -0.9], [1.0, -0.62], [1.4, -0.3], [1.2, 0.0], [1.45, 0.32], [1.15, 0.62], [1.2, 0.9], [0.8, 1.15], [0.5, 1.3], [0.001, 1.36]], 22, 0xe8a820);
-    cyl(g, 0.42, 0.42, 0.1, 16, 0x2a1608, 0, -0.45, 1.3).rotation.x = PI / 2;
-    for (const sx of [-1, 1]) sph(g, 0.09, 0xffe040, sx * 0.14, -0.42, 1.36, 8, 6);
-    cyl(g, 0.08, 0.08, 0.4, 6, 0x6a4a1a, 0, 1.5, 0);
-    for (let k = 0; k < 5; k++) { const a = k * 1.3; sph(g, 0.12, 0xffd860, Math.cos(a) * 1.2, -0.75 - (k % 2) * 0.2, Math.sin(a) * 1.2, 8, 6).scale.y = 1.8; }
+    lathe(g, [[0.001, -1.3], [0.7, -1.25], [1.15, -0.9], [1.0, -0.62], [1.4, -0.3], [1.2, 0.0], [1.45, 0.32], [1.15, 0.62], [1.2, 0.9], [0.8, 1.15], [0.5, 1.3], [0.001, 1.36]], 22, 0x5a2a80);
+    for (const [r, y] of [[1.42, -0.3], [1.47, 0.32], [1.22, 0.9]]) torus(g, r, 0.06, 5, 22, 0xb6ff3a, 0, y, 0).rotation.x = PI / 2;
+    cyl(g, 0.46, 0.46, 0.1, 16, 0x12081c, 0, -0.45, 1.3).rotation.x = PI / 2;
+    for (const sx of [-1, 1]) sph(g, 0.1, 0xffe040, sx * 0.16, -0.42, 1.37, 8, 6);
+    cone(g, 0.16, 0.8, 5, 0xd0d0d8, 0, 1.7, 0);
+    for (let k = 0; k < 5; k++) { const a = k / 5 * PI * 2; cone(g, 0.11, 0.5, 5, 0xd0d0d8, Math.cos(a) * 0.5, 1.45, Math.sin(a) * 0.5); }
+    for (let k = 0; k < 5; k++) { const a = k * 1.3; sph(g, 0.14, 0xb6ff3a, Math.cos(a) * 1.2, -0.75 - (k % 2) * 0.2, Math.sin(a) * 1.2, 8, 6).scale.y = 1.8; }
   });
-  u.I = instanced(u, 'bee', g => {
-    sph(g, 0.3, 0xffd020, 0, 0, 0, 10, 8).scale.set(0.8, 0.8, 1.25);
-    torus(g, 0.235, 0.06, 5, 12, 0x18181c, 0, 0, 0.08); torus(g, 0.2, 0.06, 5, 12, 0x18181c, 0, 0, -0.14);
-    cone(g, 0.06, 0.22, 6, 0x18181c, 0, 0, -0.46).rotation.x = -PI / 2;
-    for (const sx of [-1, 1]) { sph(g, 0.2, 0xf4f8ff, sx * 0.24, 0.24, 0, 8, 6).scale.set(1, 0.15, 0.7); sph(g, 0.07, 0x101018, sx * 0.12, 0.08, 0.32, 6, 4); }
+  u.I = instanced(u, 'bee', g => {   // zangão: mini caça
+    sph(g, 0.3, 0x5a6278, 0, 0, 0, 10, 8).scale.set(0.75, 0.6, 1.3);
+    sph(g, 0.16, 0xb6ff3a, 0, 0.1, 0.2, 8, 6);
+    cone(g, 0.1, 0.3, 6, 0xd0d0d8, 0, 0, 0.5).rotation.x = PI / 2;
+    for (const sx of [-1, 1]) { box(g, 0.5, 0.04, 0.26, 0x3c4254, sx * 0.38, 0, -0.1).rotation.y = -sx * 0.5; sph(g, 0.06, 0xff4fd8, sx * 0.6, 0, -0.24, 6, 4); }
+    sph(g, 0.1, 0xff9030, 0, 0, -0.42, 6, 4);
   }, BEE_N, 0.035);
   const hp = 4 + Math.round(G.wave * 0.4);
   u.bees = [];
@@ -774,7 +792,7 @@ function mkColmeia(u) {
   }
   addPart(u, u.group, { ellip: [1.42, 1.32, 1.42] });
   u.invuln = 'shield'; u.bubbleR = 2.0;
-  u.invulnMsg = tr('ESCUDO! DERRUBE AS ABELHAS', 'SHIELD! SHOOT THE BEES', 'SUOJA! AMMU MEHILÄISET');
+  u.invulnMsg = tr('ESCUDO! DERRUBE OS ZANGÕES', 'SHIELD! SHOOT THE DRONES', 'SUOJA! AMMU LENNOKIT');
   u.pos.set(0, 26, 36);
   u.hover.set(0, 8, 13.5);
   u.state = 'entering'; u.respT = 2.4; u.expT = 0; u.squadT = 6; u.squad = null;
@@ -793,7 +811,7 @@ function upColmeia(u, dt, edt) {
   if (u.invuln) {
     if (alive.length < 4 && u.state !== 'entering') {
       u.invuln = null; u.expT = 7;
-      showBanner(tr('COLMEIA EXPOSTA!', 'HIVE EXPOSED!', 'PESÄ PALJAANA!'), tr('ataque agora!', 'attack now!', 'hyökkää nyt!'), '', '#ffd040', 2);
+      showBanner(tr('RAINHA EXPOSTA!', 'QUEEN EXPOSED!', 'KUNINGATAR PALJAANA!'), tr('ataque agora!', 'attack now!', 'hyökkää nyt!'), '', '#ffd040', 2);
       sfx('shieldDown', { pos: gp });
     } else {
       u.respT -= edt;
@@ -804,7 +822,7 @@ function upColmeia(u, dt, edt) {
     if (u.expT <= 0) {
       for (const b of u.bees) if (!b.part.active) { b.part.active = true; b.part.hp = b.part.maxHp; b.a.position.copy(gp); }
       u.invuln = 'shield'; sfx('shieldUp', { pos: gp });
-      popup(tr('ABELHAS DE VOLTA!', 'THE BEES ARE BACK!', 'MEHILÄISET PALASIVAT!'), gp, '#ffd040', 1.2);
+      popup(tr('OS ZANGÕES VOLTARAM!', 'THE DRONES ARE BACK!', 'LENNOKIT PALASIVAT!'), gp, '#ffd040', 1.2);
     }
   }
   // esquadrão que carrega uma galinha até a colmeia
@@ -855,27 +873,30 @@ function upColmeia(u, dt, edt) {
 // 9 · COLHEITADEIRA
 // =============================================================================
 function mkColheitadeira(u) {
-  piece(u, 'harv_body', g => {
-    box(g, 2.6, 1.3, 3.0, 0x3f9a3a, 0, 1.25, -0.2);
-    box(g, 2.7, 0.12, 3.1, 0x2a6a28, 0, 1.94, -0.2);
-    box(g, 1.5, 1.0, 1.2, 0xffd040, 0, 2.47, 0.6);
-    box(g, 1.3, 0.6, 0.08, 0x9fe8ff, 0, 2.52, 1.22);
-    alienHead(g, 0, 2.38, 1.02, 1.1);
-    box(g, 3.7, 0.55, 0.5, 0xd83a30, 0, 0.62, 2.05);
+  piece(u, 'harv_body', g => {   // ceifadeira flutuante: casco roxo, piloto na bolha, tanques vermelhos, gaiola atrás
+    box(g, 2.6, 1.0, 3.0, 0x5a3a90, 0, 1.3, -0.2);
+    box(g, 2.75, 0.14, 3.15, 0x3c2466, 0, 1.87, -0.2);
+    box(g, 2.3, 0.3, 2.6, 0x2a2f3e, 0, 0.66, -0.2);
+    sph(g, 0.62, 0x9fe8ff, 0, 2.02, 0.2, 14, 10);
+    alienHead(g, 0, 2.3, 0.95, 2.1, 0x4ac0e8);
+    cone(g, 0.5, 1.1, 4, 0x3c2466, 0, 1.3, 1.75).rotation.x = PI / 2;   // bico
+    for (const sx of [-1, 1]) { for (let k = -3; k <= 3; k++) sph(g, 0.09, 0x5effd0, sx * 1.32, 1.02, k * 0.4 - 0.2, 6, 4); box(g, 0.1, 1.0, 1.0, 0x8a3ad0, sx * 1.42, 1.9, -1.55).rotation.x = -0.5; }
+    box(g, 3.7, 0.5, 0.5, 0x3c4254, 0, 0.62, 2.05);
     for (const sx of [-1, 1]) {
-      box(g, 0.45, 0.45, 0.9, 0xd83a30, sx * 1.3, 0.78, 1.55);
-      cyl(g, 0.75, 0.75, 0.5, 14, 0x202026, sx * 1.5, 0.75, -0.9).rotation.z = PI / 2; cyl(g, 0.3, 0.3, 0.54, 10, 0xffd040, sx * 1.5, 0.75, -0.9).rotation.z = PI / 2;
-      cyl(g, 0.45, 0.45, 0.35, 12, 0x202026, sx * 1.25, 0.45, 1.0).rotation.z = PI / 2;
+      box(g, 0.45, 0.45, 0.9, 0x3c4254, sx * 1.3, 0.78, 1.55);
+      cyl(g, 0.72, 0.55, 0.36, 14, 0x3c4254, sx * 1.45, 0.44, -0.9); cyl(g, 0.5, 0.5, 0.08, 14, 0x5effd0, sx * 1.45, 0.24, -0.9);
+      cyl(g, 0.46, 0.36, 0.3, 12, 0x3c4254, sx * 1.25, 0.42, 1.0); cyl(g, 0.32, 0.32, 0.08, 12, 0x5effd0, sx * 1.25, 0.25, 1.0);
       cyl(g, 0.4, 0.4, 1.15, 12, 0xff3030, sx * 1.75, 1.45, -0.2).rotation.x = PI / 2;   // tanque (ponto fraco)
       torus(g, 0.41, 0.04, 4, 12, 0xffd040, sx * 1.75, 1.45, -0.2); torus(g, 0.41, 0.04, 4, 12, 0xffd040, sx * 1.75, 1.45, 0.15);
+      sph(g, 0.1, 0xff4fd8, sx * 1.3, 1.98, 1.25, 6, 4);
     }
-    cyl(g, 0.12, 0.12, 1.2, 8, 0x404048, -0.9, 2.6, -1.25); cyl(g, 0.17, 0.12, 0.2, 8, 0x202026, -0.9, 3.25, -1.25);
+    cyl(g, 0.05, 0.05, 1.3, 6, 0x8a94a8, -1.05, 2.55, 0.9); sph(g, 0.16, 0xff4fd8, -1.05, 3.25, 0.9, 8, 6);
     for (const [x, z] of [[-0.8, -0.45], [0.8, -0.45], [-0.8, -1.55], [0.8, -1.55]]) box(g, 0.06, 0.9, 0.06, 0xb0b0b8, x, 2.45, z);   // gaiola
     box(g, 1.72, 0.06, 1.2, 0xb0b0b8, 0, 2.92, -1.0);
     for (let k = 0; k < 4; k++) box(g, 0.04, 0.9, 0.04, 0xb0b0b8, -0.48 + k * 0.32, 2.45, -1.58);
   });
   u.reel = piece(u, 'harv_reel', g => {
-    for (let k = 0; k < 6; k++) { const a = k / 6 * PI * 2; box(g, 3.4, 0.08, 0.08, 0xffd040, 0, Math.cos(a) * 0.5, Math.sin(a) * 0.5); }
+    for (let k = 0; k < 6; k++) { const a = k / 6 * PI * 2; box(g, 3.4, 0.1, 0.1, 0xff4fd8, 0, Math.cos(a) * 0.5, Math.sin(a) * 0.5); }
     for (const sx of [-1, 1]) cyl(g, 0.56, 0.56, 0.06, 12, 0xe0e0e8, sx * 1.72, 0, 0).rotation.z = PI / 2;
     cyl(g, 0.06, 0.06, 3.4, 6, 0x606068, 0, 0, 0).rotation.z = PI / 2;
   });
@@ -947,7 +968,7 @@ function upColheitadeira(u, dt, edt) {
     if (Math.abs(lx) < 1.8 && lz > 1.5 && lz < 3.1 && u.stallT <= 0 && u.cage.length < 3) {
       hold(u, c); u.cage.push({ c, t: 0 });
       feathers(c.pos, 10, 0xffffff); sfx('thiefGrab', { pos: gp });
-      popup(tr('COLHEU UMA GALINHA!', 'HARVESTED A CHICKEN!', 'KORJASI KANAN!'), t0.set(gp.x, 3.6, gp.z), '#ff6060', 1.1);
+      popup(tr('CEIFOU UMA GALINHA!', 'REAPED A CHICKEN!', 'NIITTI KANAN!'), t0.set(gp.x, 3.6, gp.z), '#ff6060', 1.1);
     } else if (u.scareT <= 0 && Math.abs(lx) < 2.7 && lz < 1.5 && lz > -2.6) scareChicken(c, gp);
   }
   if (u.scareT <= 0) u.scareT = 0.4;
@@ -967,36 +988,42 @@ function upColheitadeira(u, dt, edt) {
 // =============================================================================
 const GZ_Z = 25.5, GZ_CHICKS = 6, GS = 1.3;   // GS = tamanho geral do galo
 function mkGalozilla(u) {
-  piece(u, 'gz_legs', g => {
+  piece(u, 'gz_legs', g => {   // pernas do robô + mochila a jato
     for (const sx of [-1, 1]) {
-      cyl(g, 0.5, 0.4, 2.4, 10, 0xf0a020, sx * 1.3, 3.1, 0); cyl(g, 0.32, 0.38, 2.0, 10, 0xd88a18, sx * 1.3, 1.0, 0.1); sph(g, 0.5, 0x8a8f9c, sx * 1.3, 2.0, 0.05, 10, 8);
-      for (let k = -1; k <= 1; k++) { const t = box(g, 0.3, 0.26, 1.4, 0xf0a020, sx * 1.3 + k * 0.42, 0.13, 0.7); t.rotation.y = k * 0.35; }
-      box(g, 0.28, 0.24, 0.7, 0xf0a020, sx * 1.3, 0.12, -0.4);
+      cyl(g, 0.55, 0.42, 2.4, 10, 0x5a6278, sx * 1.3, 3.1, 0); cyl(g, 0.34, 0.42, 2.0, 10, 0x3c4254, sx * 1.3, 1.0, 0.1); sph(g, 0.55, 0xff9030, sx * 1.3, 2.0, 0.05, 10, 8);
+      box(g, 1.1, 0.36, 1.9, 0x3c4254, sx * 1.3, 0.18, 0.4); box(g, 0.9, 0.2, 1.5, 0x5a6278, sx * 1.3, 0.46, 0.35);
+      for (let k = -1; k <= 1; k++) cone(g, 0.14, 0.4, 5, 0xd0d0d8, sx * 1.3 + k * 0.36, 0.2, 1.5).rotation.x = PI / 2;
     }
-    const TC = [0xd83a30, 0x1f6a8a, 0x2a8a5a];
-    for (let k = -2; k <= 2; k++) { const b = box(g, 0.5, 3.2, 0.12, TC[Math.abs(k)], k * 0.55, 6.7, -2.8); b.rotation.x = -0.7; b.rotation.z = -k * 0.22; }
+    box(g, 2.2, 2.4, 0.9, 0x3c4254, 0, 6.0, -2.9);
+    for (const sx of [-1, 1]) { cyl(g, 0.4, 0.55, 1.6, 10, 0x5a6278, sx * 0.7, 5.2, -3.1); cyl(g, 0.4, 0.4, 0.1, 10, 0xff9030, sx * 0.7, 4.38, -3.1); box(g, 0.12, 2.6, 1.2, 0x8a3ad0, sx * 1.5, 7.2, -3.0).rotation.z = -sx * 0.35; }
   });
   u.torso = new THREE.Group(); u.torso.position.set(0, 5.3, 0); u.group.add(u.torso);
-  piece(u, 'gz_torso', g => {
-    sph(g, 2.4, 0xe8ecf2, 0, 0, 0, 20, 14).scale.set(1, 1.05, 1.3);
-    box(g, 2.5, 2.1, 0.2, 0x8a8f9c, 0, -0.1, 2.9);
-    for (let k = 0; k < 10; k++) { const a = k / 10 * PI * 2; sph(g, 0.09, 0x6a707c, Math.cos(a) * 2.38, Math.sin(a) * 2.3, 0.6, 6, 4); }
+  piece(u, 'gz_torso', g => {   // armadura roxa com canhões nos ombros
+    sph(g, 2.4, 0x5a3a90, 0, 0, 0, 20, 14).scale.set(1, 1.05, 1.3);
+    box(g, 2.5, 2.1, 0.2, 0x2a2f3e, 0, -0.1, 2.9);
+    for (let k = 0; k < 10; k++) { const a = k / 10 * PI * 2; sph(g, 0.1, 0x5effd0, Math.cos(a) * 2.38, Math.sin(a) * 2.3, 0.6, 6, 4); }
     for (const sx of [-1, 1]) {
-      box(g, 0.35, 2.6, 3.0, 0xc8ccd6, sx * 2.55, 0.1, -0.2).rotation.z = sx * 0.12;
-      for (let k = 0; k < 3; k++) cyl(g, 0.18, 0.18, 0.9, 8, 0x404048, sx * 2.72, -0.6 + k * 0.5, 1.5).rotation.x = PI / 2;
+      box(g, 0.5, 2.6, 3.0, 0x3c4254, sx * 2.6, 0.1, -0.2).rotation.z = sx * 0.12;
+      sph(g, 0.8, 0x6a7288, sx * 2.75, 1.5, -0.2, 12, 8); cone(g, 0.22, 0.8, 5, 0xd0d0d8, sx * 2.9, 2.4, -0.2);
+      for (let k = 0; k < 3; k++) cyl(g, 0.18, 0.18, 0.9, 8, 0x202028, sx * 2.78, -0.6 + k * 0.5, 1.5).rotation.x = PI / 2;
     }
-    cyl(g, 0.65, 0.85, 2.2, 12, 0xe8ecf2, 0, 2.9, 1.1).rotation.x = 0.35;
+    cyl(g, 0.6, 0.8, 2.2, 12, 0x58c878, 0, 2.9, 1.1).rotation.x = 0.35;
+    torus(g, 0.95, 0.2, 6, 16, 0x8a94a8, 0, 2.15, 0.85).rotation.x = PI / 2;
   }, u.torso);
-  u.doors = [-1, 1].map(sx => { const d = piece(u, 'gz_door', g => { box(g, 1.05, 1.7, 0.16, 0xd83a30, 0, 0, 0); box(g, 0.8, 0.1, 0.2, 0xffd040, 0, 0.5, 0); box(g, 0.8, 0.1, 0.2, 0xffd040, 0, -0.5, 0); }, u.torso); d.position.set(sx * 0.53, -0.1, 3.05); d.userData.sx = sx; return d; });
+  u.doors = [-1, 1].map(sx => { const d = piece(u, 'gz_door', g => { box(g, 1.05, 1.7, 0.16, 0x3c4254, 0, 0, 0); box(g, 0.8, 0.12, 0.2, 0xffd040, 0, 0.5, 0); box(g, 0.8, 0.12, 0.2, 0xffd040, 0, -0.5, 0); box(g, 0.8, 0.12, 0.2, 0xffd040, 0, 0, 0); }, u.torso); d.position.set(sx * 0.53, -0.1, 3.05); d.userData.sx = sx; return d; });
   u.core = new THREE.Mesh(new THREE.SphereGeometry(0.72, 14, 10), BASIC(0xffa020)); u.core.position.set(0, -0.1, 2.72); u.torso.add(u.core);
   u.head = new THREE.Group(); u.head.position.set(0, 9.1, 2.0); u.group.add(u.head);
-  piece(u, 'gz_head', g => {
-    sph(g, 1.05, 0xe8ecf2, 0, 0, 0, 16, 12);
-    cone(g, 0.5, 1.4, 8, 0xffc020, 0, -0.1, 1.5).rotation.x = PI / 2;
-    for (const sx of [-1, 1]) { sph(g, 0.3, 0xd82030, sx * 0.18, -0.95, 0.85, 8, 6).scale.y = 1.6; sph(g, 0.3, 0x202028, sx * 0.6, 0.25, 0.76, 10, 8); }
-    for (let k = 0; k < 3; k++) sph(g, 0.44 - k * 0.04, 0xe82030, 0, 1.08 + (k === 1 ? 0.16 : 0), 0.5 - k * 0.5, 10, 8);
+  piece(u, 'gz_head', g => {   // cabeçona de alienígena com o cérebro à mostra (ponto fraco) e coroa
+    sph(g, 1.25, 0x6ee070, 0, 0.1, 0, 18, 12).scale.set(1.1, 1.0, 1.0);
+    sph(g, 0.8, 0x6ee070, 0, -0.75, 0.35, 12, 10).scale.set(0.8, 0.9, 0.9);
+    for (const sx of [-1, 1]) { const e = sph(g, 0.42, 0x101018, sx * 0.6, 0.2, 0.86, 12, 10); e.scale.set(1, 1.35, 0.6); e.rotation.z = sx * 0.5; }
+    box(g, 0.5, 0.07, 0.1, 0x1a4a22, 0, -0.85, 1.02);
+    for (let k = 0; k < 9; k++) { const a = k * 2.4, r = k < 3 ? 0.25 : 0.62; sph(g, 0.42 - (k % 3) * 0.04, k % 2 ? 0xf08ab0 : 0xf7a4c4, Math.cos(a) * r, k < 3 ? 1.5 : 1.22 + (k % 2) * 0.1, Math.sin(a) * r - 0.05, 8, 6); }
+    torus(g, 1.0, 0.1, 6, 20, 0xffd040, 0, 0.98, -0.02).rotation.x = PI / 2;
+    for (let k = 0; k < 6; k++) { const a = k / 6 * PI * 2 + 0.52; cone(g, 0.12, 0.45, 4, 0xffd040, Math.cos(a) * 1.0, 1.22, Math.sin(a) * 1.0 - 0.02); }
+    for (const sx of [-1, 1]) { cyl(g, 0.04, 0.04, 0.9, 5, 0x50b050, sx * 0.95, 1.2, -0.3).rotation.z = -sx * 0.5; sph(g, 0.12, 0xffe060, sx * 1.18, 1.6, -0.3, 6, 4); }
   }, u.head);
-  u.eyes = [-1, 1].map(sx => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), BASIC(0xff2020)); e.position.set(sx * 0.62, 0.25, 0.94); u.head.add(e); return e; });
+  u.eyes = [-1, 1].map(sx => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), BASIC(0xff2020)); e.position.set(sx * 0.6, 0.22, 1.1); u.head.add(e); return e; });
   u.pComb = addPart(u, anchor(u.head, 0, 1.15, 0), { r: 0.85 * GS, kind: 'crit', mult: 2 });
   u.onDamaged = (uu, dmg, part) => {   // acertar a crista enquanto ele mira cancela o laser
     const A = uu.act;
@@ -1005,16 +1032,15 @@ function mkGalozilla(u) {
       popup(tr('LASER CANCELADO!', 'LASER CANCELLED!', 'LASER PERUTTU!'), part.c, '#60e0ff', 1.3); sfx('shieldDown', { pos: part.c });
     }
   };
-  addPart(u, anchor(u.head, 0, 0, 0.2), { r: 1.15 * GS });
+  addPart(u, anchor(u.head, 0, 0, 0.1), { r: 1.3 * GS });
   addPart(u, anchor(u.torso, 0, 0, 0), { ellip: [2.5 * GS, 2.6 * GS, 3.0 * GS], mult: 0.7 });
   u.pCore = addPart(u, anchor(u.torso, 0, -0.1, 3.0), { r: 0.95 * GS, kind: 'crit', mult: 3 });
   u.group.scale.setScalar(GS);
   u.pCore.active = false;
-  u.I = instanced(u, 'gz_chick', g => {
-    sph(g, 0.3, 0xffd020, 0, 0.3, 0, 10, 8); sph(g, 0.2, 0xffe060, 0, 0.62, 0.12, 10, 8);
-    cone(g, 0.07, 0.18, 5, 0xff8020, 0, 0.6, 0.34).rotation.x = PI / 2;
-    for (const sx of [-1, 1]) { sph(g, 0.05, 0xff2020, sx * 0.09, 0.68, 0.27, 6, 4); cyl(g, 0.03, 0.03, 0.2, 5, 0x8a8f9c, sx * 0.12, 0.08, 0); box(g, 0.05, 0.3, 0.2, 0xc8ccd6, sx * 0.3, 0.32, 0); }
-    cyl(g, 0.02, 0.02, 0.18, 5, 0x404048, 0, 0.88, 0.1); sph(g, 0.045, 0xff2020, 0, 0.98, 0.1, 6, 4);
+  u.I = instanced(u, 'gz_chick', g => {   // mini-alien num disco flutuante
+    cyl(g, 0.34, 0.26, 0.12, 12, 0x8a94a8, 0, 0.16, 0); cyl(g, 0.2, 0.2, 0.05, 10, 0x5effd0, 0, 0.08, 0);
+    sph(g, 0.2, 0x6ee070, 0, 0.42, 0, 10, 8).scale.y = 1.1; sph(g, 0.26, 0x6ee070, 0, 0.72, 0.03, 10, 8);
+    for (const sx of [-1, 1]) { sph(g, 0.08, 0x101018, sx * 0.1, 0.74, 0.24, 6, 4); cyl(g, 0.015, 0.015, 0.2, 4, 0x50b050, sx * 0.1, 1.02, 0); sph(g, 0.04, 0xffe060, sx * 0.1, 1.13, 0, 6, 4); box(g, 0.05, 0.22, 0.08, 0x6ee070, sx * 0.26, 0.42, 0.05); }
   }, GZ_CHICKS, 0.02);
   u.chicks = [];
   for (let i = 0; i < GZ_CHICKS; i++) {
@@ -1078,7 +1104,7 @@ function upGalozilla(u, dt, edt) {
         const pat = phase === 1 ? ['eggs', 'chicks'] : ['eggs', 'laser', 'chicks', 'crow'];
         u.act = { k: pat[u.seq++ % pat.length], t: 0, f: false };
         if (u.act.k === 'eggs') sfx('coreExposed', { pos: gp });
-        if (u.act.k === 'laser') { sfx('sniperCharge', { pos: gp }); u.head.getWorldPosition(t0); t0.y += 2.4; popup(tr('ACERTE A CRISTA!', 'HIT THE COMB!', 'OSU HELTAAN!'), t0, '#ff8080', 1.8, 1.5); }
+        if (u.act.k === 'laser') { sfx('sniperCharge', { pos: gp }); u.head.getWorldPosition(t0); t0.y += 2.4; popup(tr('ACERTE O CÉREBRO!', 'HIT THE BRAIN!', 'OSU AIVOIHIN!'), t0, '#ff8080', 1.8, 1.5); }
         if (u.act.k === 'crow') sfx('siren', { pos: gp });
       }
     } else {
@@ -1103,7 +1129,7 @@ function upGalozilla(u, dt, edt) {
           A.f = true;
           let n = phase;
           for (const k of u.chicks) if (n > 0 && !k.part.active) { k.part.active = true; k.part.hp = k.part.maxHp; k.mode = 'run'; k.tgt = null; k.a.position.set(rand(-1.5, 1.5), 0, GZ_Z - 2.2); n--; }
-          sfx('hatch', { pos: gp }); popup(tr('PINTINHOS-ROBÔ!', 'ROBO-CHICKS!', 'ROBOTTITIPUT!'), t0.set(0, 3, GZ_Z - 3), '#ffd040', 1.3);
+          sfx('hatch', { pos: gp }); popup(tr('MINI-ALIENS!', 'MINI-ALIENS!', 'MINIALIENIT!'), t0.set(0, 3, GZ_Z - 3), '#ffd040', 1.3);
         }
         if (A.t >= 1.5) { u.act = null; u.bt = 3; }
       } else if (A.k === 'laser') {
@@ -1127,8 +1153,8 @@ function upGalozilla(u, dt, edt) {
         if (!A.f && A.t >= 1.0) {
           A.f = true;
           u.head.getWorldPosition(t0); t0.z -= 2;
-          blast(t0, 7, 0xffe080); blast(t0, 4, 0xffffff); pulseAll(1, 350); sfx('crow', { pos: t0, pitch: 0.55 }); sfx('bossSpawn', { pos: t0 });
-          popup(tr('COCORICÓÓÓ!', 'COCK-A-DOODLE-DOO!', 'KUKKOKIEKUU!'), t1.set(0, 6, GZ_Z - 6), '#ffe080', 1.8, 1.6);
+          blast(t0, 7, 0xffe080); blast(t0, 4, 0xffffff); pulseAll(1, 350); sfx('bossSpawn', { pos: t0 });
+          popup(tr('RUGIDO DO IMPERADOR!', 'THE EMPEROR ROARS!', 'KEISARI KARJUU!'), t1.set(0, 6, GZ_Z - 6), '#ffe080', 1.8, 1.6);
           for (const c of chickens) scareChicken(c, gp);
           for (let k = 0; k < 2; k++) if (aliveRegulars() < G.waveDef.maxAlive) spawnRegular('zippy', t1.set(rand(-6, 6), 11, GZ_Z - 2));
         }
@@ -1179,7 +1205,7 @@ function upGalozilla(u, dt, edt) {
 // =============================================================================
 const MK = { zepelim: mkZepelim, olhao: mkOlhao, centopeia: mkCentopeia, polvo: mkPolvo, minhocao: mkMinhocao, tempestade: mkTempestade, magico: mkMagico, colmeia: mkColmeia, colheitadeira: mkColheitadeira, galozilla: mkGalozilla };
 const UP = { zepelim: upZepelim, olhao: upOlhao, centopeia: upCentopeia, polvo: upPolvo, minhocao: upMinhocao, tempestade: upTempestade, magico: upMagico, colmeia: upColmeia, colheitadeira: upColheitadeira, galozilla: upGalozilla };
-const BAR = { zepelim: [4.0, 4.5], olhao: [3.1, 3.6], centopeia: [1.5, 1.6], polvo: [4.6, 4.2], minhocao: [1.3, 0], tempestade: [2.6, 4.5], magico: [2.3, 2.6], colmeia: [3.6, 3], colheitadeira: [4.0, 4.5], galozilla: [15.0, 9] };
+const BAR = { zepelim: [3.4, 4.2], olhao: [3.1, 3.6], centopeia: [1.5, 1.6], polvo: [4.6, 4.2], minhocao: [1.3, 0], tempestade: [2.6, 4.5], magico: [2.3, 2.6], colmeia: [3.6, 3], colheitadeira: [4.0, 4.5], galozilla: [15.0, 9] };
 /** Cria o chefe da wave. id = chave de BOSSES. */
 export function spawnBoss(id, silent = false) {
   if (!MK[id]) id = 'zepelim';

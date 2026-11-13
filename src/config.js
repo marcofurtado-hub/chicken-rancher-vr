@@ -38,7 +38,7 @@ export const UFO_TYPES = {
 };
 
 // 10 waves, cada uma com um CHEFE totalmente diferente (corpo e mecânica próprios, ver bosses.js).
-// O chefe chega quando ~45% das naves comuns da wave já apareceram. A wave 10 termina em VITÓRIA + ranking.
+// O chefe só chega no FIM da wave, depois que todas as naves comuns foram embora. A wave 10 termina em VITÓRIA + ranking.
 export const WAVES = [
   { weapon: 'hands',     mix: { saucer: 4 }, interval: 1.6, speed: 1.1, beamTime: 7.0, maxAlive: 3, hpMult: 1, boss: 'zepelim', ufoScale: 1.7, tod: 0, close: true, intro: 'saucer', aggro: 0 },
   { weapon: 'slingshot', mix: { saucer: 5, zippy: 2 }, interval: 1.4, speed: 1.4, beamTime: 6.5, maxAlive: 4, hpMult: 1, boss: 'olhao', ufoScale: 1.5, tod: 0.4, intro: 'zippy', aggro: 0 },
@@ -54,16 +54,16 @@ export const WAVES = [
 
 // Chefes (vida base; cada um tem modelo e regras em bosses.js)
 export const BOSSES = {
-  zepelim:       { hp: 3,    name: tr('ZEPELIM', 'THE ZEPPELIN', 'ZEPPELIINI'),             hint: tr('estoure os 3 balões coloridos', 'pop the 3 colored balloons', 'puhkaise 3 värikästä palloa') },
-  olhao:         { hp: 60,   name: tr('OLHÃO', 'BIG EYE', 'ISOSILMÄ'),                      hint: tr('só toma dano de olho aberto: acerte a pupila', 'only hurts with the eye open: hit the pupil', 'vain silmä auki: osu pupilliin') },
-  centopeia:     { hp: 70,   name: tr('CENTOPEIA', 'CENTIPEDE', 'TUHATJALKAINEN'),          hint: tr('destrua os gomos, depois a cabeça', 'destroy the segments, then the head', 'tuhoa jaokkeet, sitten pää') },
-  polvo:         { hp: 440,  name: tr('POLVO ESPACIAL', 'SPACE KRAKEN', 'AVARUUSMUSTEKALA'), hint: tr('atire no tentáculo pra ele soltar a galinha', 'shoot a tentacle to free the chicken', 'ammu lonkeroa vapauttaaksesi kanan') },
-  minhocao:      { hp: 150,  name: tr('MINHOCÃO', 'GIANT WORM', 'JÄTTIMATO'),               hint: tr('só aparece pra morder: acerte a boca pra ele cuspir', 'only surfaces to bite: hit the mouth to make it spit', 'nousee vain puremaan: osu suuhun') },
-  tempestade:    { hp: 200,  name: tr('TEMPESTADE', 'THE STORM', 'MYRSKY'),                 hint: tr('abra a nuvem a tiros e acerte a máquina lá dentro', 'shoot the cloud open and hit the machine inside', 'ammu pilvi auki ja osu koneeseen') },
-  magico:        { hp: 260,  name: tr('MÁGICO', 'THE MAGICIAN', 'TAIKURI'),                 hint: tr('dois são ilusão: o de verdade tem os olhos brilhando', 'two are illusions: the real one has glowing eyes', 'kaksi on harhaa: aidolla on hehkuvat silmät') },
-  colmeia:       { hp: 620,  name: tr('COLMEIA', 'THE HIVE', 'PESÄ'),                       hint: tr('derrube as abelhas pra desligar o escudo', 'shoot the bees to drop the shield', 'ammu mehiläiset pudottaaksesi suojan') },
-  colheitadeira: { hp: 1300,  name: tr('COLHEITADEIRA', 'THE HARVESTER', 'LEIKKUUPUIMURI'),  hint: tr('a frente é blindada: acerte os tanques vermelhos', 'the front is armored: hit the red tanks', 'etuosa on panssaroitu: osu punaisiin säiliöihin') },
-  galozilla:     { hp: 2500, name: 'GALOZILLA',                                              hint: tr('acerte a crista e o peito quando abrir', 'hit the comb, and the chest when it opens', 'osu heltaan ja rintaan kun se aukeaa') },
+  zepelim:       { hp: 3,    name: tr('BATEDOR', 'THE SCOUT', 'TIEDUSTELIJA'),              hint: tr('estoure os 3 cristais de energia', 'pop the 3 energy crystals', 'puhkaise 3 energiakristallia') },
+  olhao:         { hp: 60,   name: tr('VIGIA', 'THE WATCHER', 'VARTIJA'),                   hint: tr('só toma dano de olho aberto: acerte a pupila', 'only hurts with the eye open: hit the pupil', 'vahinkoa vain silmä auki: osu pupilliin') },
+  centopeia:     { hp: 70,   name: tr('COMBOIO', 'THE CONVOY', 'SAATTUE'),                  hint: tr('destrua os vagões, depois a nave-chefe', 'destroy the pods, then the lead ship', 'tuhoa vaunut, sitten johtoalus') },
+  polvo:         { hp: 440,  name: tr('CÉREBRO-LULA', 'BRAIN SQUID', 'AIVOKALMARI'),        hint: tr('atire no tentáculo pra ele soltar a galinha', 'shoot a tentacle to free the chicken', 'ammu lonkeroa niin se päästää kanan') },
+  minhocao:      { hp: 150,  name: tr('BROCA', 'THE DRILL', 'PORA'),                        hint: tr('só sobe pra morder: acerte a boca pra ela cuspir', 'only surfaces to bite: hit the mouth to make it spit', 'nousee vain puremaan: osu suuhun') },
+  tempestade:    { hp: 200,  name: tr('CRISTAL', 'THE CRYSTAL', 'KRISTALLI'),               hint: tr('quebre os cristais e acerte a máquina lá dentro', 'break the crystals and hit the machine inside', 'riko kristallit ja osu koneeseen') },
+  magico:        { hp: 260,  name: tr('MIRAGEM', 'THE MIRAGE', 'KANGASTUS'),                hint: tr('duas são holograma: a de verdade tem os olhos brilhando', 'two are holograms: the real one has glowing eyes', 'kaksi on hologrammeja: aidolla silmät hehkuvat') },
+  colmeia:       { hp: 620,  name: tr('RAINHA', 'THE QUEEN', 'KUNINGATAR'),                 hint: tr('derrube os zangões pra desligar o escudo', 'shoot the drones to drop the shield', 'ammu lennokit niin suoja sammuu') },
+  colheitadeira: { hp: 1300, name: tr('CEIFADOR', 'THE REAPER', 'NIITTÄJÄ'),                hint: tr('a frente é blindada: acerte os tanques vermelhos', 'the front is armored: hit the red tanks', 'etuosa on panssaroitu: osu punaisiin säiliöihin') },
+  galozilla:     { hp: 2500, name: tr('IMPERADOR', 'THE EMPEROR', 'KEISARI'),               hint: tr('acerte o cérebro, e o peito quando abrir', 'hit the brain, and the chest when it opens', 'osu aivoihin ja rintaan kun se aukeaa') },
 };
 export const BOSS_ORDER = ['zepelim', 'olhao', 'centopeia', 'polvo', 'minhocao', 'tempestade', 'magico', 'colmeia', 'colheitadeira', 'galozilla'];
 

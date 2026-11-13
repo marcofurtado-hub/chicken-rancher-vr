@@ -216,10 +216,10 @@ function updateWaveLogic(edt) {
       W.spawnT = w.interval * rand(0.7, 1.3);
     }
     if (w.flight && !flight.done && G.stateT > 8) startFlightEvent();
-    if (w.boss && !W.bossSpawned) {
-      if (W.spawned >= Math.ceil(W.total * 0.45)) { spawnBoss(w.boss); W.bossSpawned = true; }
-    }
-    if (!W.queue.length && (!w.boss || W.bossSpawned) && !ufos.some(u => !u.removed && (u.kind !== 'ufo' || isAlive(u)) && u.state !== 'escaping')) waveComplete();
+    // o chefe só chega no FIM da wave: fila vazia e nenhuma nave comum viva
+    const cleared = !W.queue.length && !ufos.some(u => !u.removed && (u.kind !== 'ufo' || isAlive(u)) && u.state !== 'escaping');
+    if (cleared && w.boss && !W.bossSpawned) { spawnBoss(w.boss); W.bossSpawned = true; }
+    else if (cleared) waveComplete();
   }
   if (G.state === 'wave_complete' && G.stateT > 3.4 && !flightActive()) advanceFromComplete();   // cards só depois de pousar
 }
