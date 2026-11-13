@@ -45,6 +45,13 @@
   arrancadas · Cristal: estilhaço de volta, raio mais frequente, chuva de cristais abaixo de 60% · Rainha: rajada de
   3 zangões, mini naves quando exposta, repõe zangões mais rápido · Imperador: canhões dos ombros no ciclo + chama
   chefes antigos.
+- **Placas vermelhas (estilo Star Fox):** toda nave comum tem uma placa vermelha pendurada embaixo, virada para o
+  jogador: alvo separado do casco, dano x3 (`plateA`/`pPlate` em `spawnRegular`, desenhadas por uma malha instanciada
+  em `drawPlates`, `ufos.js`). Chefes têm placas presas no corpo (`weakPlate` em `bosses.js`): Broca, Comboio,
+  Cérebro-Lula, Ceifador (traseira), Cristal (no núcleo), Rainha e os joelhos do Imperador.
+- **Inimigos atacam mais:** naves que abduzem atiram plasma desde a wave 1 (`aggro` de 0,35 a 1,6) e há mais naves
+  atiradoras nas waves 3 e 6-10.
+- **Pause (PC):** volume da música, dos efeitos e sensibilidade do mouse, sincronizados com os ajustes do menu.
 - **Melhorias:** saiu a Mão Rápida (invisível); entrou o **Ricochete** (o ovo quica para outra nave) e a Força virou
   **Ovo Grandão** (o ovo cresce junto com o dano).
 - **Feedback de teste (PC):** sensibilidade do mouse ajustável (ajustes do menu, ou teclas `[` e `]` no jogo; padrão

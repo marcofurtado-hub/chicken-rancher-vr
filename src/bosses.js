@@ -47,6 +47,13 @@ function piece(u, key, fn, parent) {
   return m;
 }
 function anchor(parent, x, y, z) { const o = new THREE.Object3D(); o.position.set(x, y, z); parent.add(o); return o; }
+/** Placa vermelha (ponto fraco) presa no chefe: `size` na escala do pai, `r` = raio de acerto no mundo. */
+function weakPlate(u, parent, x, y, z, size, r, mult = 2, rx = 0, ry = 0) {
+  const a = anchor(parent, x, y, z); a.rotation.set(rx, ry, 0); a.scale.setScalar(size);
+  a.part = addPart(u, a, { r, kind: 'crit', mult });
+  (u.plates || (u.plates = [])).push(a);
+  return a;
+}
 function extra(u, obj) { scene.add(obj); (u.extras || (u.extras = [])).push(obj); return obj; }
 /** Muitas cópias de uma peça (tentáculos, gomos, abelhas, nuvens) em 2 draw calls. */
 function instanced(u, key, fn, n, outW = 0.03) {
@@ -330,6 +337,7 @@ function mkCentopeia(u) {
     u.segs.push({ a, part, col: i % 2 });
   }
   addPart(u, u.group, { r: 0.95 });
+  weakPlate(u, u.group, 0, -0.34, 0.25, 1.4, 0.36, 2, 1.1);
   u.invuln = 'armor';
   u.invulnMsg = tr('DESTRUA OS VAGÕES PRIMEIRO!', 'DESTROY THE PODS FIRST!', 'TUHOA VAUNUT ENSIN!');
   u.pos.set(-16, 9, 28);
@@ -428,6 +436,7 @@ function mkPolvo(u) {
   }
   addPart(u, anchor(u.group, 0, 1.25, 0), { ellip: [1.32 * PS, 1.28 * PS, 1.32 * PS] });
   for (const sx of [-1, 1]) addPart(u, anchor(u.group, sx * 0.5, 0.95, 1.12), { r: 0.42 * PS, kind: 'crit', mult: 1.6 });
+  weakPlate(u, u.group, 0, -0.12, 0.55, 2.0, 0.5 * PS, 1.6, 1.25);
   u.group.scale.setScalar(PS);
   u.pos.set(rand(-6, 6), 24, 30);
   u.hover.set(0, 6.8, 10.5);
@@ -547,6 +556,7 @@ function mkMinhocao(u) {
   ];
   u.pMouth = addPart(u, anchor(u.worm, 0, 3.3, 0), { r: 0.62, kind: 'crit', mult: 2, onHit: wormMouthHit });
   u.wParts.push(u.pMouth);
+  u.wParts.push(weakPlate(u, u.worm, 0, 1.15, 0.8, 1.7, 0.42, 2).part);
   u.onDamaged = (uu, d) => { uu.dmgAcc += d; if (uu.dmgAcc > uu.maxHp * 0.12) wormSpit(uu); };
   u.pos.set(rand(-5, 5), 0, 14.5);
   u.worm.position.y = WORM_DOWN;
@@ -642,6 +652,7 @@ function mkTempestade(u) {
     return { o, a, part, k: 1, regrow: 0, sh: 0.26 + (i % 3) * 0.05 };
   });
   addPart(u, u.group, { r: 0.85 * CS });
+  weakPlate(u, u.group, 0, 0, 0.74, 1.5, 0.42 * CS, 2);
   u.group.scale.setScalar(CS);
   u.onDamaged = uu => stormWeaken(uu);
   u.funnel = extra(u, new THREE.Mesh(FUNNEL_GEO, BASIC(0x9098b0, { transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false })));
@@ -836,6 +847,7 @@ function mkColmeia(u) {
     u.bees.push({ i, a, part, dir: new THREE.Vector3(0, 0, 1) });
   }
   addPart(u, u.group, { ellip: [1.42 * QS, 1.32 * QS, 1.42 * QS] });
+  weakPlate(u, u.group, 0, 0.3, 1.47, 1.8, 0.45 * QS, 2);
   u.group.scale.setScalar(QS);
   u.invuln = 'shield'; u.bubbleR = 2.0 * QS;
   u.invulnMsg = tr('ESCUDO! DERRUBE OS ZANGÕES', 'SHIELD! SHOOT THE DRONES', 'SUOJA! AMMU LENNOKIT');
@@ -953,6 +965,7 @@ function mkColheitadeira(u) {
   });
   u.reel.position.set(0, 0.75, 2.6);
   u.group.scale.setScalar(HS);
+  weakPlate(u, u.group, 0, 1.3, -1.74, 2.4, 0.6 * HS, 2, 0, PI);
   addPart(u, anchor(u.group, 0, 0.7, 2.25), { ellip: [1.95 * HS, 0.75 * HS, 0.65 * HS], kind: 'armor' });
   addPart(u, anchor(u.group, 0, 1.55, -0.2), { ellip: [1.35 * HS, 1.05 * HS, 1.6 * HS], mult: 0.6 });
   for (const sx of [-1, 1]) addPart(u, anchor(u.group, sx * 1.75, 1.45, -0.2), { r: 0.58 * HS, kind: 'crit', mult: 2, onHit: harvTankHit });
@@ -1098,6 +1111,7 @@ function mkGalozilla(u) {
   u.pCore = addPart(u, anchor(u.torso, 0, -0.1, 3.0), { r: 0.95 * GS, kind: 'crit', mult: 3 });
   u.group.scale.setScalar(GS);
   u.pCore.active = false;
+  for (const sx of [-1, 1]) weakPlate(u, u.group, sx * 1.3, 2.0, 0.6, 2.4, 0.6 * GS, 1.5);
   u.I = instanced(u, 'gz_chick', g => {   // mini-alien num disco flutuante
     cyl(g, 0.34, 0.26, 0.12, 12, 0x8a94a8, 0, 0.16, 0); cyl(g, 0.2, 0.2, 0.05, 10, 0x5effd0, 0, 0.08, 0);
     sph(g, 0.2, 0x6ee070, 0, 0.42, 0, 10, 8).scale.y = 1.1; sph(g, 0.26, 0x6ee070, 0, 0.72, 0.03, 10, 8);
@@ -1209,9 +1223,9 @@ function upGalozilla(u, dt, edt) {
           if (camPos.distanceTo(u.lockP) < 0.75) damagePlayer(12, 'LASER!', '#ff3050');
         }
         if (A.t >= AIM + 0.6) { u.act = null; u.bt = 2.6; }
-      } else if (A.k === 'cannons') {   // 3 salvas dos canhões dos ombros (plasma: dá pra derrubar)
+      } else if (A.k === 'cannons') {   // 2 salvas dos canhões dos ombros (3 na última fase); plasma: dá pra derrubar
         const n = Math.floor((A.t - 0.5) / 0.45);
-        if (n >= 0 && n < 3 && n !== A.n) {
+        if (n >= 0 && n < (phase === 3 ? 3 : 2) && n !== A.n) {
           A.n = n;
           for (const sx of [-1, 1]) { u.torso.getWorldPosition(t0); t0.x += sx * 2.78 * GS; t0.y -= 0.1 * GS; t0.z -= 1.6 * GS; fireEnemy('plasma', t0, 0.09); smoke(t0, 2, 0xd0d0d0, 0.5, 0.6, 0.4); }
           sfx('launcher', { pos: gp, pitch: 1.4 });

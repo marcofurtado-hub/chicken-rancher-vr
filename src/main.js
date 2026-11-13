@@ -26,7 +26,11 @@ function bindRange(id, key, apply) {
   const el = document.getElementById(id);
   if (!el) return;
   el.value = Math.round(S[key] * 100);
-  el.addEventListener('input', () => { S[key] = el.value / 100; saveSettings(); apply(); });
+  el.dataset.set = key;
+  el.addEventListener('input', () => {
+    S[key] = el.value / 100; saveSettings(); apply();
+    for (const o of document.querySelectorAll('input[data-set="' + key + '"]')) if (o !== el) o.value = el.value;   // menu e pause andam juntos
+  });
   el.addEventListener('click', e => e.stopPropagation());
 }
 function bindToggle(id, get, set) {
@@ -40,6 +44,11 @@ const applyVol = () => setVolumes({ music: S.music, sfx: S.sfx });
 bindRange('set-music', 'music', applyVol);
 bindRange('set-sfx', 'sfx', applyVol);
 bindRange('set-mouse', 'mouse', () => {});
+// os mesmos ajustes dentro do PAUSE
+bindRange('p-music', 'music', applyVol);
+bindRange('p-sfx', 'sfx', applyVol);
+bindRange('p-mouse', 'mouse', () => {});
+{ const ps = document.getElementById('p-set'); if (ps) ps.addEventListener('click', e => e.stopPropagation()); }
 bindToggle('set-vig', () => S.vignette, () => { S.vignette = !S.vignette; });
 bindToggle('set-turn', () => S.turn === 'snap', () => { S.turn = S.turn === 'snap' ? 'smooth' : 'snap'; });
 
