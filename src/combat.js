@@ -267,11 +267,10 @@ export function addUlt(x) {
 
 // ---------- Power-ups ----------
 function pickPowerType() {
-  const pool = ['golden', 'golden', 'boom', 'boom', 'slow', 'slow'];
-  if (chickensAlive() < 5) pool.push('chicken', 'chicken', 'chicken');
-  else if (chickensAlive() < MAX_CHICKENS) pool.push('chicken');
-  if (G.hp < G.hpMax * 0.6) pool.push('heal', 'heal');
-  if (G.hp < G.hpMax * 0.35) pool.push('heal', 'heal', 'heal');
+  // 3.4: só 3 caixas — ouro (mais comum), câmera lenta e cura (quando precisa)
+  const pool = ['golden', 'golden', 'golden', 'slow', 'slow'];
+  if (G.hp < G.hpMax * 0.7) pool.push('heal', 'heal');
+  if (G.hp < G.hpMax * 0.4) pool.push('heal', 'heal', 'heal');
   return pick(pool);
 }
 function maybeDropCrate(u, pos) {
@@ -279,14 +278,14 @@ function maybeDropCrate(u, pos) {
   if (crates.length >= 2) return;
   G.killsSinceDrop++;
   const chance = u.kind === 'boss' ? 1 : (UFO_TYPES[u.typeKey].drop || 0);
-  if (Math.random() < chance || G.killsSinceDrop >= 22) { G.killsSinceDrop = 0; spawnCrate(pickPowerType(), pos); }
+  if (Math.random() < chance || G.killsSinceDrop >= 12) { G.killsSinceDrop = 0; spawnCrate(pickPowerType(), pos); }
 }
 export function activatePower(type, pos) {
   const Pw = POWERS[type];
   if (type === 'chicken') {
     if (chickensAlive() < MAX_CHICKENS) { const c = respawnChicken('hen'); popup('+1 ' + CHICKEN_KINDS.hen.label.toUpperCase(), c.pos, '#ffffff', 1.1, 1.5); }
     else G.score += 500;
-  } else if (type === 'heal') healPlayer(35);
+  } else if (type === 'heal') healPlayer(30);
   else G.power[type] = Pw.dur;
   const lines = [[Pw.icon + ' ' + Pw.label, Pw.css, 1.4, 1.6]];
   if (Pw.sub) lines.push([Pw.sub, '#ffffff', 0.9, 1.6]);

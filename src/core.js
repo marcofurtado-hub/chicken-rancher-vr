@@ -29,7 +29,7 @@ export const SKILL_DUR = 8, MAX_SLOTS = 3;
 // Valores neutros dos modificadores (recalculados a cada frame pelas habilidades ativas)
 export const UP_DEFAULTS = {
   dmg: 1, rate: 1, front: 0, diag: 0, ricochet: 0, pierce: 0, fire: 0, ice: 0, shock: 0,
-  critChance: 0, slowSkill: 1, bubble: 0, armor: 0,
+  critChance: 0, slowSkill: 1, bubble: 0, armor: 0, magnet: 1,
 };
 
 /** Estado da partida. */
@@ -54,6 +54,8 @@ export const G = {
   unlocked: new Set(['hands']),
   power: { golden: 0, boom: 0, slow: 0 },
   up: Object.assign({}, UP_DEFAULTS),
+  lv: {},            // níveis das melhorias permanentes (forca, rapidez, duplo, mira, coracao)
+  testWave: 0,       // código secreto: começa nesta wave (0 = normal). Recorde não conta.
   slots: [],              // habilidades equipadas { sk, lv, active, cd }
   pendingPicks: 0,
   tod: 0, todTarget: 0,

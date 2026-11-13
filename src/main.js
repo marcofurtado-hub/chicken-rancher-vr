@@ -5,8 +5,8 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { renderer, isTouch } from './render.js';
 import { G, saveSettings } from './core.js';
 import { initAudio, setVolumes } from './audio.js';
-import { boot, startGame } from './game.js';
-import { lockPointer } from './player.js';
+import { boot, startGame, setTestWave } from './game.js';
+import { lockPointer, openWavePick } from './player.js';
 
 // Botão "ENTRAR NO VR" (só aparece se o navegador suporta)
 if ('xr' in navigator) {
@@ -57,8 +57,20 @@ document.getElementById('pause').addEventListener('click', () => lockPointer());
 const fontsReady = document.fonts && document.fonts.load
   ? Promise.race([Promise.all([document.fonts.load('40px "Lilita One"'), document.fonts.load('800 20px "Nunito"'), document.fonts.load('700 20px "Nunito"')]), new Promise(r => setTimeout(r, 2500))])
   : Promise.resolve();
+// Código secreto: escolher a wave inicial (PC: digite OVOS · celular: 5 toques no título · VR: B+Y no menu · ?wave=N)
+for (const b of document.querySelectorAll('#wavepick button')) b.addEventListener('click', e => { e.stopPropagation(); setTestWave(+b.dataset.w); });
+let titleTaps = 0, titleT = 0;
+document.querySelector('#start h1').addEventListener('click', e => {
+  e.stopPropagation();
+  const now = performance.now();
+  titleTaps = now - titleT < 900 ? titleTaps + 1 : 1; titleT = now;
+  if (titleTaps >= 5) { titleTaps = 0; openWavePick(); }
+});
+
 fontsReady.then(() => {
   boot();
+  const qw = new URLSearchParams(location.search).get('wave') || new URLSearchParams(location.search).get('onda');
+  if (qw && +qw >= 1) { openWavePick(); setTestWave((+qw | 0) - 1); }
   applyVol();
   document.body.classList.add('ready');
   if (isTouch) document.getElementById('cta').textContent = document.getElementById('cta').dataset.touch || document.getElementById('cta').textContent;

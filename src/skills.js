@@ -24,121 +24,50 @@ export const skillKey = i => xrActive() ? SKILL_KEYS_VR[i] : (isTouch ? tr('toqu
 export const slotOf = id => G.slots.find(x => x.sk.id === id);
 export const skillCooldown = sl => 26 - (sl.lv - 1) * 4;
 
-// ---------- Oferta ----------
+// ---------- Oferta (3.4: melhorias PERMANENTES com níveis, em G.lv) ----------
+const lvOf = id => G.lv[id] || 0;
 function cardAvail(x) {
   if (x.id === 'cash') return false;
-  if (x.instant) {
-    if (x.id === 'canja') return G.hp < G.hpMax * 0.8;
-    if (x.id === 'angel') return chickensAlive() < MAX_CHICKENS - 1;
-    if (x.id === 'heart') return G.hpMax < 160;
-    return true;
+  if (x.id === 'ninhada') return chickensAlive() <= MAX_CHICKENS - 2;
+  return lvOf(x.id) < (x.max || 3);
+}
+export function buildOffer() {
+  const pool = SKILLS.filter(cardAvail);
+  const out = [];
+  // galinhas em perigo: a ninhada sempre aparece
+  if (G.waveLost >= 2 && pool.some(x => x.id === 'ninhada')) out.push(SKILLS.find(x => x.id === 'ninhada'));
+  while (out.length < 3 && pool.some(x => !out.includes(x))) {
+    const rest = pool.filter(x => !out.includes(x));
+    out.push(pick(rest));
   }
-  const sl = slotOf(x.id);
-  if (sl) return sl.lv < 3;
-  return G.slots.length < MAX_SLOTS;
-}
-function rollRarity() {
-  const r = Math.random();
-  const [c, ra] = G.wave < 3 ? [0.62, 0.30] : G.wave < 7 ? [0.50, 0.36] : [0.40, 0.40];
-  return r < c ? 'comum' : r < c + ra ? 'raro' : 'epico';
-}
-export function buildOffer(kind) {
-  let epicCat = null;
-  if (kind === 'first') epicCat = 'atk';
-  else if (kind === 'boss') epicCat = pick(['atk', 'def', 'atk']);
-  const taken = new Set(), out = [];
   const cash = INSTANTS.find(x => x.id === 'cash');
-  for (const cat of ['atk', 'egg', 'def']) {
-    let pool = ALL_CARDS.filter(x => x.cat === cat && cardAvail(x) && !taken.has(x.id));
-    if (!pool.length) pool = ALL_CARDS.filter(x => cardAvail(x) && !taken.has(x.id));
-    if (!pool.length) { out.push(cash); continue; }
-    const rar = cat === epicCat ? 'epico' : rollRarity();
-    const order = rar === 'epico' ? ['epico', 'raro', 'comum'] : rar === 'raro' ? ['raro', 'comum', 'epico'] : ['comum', 'raro', 'epico'];
-    let cand = [];
-    for (const rr of order) { cand = pool.filter(x => x.rar === rr); if (cand.length) break; }
-    const owned = cand.filter(x => slotOf(x.id));
-    const choice = owned.length && Math.random() < 0.4 ? pick(owned) : pick(cand);
-    taken.add(choice.id);
-    out.push(choice);
-  }
-  if (G.waveLost >= 2) {
-    const a = INSTANTS.find(x => x.id === 'angel');
-    if (cardAvail(a) && !taken.has('angel')) out[2] = a;
-  } else if (G.hp < G.hpMax * 0.45) {
-    const c = INSTANTS.find(x => x.id === 'canja');
-    if (cardAvail(c) && !taken.has('canja')) out[2] = c;
-  }
+  while (out.length < 3) out.push(cash);
   return out;
 }
-function applyInstant(id) {
-  if (id === 'canja') healPlayer(50);
-  else if (id === 'angel') { respawnChicken('hen'); respawnChicken('hen'); }
-  else if (id === 'heart') { G.hpMax += 20; healPlayer(20); }
-  else if (id === 'cash') G.score += 1500;
+/** Modo teste: dá n melhorias aleatórias (como se tivesse escolhido nas waves anteriores). */
+export function grantRandomUpgrades(n) {
+  for (let i = 0; i < n; i++) { const o = buildOffer().filter(x => !x.instant); if (o.length) applyUpgrade(pick(o).id); }
+}
+function applyUpgrade(id) {
+  if (id === 'ninhada') { respawnChicken('hen'); respawnChicken('hen'); return; }
+  if (id === 'cash') { G.score += 1500; return; }
+  G.lv[id] = lvOf(id) + 1;
+  if (id === 'coracao') { G.hpMax += 25; G.hp = G.hpMax; }
+  refreshUp();
 }
 
-// ---------- Usar ----------
-export function useSkill(i) {
-  const sl = G.slots[i];
-  if (!sl || !playing()) return;
-  if (sl.active > 0) return;
-  if (sl.cd > 0) { sfx('denied'); popupAhead(sl.sk.icon + tr(' recarregando ', ' recharging ', ' latautuu ') + Math.ceil(sl.cd) + 's', '#aaaaaa', 0.7); return; }
-  sl.active = SKILL_DUR;
-  onSkillStart(sl);
-  refreshUp();
-  const R = RARITY[sl.sk.rar] || RARITY.comum;
-  sfx('skillOn'); flashScreen(R.hex, 0.35); pulseAll(0.5, 80);
-  popupAhead(sl.sk.icon + ' ' + sl.sk.title + '! 8s', R.col, 1.0);
-}
-function onSkillStart(sl) {
-  if (sl.sk.id === 'feather') for (const c of chickens) if (c.state !== 'gone') { setChickenShield(c, true); c.shieldHits = sl.lv >= 3 ? 2 : 1; }
-  if (sl.sk.id === 'bird') spawnBirds(sl.lv >= 3 ? 2 : 1, sl.lv);
-  if (sl.sk.id === 'bubble') sfx('bubble');
-}
-function onSkillEnd(sl) {
-  if (sl.sk.id === 'feather') for (const c of chickens) setChickenShield(c, false);
-  sl.cd = skillCooldown(sl);
-}
-export function resetSkillsForWave() {
-  for (const sl of G.slots) { if (sl.active > 0) { sl.active = 0; onSkillEnd(sl); } sl.cd = 0; }
-  refreshUp();
-}
-export function updateSkills(dt) {
-  for (let i = 0; i < G.slots.length; i++) {
-    const sl = G.slots[i];
-    if (sl.active > 0) { sl.active -= dt; if (sl.active <= 0) { sl.active = 0; onSkillEnd(sl); } }
-    else if (sl.cd > 0) {
-      sl.cd -= dt;
-      if (sl.cd <= 0) {
-        sl.cd = 0;
-        if (playing()) { sfx('skillReady'); popupAhead(sl.sk.icon + tr(' PRONTO! (', ' READY! (', ' VALMIS! (') + skillKey(i) + ')', '#8dff4a', 0.6); }
-      }
-    }
-  }
-  refreshUp();
-}
-// Os efeitos só existem enquanto a habilidade está ativa
+// ---------- Habilidades ativas: removidas na 3.4 (botões B/Y/GRIP/Q/E/F não fazem mais nada) ----------
+export function useSkill() {}
+export function resetSkillsForWave() { refreshUp(); }
+export function updateSkills() {}
+// Os modificadores vêm das melhorias permanentes
 export function refreshUp() {
   const up = G.up;
   Object.assign(up, UP_DEFAULTS);
-  for (const sl of G.slots) {
-    if (sl.active <= 0) continue;
-    const L = sl.lv;
-    switch (sl.sk.id) {
-      case 'fan': up.diag = L >= 2 ? 2 : 1; break;
-      case 'double': up.front = L >= 2 ? 2 : 1; break;
-      case 'fury': up.dmg = 1.25 + 0.25 * L; break;
-      case 'turbo': up.rate = 1.25 + 0.25 * L; break;
-      case 'eagle': up.critChance = 0.2 + 0.15 * L; break;
-      case 'fire': up.fire = L; break;
-      case 'ice': up.ice = L >= 2 ? 2 : 1; break;
-      case 'shock': up.shock = L; break;
-      case 'bounce': up.ricochet = L + 1; break;
-      case 'pierce': up.pierce = L + 1; break;
-      case 'slowmo': up.slowSkill = [1, 0.4, 0.3, 0.25][L]; break;
-      case 'bubble': up.bubble = 1; break;
-    }
-  }
+  up.dmg = 1 + 0.25 * lvOf('forca');
+  up.rate = 1 + 0.2 * lvOf('rapidez');
+  up.front = lvOf('duplo');
+  up.magnet = 1 + 0.6 * lvOf('mira');
 }
 
 // =============================================================================
@@ -184,12 +113,16 @@ function drawCard(x, w, h, upg) {
   wrapText(x, upg.title, w / 2, 372, w - 70, 60, true, '#ffd040');
   x.fillStyle = '#ffffff'; x.font = '800 32px ' + FONT_UI;
   wrapText(x, upg.desc, w / 2, 470, w - 80, 40, false, '#ffffff');
-  if (upg.instant) fitText(x, tr('EFEITO NA HORA', 'INSTANT EFFECT', 'VÄLITÖN VAIKUTUS'), w / 2, 585, w - 70, 28, FONT_UI, R.col, false, '800');
+  if (upg.instant) fitText(x, tr('NA HORA', 'INSTANT', 'HETI'), w / 2, 585, w - 70, 30, FONT_UI, R.col, false, '800');
   else {
-    const sl = slotOf(upg.id);
-    const L = sl ? sl.lv : 0;
-    fitText(x, sl ? tr('NÍVEL ', 'LEVEL ', 'TASO ') + L + ' → ' + (L + 1) + ': ' + upg.lvl[L] : tr('ATIVA · 8s · ', 'ACTIVE · 8s · ', 'AKTIIVINEN · 8 s · ') + upg.lvl[0], w / 2, 572, w - 70, 28, FONT_UI, R.col, false, '800');
-    fitText(x, tr('recarga ', 'cooldown ', 'lataus ') + (26 - L * 4) + tr('s · até 3 habilidades', 's · up to 3 skills', ' s · enintään 3 kykyä'), w / 2, 608, w - 70, 24, FONT_UI, '#c0c8b8', false, '700');
+    const L = G.lv[upg.id] || 0, M = upg.max || 3;
+    fitText(x, (L ? tr('NÍVEL ', 'LEVEL ', 'TASO ') + L + ' → ' + (L + 1) : tr('NOVA!', 'NEW!', 'UUSI!')) + ' · ' + upg.lvl[L], w / 2, 572, w - 70, 30, FONT_UI, R.col, false, '800');
+    // bolinhas de nível: quanto falta para o máximo
+    for (let k = 0; k < M; k++) {
+      const cx = w / 2 + (k - (M - 1) / 2) * 34;
+      x.beginPath(); x.arc(cx, 612, 11, 0, Math.PI * 2);
+      x.fillStyle = k < L ? R.col : k === L ? '#ffffff' : 'rgba(255,255,255,0.18)'; x.fill();
+    }
   }
 }
 function wrapText(ctx, text, x, y, maxW, lh, stroke, color) {
@@ -238,24 +171,17 @@ export function showUpgradeCards(kind = 'normal') {
     cards.push(card);
   });
   G.state = 'upgrade'; G.stateT = 0;
-  const keys = xrActive() ? 'B · Y · ' + tr('GRIP direito', 'right GRIP', 'oikea GRIP') : (isTouch ? tr('botões na tela', 'on-screen buttons', 'näytön napit') : 'Q · E · F');
-  if (kind === 'boss') showBanner(tr('RECOMPENSA DO CHEFÃO', 'BOSS REWARD', 'POMON PALKINTO'), tr('uma habilidade ÉPICA te espera', 'an EPIC skill awaits', 'EEPPINEN kyky odottaa'), tr('atire no card', 'shoot a card', 'ammu korttia'), '#e080ff', 3.5, 1.15);
-  else if (kind === 'first') showBanner(tr('PRIMEIRA HABILIDADE!', 'FIRST SKILL!', 'ENSIMMÄINEN KYKY!'), tr('habilidades duram 8s e recarregam', 'skills last 8s, then recharge', 'kyvyt kestävät 8 s ja latautuvat'), tr('você ativa com ', 'activate with ', 'aktivoi: ') + keys, '#8dff4a', 4, 1.15);
-  else showBanner(tr('ESCOLHA UMA HABILIDADE', 'CHOOSE A SKILL', 'VALITSE KYKY'), tr('atire no card · ativa com ', 'shoot a card · activate with ', 'ammu korttia · aktivoi: ') + keys, tr('ATAQUE · OVO · DEFESA', 'ATTACK · EGG · DEFENSE', 'HYÖKKÄYS · MUNA · PUOLUSTUS'), '#8dff4a', 3.5, 1.15);
+  if (kind === 'boss') showBanner(tr('RECOMPENSA DO CHEFÃO', 'BOSS REWARD', 'POMON PALKINTO'), tr('mais uma melhoria', 'one more upgrade', 'yksi parannus lisää'), tr('atire no card', 'shoot a card', 'ammu korttia'), '#e080ff', 3.0, 1.15);
+  else showBanner(tr('ESCOLHA UMA MELHORIA', 'CHOOSE AN UPGRADE', 'VALITSE PARANNUS'), tr('vale para o resto do jogo', 'lasts for the rest of the game', 'kestää koko pelin'), tr('atire no card', 'shoot a card', 'ammu korttia'), '#8dff4a', 3.0, 1.15);
   sfx('cardAppear');
 }
 export function chooseUpgrade(card) {
   if (chosen || card.done) return;
   chosen = true;
   const sk = card.upg;
-  let msg, hint = '';
-  if (sk.instant) { applyInstant(sk.id); msg = sk.title + '!'; }
-  else {
-    let sl = slotOf(sk.id);
-    if (sl) { sl.lv++; sl.cd = 0; msg = sk.title + tr(' NÍVEL ', ' LEVEL ', ' TASO ') + sl.lv + '!'; }
-    else { G.slots.push({ sk, lv: 1, active: 0, cd: 0 }); sl = G.slots[G.slots.length - 1]; msg = tr('NOVA: ', 'NEW: ', 'UUSI: ') + sk.title + '!'; }
-    hint = tr('aperte ', 'press ', 'paina ') + skillKey(G.slots.indexOf(sl)) + tr(' pra usar', ' to use', ' käyttääksesi');
-  }
+  applyUpgrade(sk.id);
+  const msg = sk.instant ? sk.title + '!' : sk.title + ' ' + tr('NÍVEL ', 'LEVEL ', 'TASO ') + G.lv[sk.id] + '!';
+  const hint = sk.instant ? '' : sk.lvl[G.lv[sk.id] - 1] || '';
   for (const c of cards) { c.done = true; c.target.active = false; }
   card.chosen = true;
   const R = RARITY[card.upg.rar] || RARITY.comum;

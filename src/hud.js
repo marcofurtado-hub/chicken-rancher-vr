@@ -5,7 +5,7 @@
 import { THREE, scene, camera, camPos, rig, xrActive, isTouch, canvasTex, roundRect, FONT, FONT_UI } from './render.js';
 import { G, clamp, fmt, tmpV, load, save, saveSettings, comboMult, comboWindow, MAX_CHICKENS, SKILL_DUR } from './core.js';
 import { tr } from './i18n.js';
-import { WEAPONS, WEAPON_ORDER, WAVES, POWERS, RARITY } from './config.js';
+import { WEAPONS, WEAPON_ORDER, WAVES, POWERS, RARITY, SKILLS } from './config.js';
 import { fitText, popupAhead } from './fx.js';
 import { sfx } from './audio.js';
 import { chickensAlive, flockCounts } from './chickens.js';
@@ -57,6 +57,7 @@ function lapSignature() {
     '|' + G.wave + G.state + '|' + G.weapon + '|' + Math.ceil(G.hp) + '/' + G.hpMax + '|' +
     (G.ultActive > 0 ? 'A' + Math.floor(G.ultActive * 8) : ultFull ? 'F' + (Math.floor(G.time * 4) % 2) : Math.floor(G.ult * 100)) + '|' + (lapHintT > 0 ? 1 : 0);
   for (const q of powerList()) sg += q[0] + q[2];
+  for (const k of upgList()) sg += k.id + G.lv[k.id];
   for (const sl of G.slots) sg += '|' + sl.lv + (sl.active > 0 ? 'a' + Math.ceil(sl.active) + ':' + Math.floor(sl.active / SKILL_DUR * 20) : sl.cd > 0 ? 'c' + Math.ceil(sl.cd) : 'r');
   return sg;
 }
@@ -110,18 +111,14 @@ function drawLap() {
   const pl = powerList();
   if (pl.length) { x.textAlign = 'left'; fitText(x, pl.map(q => q[0] + ' ' + q[2] + 's').join('  '), 30, 318, 700, 28, FONT_UI, pl[0][3], false, '800'); }
   // habilidades
-  if (G.slots.length) {
-    G.slots.forEach((sl, i) => {
-      const bx = 24 + i * 242, by = 340, bw = 230, bh = 74;
+  if (upgList().length) {
+    upgList().forEach((k, i) => {
+      const bx = 24 + i * 146, by = 340, bw = 136, bh = 74, R = RARITY[k.rar] || RARITY.comum;
       x.fillStyle = 'rgba(255,255,255,0.08)'; roundRect(x, bx, by, bw, bh, 14); x.fill();
-      if (sl.active > 0) { x.fillStyle = 'rgba(141,255,74,0.45)'; roundRect(x, bx, by, Math.max(28, bw * (sl.active / SKILL_DUR)), bh, 14); x.fill(); }
-      else if (sl.cd > 0) { x.fillStyle = 'rgba(0,0,0,0.5)'; roundRect(x, bx, by, bw, bh, 14); x.fill(); }
+      x.strokeStyle = R.col; x.lineWidth = 3; x.stroke();
       x.textAlign = 'left';
-      x.font = '42px sans-serif'; x.fillStyle = '#fff'; x.fillText(sl.sk.icon, bx + 8, by + 40);
-      x.font = '800 22px ' + FONT_UI; x.fillStyle = '#ffd040'; x.fillText(skillKey(i) + tr(' · NV', ' · LV', ' · T') + sl.lv, bx + 62, by + 22);
-      x.font = '800 26px ' + FONT_UI;
-      x.fillStyle = sl.active > 0 ? '#d8ffb0' : sl.cd > 0 ? '#9a9a9a' : '#8dff4a';
-      x.fillText(sl.active > 0 ? tr('ATIVO ', 'ACTIVE ', 'PÄÄLLÄ ') + Math.ceil(sl.active) + 's' : sl.cd > 0 ? Math.ceil(sl.cd) + 's' : tr('PRONTO!', 'READY!', 'VALMIS!'), bx + 62, by + 54);
+      x.font = '40px sans-serif'; x.fillStyle = '#fff'; x.fillText(k.icon, bx + 8, by + 38);
+      x.font = '800 26px ' + FONT_UI; x.fillStyle = '#ffd040'; x.fillText(G.lv[k.id] + '/' + (k.max || 3), bx + 64, by + 38);
     });
   } else if (lapHintT > 0) {
     x.textAlign = 'left';
@@ -138,7 +135,9 @@ signCanvas.width = 1024; signCanvas.height = 560;
 const signCtx = signCanvas.getContext('2d');
 const signTex = new THREE.CanvasTexture(signCanvas); signTex.colorSpace = THREE.SRGBColorSpace;
 const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.31), new THREE.MeshBasicMaterial({ map: signTex, transparent: true, fog: false, side: THREE.DoubleSide, toneMapped: false }));
-signMesh.position.set(0, 2.25, 3.2);
+// um pouco para a esquerda do jogador (o rig olha para +Z, então a esquerda dele é +X)
+const SIGN_X = 0.6;
+signMesh.position.set(SIGN_X, 2.25, 3.2);
 signMesh.rotation.y = Math.PI;
 scene.add(signMesh);
 // botões de conforto (criados no initHud: dependem de outros módulos já carregados)
@@ -148,7 +147,7 @@ function makeButton(x, y) {
   const c = document.createElement('canvas'); c.width = 384; c.height = 128;
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(BTN_W, BTN_H), new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false, side: THREE.DoubleSide, toneMapped: false }));
-  m.position.set(x, y, 3.19); m.rotation.y = Math.PI;
+  m.position.set(SIGN_X + x, y, 3.19); m.rotation.y = Math.PI;
   scene.add(m);
   const b = { mesh: m, ctx: c.getContext('2d'), tex, hover: 0, flash: 0 };
   b.target = { c: m.position, r: 0.17, active: false, onHit: () => {} };
@@ -196,7 +195,8 @@ export function drawSign() {
   fitText(x, '🏆 ' + tr('RECORDE: ', 'BEST: ', 'ENNÄTYS: ') + fmt(G.best), 512, 262, 900, 54, FONT, '#ffffff');
   if (G.lastScore > 0) fitText(x, tr('última partida: ', 'last game: ', 'viime peli: ') + fmt(G.lastScore), 512, 318, 900, 34, FONT_UI, '#f0d8a8', false, '700');
   fitText(x, tr('APERTE O GATILHO PRA COMEÇAR', 'PULL THE TRIGGER TO START', 'ALOITA LIIPAISIMELLA'), 512, 394, 950, 56, FONT, '#8dff4a', true);
-  fitText(x, tr('12 WAVES · 11 ARMAS · 11 NAVES · CADEIRA VOADORA', '12 WAVES · 11 WEAPONS · 11 SAUCERS · FLYING WHEELCHAIR', '12 AALTOA · 11 ASETTA · 11 LAUTASTA · LENTÄVÄ PYÖRÄTUOLI'), 512, 470, 950, 32, FONT_UI, '#ffc890', false, '800');
+  if (G.testWave) fitText(x, tr('🧪 COMEÇAR NA WAVE ', '🧪 START AT WAVE ', '🧪 ALOITA AALLOSTA ') + (G.testWave + 1) + tr(' (B+Y muda)', ' (B+Y changes)', ' (B+Y vaihtaa)'), 512, 470, 950, 36, FONT, '#60e0ff');
+  else fitText(x, tr('8 WAVES · 8 ARMAS DE OVO · CHEFÃO · NAVE-MÃE · CADEIRA VOADORA', '8 WAVES · 8 EGG WEAPONS · BOSS · MOTHERSHIP · FLYING WHEELCHAIR', '8 AALTOA · 8 MUNA-ASETTA · POMO · EMOALUS · LENTÄVÄ PYÖRÄTUOLI'), 512, 470, 950, 32, FONT_UI, '#ffc890', false, '800');
   fitText(x, tr('conforto: aponte e atire nos botões abaixo', 'comfort: aim and shoot the buttons below', 'mukavuus: tähtää ja ammu alla olevia nappeja'), 512, 520, 950, 26, FONT_UI, '#d0b090', false, '700');
   signTex.needsUpdate = true;
   drawButtons();
@@ -226,20 +226,23 @@ function updateWeaponBar() {
   lastWbar = key;
   wbarEl.innerHTML = WEAPON_ORDER.map((w, i) => '<div class="slot' + (G.unlocked.has(w) ? ' unl' : '') + (w === G.weapon ? ' on' : '') + '" data-w="' + w + '">' + WEAPONS[w].icon + '<i>' + (i === 10 ? '-' : (i + 1) % 10) + '</i></div>').join('');
 }
+// 3.4: mostra as melhorias permanentes (ícone + nível), sem botão
+const upgList = () => SKILLS.filter(k => !k.instant && G.lv[k.id]);
+let lastSkb = '';
 function updateSkillBar() {
-  skillbarEl.innerHTML = G.slots.map((sl, i) => {
-    const st = sl.active > 0 ? 'on' : sl.cd > 0 ? 'cd' : 'ready';
-    const pct = sl.active > 0 ? (sl.active / SKILL_DUR) * 100 : sl.cd > 0 ? (1 - sl.cd / skillCooldown(sl)) * 100 : 100;
-    const txt = sl.active > 0 ? Math.ceil(sl.active) + 's' : sl.cd > 0 ? Math.ceil(sl.cd) + 's' : tr('PRONTO', 'READY', 'VALMIS');
-    const R = RARITY[sl.sk.rar] || RARITY.comum;
-    return '<div class="sk ' + st + '" data-i="' + i + '" style="--rc:' + R.col + '"><span class="ic">' + sl.sk.icon + '</span><b>' + (isTouch ? '' : SKILL_KEYS_PC[i]) + '</b><u>' + sl.lv + '</u><i style="height:' + pct.toFixed(0) + '%"></i><em>' + txt + '</em></div>';
+  const key = upgList().map(k => k.id + G.lv[k.id]).join();
+  if (key === lastSkb) return;
+  lastSkb = key;
+  skillbarEl.innerHTML = upgList().map(k => {
+    const R = RARITY[k.rar] || RARITY.comum, L = G.lv[k.id];
+    return '<div class="sk ready" style="--rc:' + R.col + ';pointer-events:none"><span class="ic">' + k.icon + '</span><u>' + L + '/' + (k.max || 3) + '</u><em>' + k.title + '</em></div>';
   }).join('');
 }
 export function updateHtmlHud() {
   const show = !xrActive() && G.state !== 'idle';
   hudEl.classList.toggle('show', show);
   wbarEl.classList.toggle('show', show && G.unlocked.size > 1);
-  skillbarEl.classList.toggle('show', show && G.slots.length > 0);
+  skillbarEl.classList.toggle('show', show && upgList().length > 0);
   crossEl.classList.toggle('show', show && (canShoot() || G.state === 'wave_complete'));
   crossEl.classList.toggle('hit', G.hitMarkT > 0);
   ultEl.classList.toggle('show', show && G.state !== 'upgrade');

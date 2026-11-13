@@ -8,12 +8,12 @@ import { tr } from './i18n.js';
 import { WEAPONS, WEAPON_ORDER } from './config.js';
 import { fxAdd, popup, popupAhead, showBanner, ov, SHAPE, glow } from './fx.js';
 import { sfx, loop, initAudio, resumeAudio, music, toggleMusic } from './audio.js';
-import { castSegment } from './combat.js';
+import { castSegment, forEachAimable } from './combat.js';
 import { chickens, scareChicken } from './chickens.js';
 import { groundHeightAt, blockedSeg, PORCH_Y } from './world.js';
 import { equipWeapon, onTriggerStart, onTriggerEnd, desktopShoot, isTapWeapon, canShoot, fireUltimate, weaponState, targetVel, canUlt } from './weapons.js';
 import { useSkill } from './skills.js';
-import { handleMenuAdvance, setPaused, resetGame } from './game.js';
+import { handleMenuAdvance, setPaused, resetGame, setTestWave } from './game.js';
 import { lapPanel, startLapGrab, endLapGrab } from './hud.js';
 
 const [t0, t1, t2, t3, t4] = tmpV(5);
@@ -77,9 +77,17 @@ function pulseSrc(src, intensity, duration) {
 export function pulseCtrl(ctrl, intensity, duration) { if (ctrl) pulseSrc(ctrl.userData.src, intensity, duration); }
 export function pulseAll(intensity, duration) { pulseSrc(c1.userData.src, intensity, duration); pulseSrc(c2.userData.src, intensity, duration); }
 
-// ---------- Botões: A próxima arma · X anterior · B habilidade 1 · Y habilidade 2 ----------
+// ---------- Botões: A próxima arma · X anterior · (B + Y juntos no menu = código secreto da wave) ----------
 const btnPrev = new Map();
+let secretHeld = false;
 function pollButtons() {
+  // código secreto (VR): no menu, B e Y apertados juntos avançam a wave inicial
+  if (G.state === 'idle') {
+    const pressed5 = c => { const s = c.userData.src; return !!(s && s.gamepad && s.gamepad.buttons[5] && s.gamepad.buttons[5].pressed); };
+    const both = pressed5(c1) && pressed5(c2);
+    if (both && !secretHeld) { setTestWave(G.testWave + 1); sfx('uiClick'); pulseAll(0.5, 60); }
+    secretHeld = both;
+  }
   for (const c of [c1, c2]) {
     const s = c.userData.src;
     if (!s || !s.gamepad) continue;
@@ -90,7 +98,6 @@ function pollButtons() {
       const key = c.uuid + idx;
       if (pressed && !btnPrev.get(key)) {
         if (idx === 4) cycleWeapon(right ? 1 : -1);
-        else if (idx === 5) useSkill(right ? 0 : 1);
       }
       btnPrev.set(key, pressed);
     }
@@ -241,22 +248,44 @@ function updatePcControls(dt) {
   }
   const fov = P.zoom ? 42 : 78;
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 12); camera.updateProjectionMatrix(); }
-  // ponto exato sob a mira: todas as armas convergem para ele
+  // ponto sob a mira: todas as armas convergem para ele (e a parábola é calculada até ele)
   const dir = camera.getWorldDirection(t3);
-  const hit = castSegment(camPos, dir, 80, 0);
-  let t = hit ? Math.max(hit.t, 1.5) : 40;
-  // mirando para baixo: o alvo é o ponto do chão sob a mira (não 40 m dentro da terra)
-  if (!hit && dir.y < -0.02) {
-    let tg = (0 - camPos.y) / dir.y;
-    for (let k = 0; k < 2; k++) tg = (groundHeightAt(camPos.x + dir.x * tg, camPos.z + dir.z * tg) - camPos.y) / dir.y;
-    if (tg > 0.5) t = Math.min(t, tg);
-  }
-  pcAim.copy(camPos).addScaledVector(dir, t);
-  // velocidade do alvo sob a mira (para o arremesso mirar onde ele VAI estar)
-  targetVel(hit, pcAimVel);
+  const d = resolveAim(camPos, dir, 0, pcAimVel);
+  // a distância muda suave (passar a mira pela borda de uma nave não faz o arco pular)
+  aimDist = aimDist > 0 ? aimDist + (d - aimDist) * Math.min(1, dt * 10) : d;
+  pcAim.copy(camPos).addScaledVector(dir, aimDist);
 }
+let aimDist = 0;
 export const pcAimVel = new THREE.Vector3();
-/** Ponto do mundo sob um toque na tela (celular): nave/caixa/gosma sob o dedo, com folga de dedo; senão o chão ou 40 m à frente. */
+/**
+ * A mira "entende" a distância do alvo:
+ * 1) nave/caixa/gosma sob a mira (com folga `fingerR` no celular) → a distância dela;
+ * 2) quase na mira (até ~7°) → a distância da nave mais próxima da mira, mantendo a direção mirada;
+ * 3) mirando o chão → o ponto do chão;  4) céu vazio → 22 m (distância típica de combate).
+ * Antes, mirar um tiquinho ao lado da nave virava "alvo a 40 m" e o arco mudava totalmente.
+ */
+const AIM_CONE = Math.cos(7 * Math.PI / 180), DEFAULT_AIM = 22;
+function resolveAim(o, dir, fingerR, outVel) {
+  let hit = castSegment(o, dir, 80, 0);
+  if (!hit && fingerR) hit = castSegment(o, dir, 80, fingerR);
+  if (hit) { targetVel(hit, outVel); return Math.max(hit.t, 1.5); }
+  let best = null, bestCos = AIM_CONE, bestD = 0;
+  forEachAimable((c, u) => {
+    t4.copy(c).sub(o); const dl = t4.length();
+    if (dl < 1.5 || dl > 80) return;
+    const cs = t4.dot(dir) / dl;
+    if (cs > bestCos) { bestCos = cs; best = u; bestD = dl; }
+  });
+  if (bestD) { if (best && best._vel) outVel.copy(best._vel); else outVel.set(0, 0, 0); return bestD; }
+  outVel.set(0, 0, 0);
+  if (dir.y < -0.02) {
+    let tg = (0 - o.y) / dir.y;
+    for (let k = 0; k < 2; k++) tg = (groundHeightAt(o.x + dir.x * tg, o.z + dir.z * tg) - o.y) / dir.y;
+    if (tg > 0.5) return Math.min(DEFAULT_AIM * 2, tg);
+  }
+  return DEFAULT_AIM;
+}
+/** Ponto do mundo sob um toque na tela (celular): mesma regra da mira, com folga de dedo. */
 const _ray = new THREE.Raycaster(), _ndc = new THREE.Vector2();
 export const tapAim = new THREE.Vector3(), tapAimVel = new THREE.Vector3();
 function aimFromTap(cx, cy) {
@@ -264,17 +293,10 @@ function aimFromTap(cx, cy) {
   _ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
   _ray.setFromCamera(_ndc, camera);
   const o = _ray.ray.origin, dir = _ray.ray.direction;
-  let hit = castSegment(o, dir, 80, 0);
-  if (!hit) hit = castSegment(o, dir, 80, 0.7);   // dedo é grosso: aceita tocar perto da nave
-  let t = hit ? Math.max(hit.t, 1.5) : 40;
-  if (!hit && dir.y < -0.02) {
-    let tg = (0 - o.y) / dir.y;
-    for (let k = 0; k < 2; k++) tg = (groundHeightAt(o.x + dir.x * tg, o.z + dir.z * tg) - o.y) / dir.y;
-    if (tg > 0.5) t = Math.min(t, tg);
-  }
-  // com a folga, mira o centro da parte tocada (não a casca inflada)
-  if (hit && hit.kind === 'ufo') tapAim.copy(hit.part.c); else tapAim.copy(o).addScaledVector(dir, t);
-  targetVel(hit, tapAimVel);
+  // com o dedo em cima de uma nave, mira o CENTRO dela (não a borda inflada pela folga)
+  const hit = castSegment(o, dir, 80, 0) || castSegment(o, dir, 80, 0.7);
+  if (hit && hit.kind === 'ufo') { tapAim.copy(hit.part.c); targetVel(hit, tapAimVel); return; }
+  tapAim.copy(o).addScaledVector(dir, resolveAim(o, dir, 0.7, tapAimVel));
 }
 export function applyPcView() { rig.rotation.y = P.yaw; camera.rotation.set(P.pitch, 0, 0); }
 
@@ -288,18 +310,26 @@ document.addEventListener('pointerlockchange', () => {
 export function lockPointer() { if (!isTouch && !xrActive()) { try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
 addEventListener('keyup', e => { P.keys[e.code] = false; });
 addEventListener('contextmenu', e => { if (!isTouch) e.preventDefault(); });
+let secretBuf = '';
+const wavePickOpen = () => { const el = document.getElementById('wavepick'); return !!(el && el.classList.contains('show')); };
+export function openWavePick() {
+  const el = document.getElementById('wavepick');
+  if (!el) return;
+  el.classList.add('show'); setTestWave(G.testWave); sfx('powerup');
+}
 addEventListener('keydown', e => {
   P.keys[e.code] = true;
   if (e.repeat) return;
   if (e.code === 'Space' || e.code === 'Enter') { initAudio(); handleMenuAdvance(); }
   if (e.code === 'KeyR') fireUltimate();
   if (e.code === 'KeyM') { const on = musicToggle(); popupAhead(on ? '🎵 ON' : '🎵 OFF', '#ffffff', 0.6); }
-  if (e.code === 'KeyQ') useSkill(0);
-  if (e.code === 'KeyE') useSkill(1);
-  if (e.code === 'KeyF') useSkill(2);
-  if (e.code === 'Minus') selectWeapon(WEAPON_ORDER[10]);
+  // código secreto (PC): digitar O-V-O-S no menu abre o seletor de wave
+  if (G.state === 'idle' && e.key && e.key.length === 1) {
+    secretBuf = (secretBuf + e.key.toUpperCase()).slice(-4);
+    if (secretBuf === 'OVOS') { openWavePick(); secretBuf = ''; }
+  }
   const m = e.code.match(/^Digit(\d)$/);
-  if (m) { const n = parseInt(m[1], 10); selectWeapon(WEAPON_ORDER[n === 0 ? 9 : n - 1]); }
+  if (m) { const n = parseInt(m[1], 10); if (G.state === 'idle' && wavePickOpen()) setTestWave(n - 1); else selectWeapon(WEAPON_ORDER[n - 1]); }
 });
 function musicToggle() { return toggleMusic(); }
 let wheelT = 0;

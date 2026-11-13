@@ -15,7 +15,7 @@ import { CTRL, pulseCtrl, pulseAll, pcAim, pcAimVel } from './player.js';
 import { groundHeightAt } from './world.js';
 
 const [t0, t1, t2, t3, t4, t5, t6, t7, t8] = tmpV(9);
-const _c = new THREE.Color(), _q = new THREE.Quaternion(), _m4 = new THREE.Matrix4(), _s = new THREE.Vector3();
+const _c = new THREE.Color(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _m4 = new THREE.Matrix4(), _s = new THREE.Vector3(), X_AX = new THREE.Vector3(1, 0, 0);
 const Z_NEG = new THREE.Vector3(0, 0, -1), Y_POS = new THREE.Vector3(0, 1, 0);
 export const MAX_PROJECTILES = 260;
 const SHOT_SPEED_FACTOR = 38, MAX_SHOT_SPEED = 24, SLINGSHOT_MIN_PULL = 0.025, CROSSBOW_SPEED = 38, POUCH_GRAB_DIST = 0.32;
@@ -196,16 +196,17 @@ const ARROW_GEO = bakeWith(g => {
   const e = eggShape(g, 0xffffff, 0, 0, 0, 1); e.scale.set(1.05, 1.5, 1.05);
   for (let k = 0; k < 3; k++) { const f = box(g, 0.004, 0.05, 0.035, 0xff4848, Math.cos(k * 2.09) * 0.018, -0.09, Math.sin(k * 2.09) * 0.018); f.rotation.y = -k * 2.09; }
 });
+// ovo-foguete: ovo branco alongado com aletas vermelhas e bocal (3.4: tudo é ovo)
 const ROCKET_GEO = bakeWith(g => {
-  cyl(g, 0.022, 0.022, 0.13, 8, 0xe8e8f0, 0, 0, 0);
-  cone(g, 0.022, 0.05, 8, 0xff4040, 0, 0.09, 0);
-  for (let k = 0; k < 4; k++) { const f = box(g, 0.004, 0.04, 0.03, 0xff4040, Math.cos(k * 1.57) * 0.022, -0.05, Math.sin(k * 1.57) * 0.022); f.rotation.y = -k * 1.57; }
+  const e = eggShape(g, 0xf4f4f8, 0, 0.01, 0, 1); e.scale.set(0.85, 1.25, 0.85);
+  for (let k = 0; k < 4; k++) { const f = box(g, 0.005, 0.045, 0.03, 0xff4040, Math.cos(k * 1.57) * 0.03, -0.05, Math.sin(k * 1.57) * 0.03); f.rotation.y = -k * 1.57; }
+  cyl(g, 0.014, 0.018, 0.02, 8, 0x404048, 0, -0.065, 0);
 });
+// ovo-rojão: ovo vermelho com faixa dourada e a varetinha
 const FW_GEO = bakeWith(g => {
-  cyl(g, 0.03, 0.03, 0.18, 10, 0xe02838, 0, 0, 0);
-  cone(g, 0.034, 0.07, 10, 0xffd040, 0, 0.125, 0);
-  torus(g, 0.031, 0.006, 4, 12, 0xffffff, 0, 0.03, 0).rotation.x = Math.PI / 2;
-  cyl(g, 0.004, 0.004, 0.25, 4, 0x8a5a30, 0.035, -0.12, 0);
+  const e = eggShape(g, 0xe02838, 0, 0, 0, 1.15); e.scale.set(1.05, 1.3, 1.05);
+  torus(g, 0.047, 0.007, 4, 14, 0xffd040, 0, 0.012, 0).rotation.x = Math.PI / 2;
+  cyl(g, 0.004, 0.004, 0.22, 4, 0x8a5a30, 0.03, -0.14, 0);
 });
 const GIANT_GEO = bakeWith(g => eggShape(g, 0xffe070, 0, 0, 0, 5));
 const P_MAT = toon({ ramp: 4 });
@@ -216,6 +217,10 @@ function pim(geo, n) {
   scene.add(m); return m;
 }
 const PIM = { egg: pim(EGG_GEO, MAX_PROJECTILES), arrow: pim(ARROW_GEO, 60), rocket: pim(ROCKET_GEO, 60), fw: pim(FW_GEO, 30), giant: pim(GIANT_GEO, 30) };
+// contorno dos ovos: mesma matriz das instâncias, desenhado em volta (1 draw call)
+const EGG_OUT = new THREE.InstancedMesh(outlineGeo(EGG_GEO), outlineMat(0.007), MAX_PROJECTILES);
+EGG_OUT.instanceMatrix = PIM.egg.instanceMatrix; EGG_OUT.count = 0; EGG_OUT.frustumCulled = false;
+scene.add(EGG_OUT);
 const EGG_COL = new THREE.Color(0xfffaf0), GOLD_COL = new THREE.Color(0xffd040).multiplyScalar(1.3), BOOM_COL = new THREE.Color(0xff7040), FIRE_COL = new THREE.Color(0xff9a50), ICE_COL = new THREE.Color(0xa8e8ff);
 
 export function volleyCount() { return 1 + G.up.front + 2 * G.up.diag; }
@@ -246,10 +251,10 @@ export function spawnEgg(pos, vel, o = {}) {
   const golden = G.power.golden > 0 || !!o.golden, boom = G.power.boom > 0 || !!o.boom;
   const p = {
     pos: new THREE.Vector3().copy(pos), prev: new THREE.Vector3().copy(pos), vel: new THREE.Vector3().copy(vel),
-    life: 0, damage: (o.damage || 1) * G.up.dmg * (golden ? 3 : 1),
+    life: 0, damage: (o.damage || 1) * G.up.dmg * (golden ? 2 : 1),
     gravity: !!o.gravity, gScale: o.gScale != null ? o.gScale : 1,
     vis: o.giant ? 'giant' : o.firework ? 'fw' : o.rocket ? 'rocket' : o.arrow ? 'arrow' : 'egg',
-    scale: o.scale || 1, maxLife: o.maxLife || 5, magnet: o.magnet || 0,
+    scale: o.scale || 1, maxLife: o.maxLife || 5, magnet: (o.magnet || 0) * G.up.magnet,
     golden, boom, boomR: o.boomR || 2.8, boomDmg: o.boomDmg || 2, pierce: G.up.pierce + (o.pierce || 0), ricochet: o.noRicochet ? 0 : G.up.ricochet,
     hitSet: null, firework: !!o.firework, giant: !!o.giant, homing: o.homing ? { target: null } : null, extraR: o.extraR || 0, spin: rand(0, 6), dead: false,
     col: golden ? GOLD_COL : boom ? BOOM_COL : G.up.fire ? FIRE_COL : G.up.ice ? ICE_COL : EGG_COL,
@@ -406,7 +411,18 @@ function drawProjectiles() {
     const sp = p.vel.length();
     if (sp > 1e-4) _q.setFromUnitVectors(Y_POS, t7.copy(p.vel).divideScalar(sp)); else _q.identity();
     let sx = p.scale, sy = p.scale;
-    if (p.vis === 'egg') { const st = Math.min(0.5, sp * 0.012); sy *= 1 + st; sx *= 1 - st * 0.3; }
+    if (p.vis === 'egg') {
+      // O ovo dá cambalhotas mostrando sempre o PERFIL para quem olha. Antes ele apontava para onde
+      // voava e, voando para longe, a gente via só a ponta (um círculo = "bola").
+      t7.copy(p.pos).sub(camPos); const dl = t7.length();
+      if (dl > 1e-3) {
+        t7.divideScalar(dl);
+        _s.set(Math.cos(p.spin), Math.sin(p.spin), Math.sin(p.spin * 0.7) * 0.4);
+        _s.addScaledVector(t7, -_s.dot(t7));                       // tira a componente na direção do olhar
+        if (_s.lengthSq() < 1e-4) _s.set(0, 1, 0);
+        _q.setFromUnitVectors(Y_POS, _s.normalize());
+      }
+    }
     if (p.vis === 'giant') { _q.setFromAxisAngle(t7.set(1, 0, 0.3).normalize(), Math.PI + Math.sin(p.spin * 0.2) * 0.2); }
     _m4.compose(p.pos, _q, _s.set(sx, sy, sx));
     const im = PIM[p.vis], i = n[p.vis]++;
@@ -414,6 +430,7 @@ function drawProjectiles() {
     im.setColorAt(i, p.col);
   }
   for (const k of Object.keys(PIM)) { const im = PIM[k]; im.count = n[k]; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
+  EGG_OUT.count = n.egg;
 }
 
 // =============================================================================
@@ -429,38 +446,60 @@ function spreadDir(dir, s) {
   dir.x += (Math.random() - 0.5) * s; dir.y += (Math.random() - 0.5) * s; dir.z += (Math.random() - 0.5) * s;
   return dir.normalize();
 }
-function fireBullet(speed, damage, spread, scale, flashHex, ctrl = CTRL.right, grp = null, name = G.weapon, life = 2) {
-  const origin = muzzleWorld(name, t0, grp);
-  const dir = spreadDir(shotDir(origin, ctrl, t1), spread);
-  spawnEgg(origin, dir.multiplyScalar(speed), { damage, scale, maxLife: life, volley: true });
-  muzzle(origin, flashHex, 0.16 * scale + 0.06);
+// Velocidade inicial com física: no VR sai na direção do cano; no PC/celular resolve a parábola
+// até a mira (mesma velocidade, ângulo que compensa a gravidade) e mira à frente de nave andando.
+const _fixed = { g: 9.8, vmin: 0, vmax: 0, k: 1 };
+function launchVel(origin, ctrl, speed, gScale, out) {
+  if (xrActive() || gScale <= 0) return shotDir(origin, ctrl, out).multiplyScalar(speed);
+  _fixed.g = 9.8 * gScale; _fixed.vmin = _fixed.vmax = speed;
+  solveThrow(origin, pcAim, pcAimVel, _fixed, out);
+  return out;
 }
+function spreadVel(v, s) {
+  if (s <= 0) return v;
+  const sp = v.length(); v.divideScalar(sp);
+  return spreadDir(v, s).multiplyScalar(sp);
+}
+/** Ovo disparado por arma: B = { speed, g (fração da gravidade), dmg, scale, spread, life, magnet } */
+function fireBullet(B, flashHex, ctrl = CTRL.right, grp = null, name = G.weapon) {
+  const origin = muzzleWorld(name, t0, grp);
+  const v = spreadVel(launchVel(origin, ctrl, B.speed, B.g, t1), B.spread);
+  spawnEgg(origin, v, { damage: B.dmg, scale: B.scale, maxLife: B.life, gravity: B.g > 0, gScale: B.g, magnet: B.magnet, volley: true });
+  muzzle(origin, flashHex, 0.16 * B.scale + 0.06);
+}
+// 3.4: ovos mais lentos e com peso (dá pra VER o ovo voando e caindo um pouco), mira compensa
+export const BAL = {
+  pistols: { speed: 40, g: 0.5, dmg: 2, scale: 1.25, spread: 0.015, life: 1.8, magnet: 0.8, cd: 0.16 },
+  shotgun: { speed: 30, g: 0.8, dmg: 1.4, scale: 1.05, spread: 0.18, life: 1.4, magnet: 0.4, cd: 0.45, n: 9 },
+  gatling: { speed: 42, g: 0.45, dmg: 2, scale: 1.1, spread: 0.035, life: 1.6, magnet: 0.6, cd: 0.06 },
+};
 function firePistol(left) {
   const grp = left ? pistolL : pistols, ctrl = left ? CTRL.left : CTRL.right;
-  fireBullet(60, 2, 0.015, 0.9, 0xffb040, ctrl, grp, 'pistols');
+  fireBullet(BAL.pistols, 0xffb040, ctrl, grp, 'pistols');
   sfx('pistol', { pitch: rand(0.95, 1.05) }); pulseCtrl(ctrl, 0.45, 35);
-  const cd = 0.16 / G.up.rate;
+  const cd = BAL.pistols.cd / G.up.rate;
   if (left) W.cdL = cd; else W.cdR = cd;
   grp.userData.kick = 1;
 }
 function fireShotgun() {
-  const pellets = Math.round(14 / Math.sqrt(volleyCount()));
-  for (let i = 0; i < pellets; i++) fireBullet(62, 1, 0.26, 0.85, 0xffe860);
+  const pellets = Math.round(BAL.shotgun.n / Math.sqrt(volleyCount()));
+  for (let i = 0; i < pellets; i++) fireBullet(BAL.shotgun, 0xffe860);
   muzzleWorld('shotgun', t0); smoke(t0, 4, 0xb0b0b0, 0.18, 0.5, 0.3);
   sfx('shotgun'); pulseCtrl(CTRL.right, 0.95, 130);
-  W.cd = 0.4 / G.up.rate;
+  W.cd = BAL.shotgun.cd / G.up.rate;
   shotgun.userData.kick = 1;
 }
 function fireGatling() {
-  fireBullet(75, 2, 0.03, 0.95, 0xff8030, CTRL.right, null, 'gatling', 1.2);
+  fireBullet(BAL.gatling, 0xff8030, CTRL.right, null, 'gatling');
   sfx('gatling', { pitch: rand(0.95, 1.08) }); pulseCtrl(CTRL.right, 0.35, 30);
-  W.cd = 0.05 / G.up.rate;
+  W.cd = BAL.gatling.cd / G.up.rate;
 }
 function fireLauncher() {
   const origin = muzzleWorld('launcher', t0);
-  const dir = shotDir(origin, CTRL.right, t1);
-  if (!xrActive()) dir.y += 0.06;
-  spawnEgg(origin, dir.normalize().multiplyScalar(26), { damage: 2, scale: 1.7, gravity: true, gScale: 0.9, boom: true, boomR: 3.0, boomDmg: 4, maxLife: 4, magnet: 1, volley: true });
+  // granada de ovo: arco alto; no PC a força se ajusta à distância (como o arremesso)
+  if (xrActive()) shotDir(origin, CTRL.right, t1).multiplyScalar(24);
+  else solveThrow(origin, pcAim, pcAimVel, LAUNCH_SPEC, t1);
+  spawnEgg(origin, t1, { damage: 2, scale: 1.7, gravity: true, gScale: 0.9, boom: true, boomR: 3.0, boomDmg: 4, maxLife: 4, magnet: 1, volley: true });
   muzzle(origin, 0xff8040, 0.35); smoke(origin, 3, 0x909090, 0.2, 0.6);
   sfx('launcher'); pulseCtrl(CTRL.right, 0.8, 90);
   W.cd = 0.7 / G.up.rate;
@@ -473,8 +512,8 @@ function fireHoming() {
   for (let k = 0; k < 3; k++) {
     const v = t2.copy(dir);
     v.x += rand(-0.25, 0.25); v.y += rand(0, 0.3); v.z += rand(-0.25, 0.25);
-    v.normalize().multiplyScalar(12);
-    const p = spawnEgg(origin, v, { damage: 3, rocket: true, homing: true, maxLife: 4, scale: 1.1, volley: k === 0 });
+    v.normalize().multiplyScalar(13);
+    const p = spawnEgg(origin, v, { damage: 3, rocket: true, homing: true, maxLife: 4, scale: 1.2, volley: k === 0 });
     if (p) p.homing.target = tgt;
   }
   sfx('homingLaunch'); pulseCtrl(CTRL.right, 0.6, 70); muzzle(origin, 0xffa040, 0.3);
@@ -600,8 +639,8 @@ function fireTesla() {
 // Rojão: sobe assobiando e explode no céu num leque colorido que machuca muito
 function fireFireworks() {
   const origin = muzzleWorld('fireworks', t0);
-  const dir = shotDir(origin, CTRL.right, t1);
-  spawnEgg(origin, dir.multiplyScalar(30), { damage: 4, firework: true, gravity: true, gScale: 0.15, maxLife: 1.15, magnet: 1.2, volley: true, scale: 1.2 });
+  const v = launchVel(origin, CTRL.right, 30, 0.15, t1);
+  spawnEgg(origin, v, { damage: 4, firework: true, gravity: true, gScale: 0.15, maxLife: 1.15, magnet: 1.2, volley: true, scale: 1.2 });
   muzzle(origin, 0xffd040, 0.35); smoke(origin, 3, 0xa0a0a0, 0.2, 0.6);
   sfx('fireworkLaunch'); pulseCtrl(CTRL.right, 0.7, 80);
   W.cd = 0.85 / G.up.rate;
@@ -668,6 +707,7 @@ function fireCrossbowArrow() {
 // curva mais alta; fora do alcance, o ovo cai antes (somos rancheiros, não canhões).
 // Se a mira está numa nave andando, joga onde ela VAI estar.
 // -----------------------------------------------------------------------------
+const LAUNCH_SPEC = { g: 9.8 * 0.9, vmin: 13, vmax: 24, k: 1.25 };
 export const THROW = {
   hands: { g: 9.8 * 0.6, gScale: 0.6, vmin: 9, vmax: 15.5, k: 1.3, magnet: 1.5 },
   slingshot: { g: 9.8, gScale: 1, vmin: 14, vmax: MAX_SHOT_SPEED, k: 1.3, magnet: 1.5 },

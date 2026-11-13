@@ -93,6 +93,12 @@ h1 .v{display:inline-block;font-size:.55em;color:var(--g);transform:rotate(-8deg
 #wbar .slot.unl{opacity:.8}
 #wbar .slot.on{opacity:1;border-color:var(--g);box-shadow:0 0 14px rgba(141,255,74,.6);background:rgba(30,70,14,.7);transform:translateY(-4px)}
 #wbar .slot i{font-style:normal;font-size:9px;color:#ccc;margin-top:1px}
+#wavepick{display:none;margin:4px auto 10px;padding:10px 12px;border-radius:16px;background:rgba(0,40,60,.55);border:1px solid #60e0ff;max-width:520px}
+#wavepick.show{display:block}
+#wavepick-label{font:800 14px Nunito,sans-serif;color:#9feaff;margin-bottom:8px}
+#wavepick .row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+#wavepick button{font:800 18px 'Lilita One',sans-serif;width:44px;height:40px;border-radius:10px;border:1px solid #60e0ff;background:rgba(0,0,0,.35);color:#fff;cursor:pointer}
+#wavepick button.on{background:#60e0ff;color:#06202a}
 #skillbar{position:fixed;left:14px;bottom:14px;display:none;gap:8px;z-index:7}
 #skillbar.show{display:flex}
 .sk{position:relative;width:68px;height:68px;border-radius:16px;background:rgba(14,6,26,.62);border:2px solid var(--rc,#fff);overflow:hidden;text-align:center;pointer-events:auto;cursor:pointer}
@@ -156,21 +162,24 @@ body:not(.ready) #start .ctas{opacity:.5;pointer-events:none}
     <div id="vr-slot"></div>
     <button class="cta" id="cta" data-touch="📱 JOGAR">🖥️ JOGAR NO PC</button>
   </div>
+  <div id="wavepick"><div id="wavepick-label">🧪 escolha a wave inicial</div><div class="row">
+    <button data-w="0">1</button><button data-w="1">2</button><button data-w="2">3</button><button data-w="3">4</button><button data-w="4">5</button><button data-w="5">6</button><button data-w="6">7</button><button data-w="7">8</button></div></div>
   <div class="hint" id="s-hint">No Meta Quest: aperte ENTRAR NO VR · no PC: mouse + teclado · no celular: toque</div>
   <div class="grid">
    <div class="card" id="s-how"><h3>🎮 COMO JOGAR</h3>
-     Você está na cadeira de rodas da varanda e as galinhas estão no quintal. Os aliens querem levar todas. <b>Sua munição é ovo.</b><br><br>
-     <b>VR:</b> na wave 1, balance o controle para arremessar ovos. Estilingue e besta: o gatilho esquerdo pega o elástico, puxe e solte. Pistolas: um gatilho em cada mão. As outras armas usam o gatilho direito (segure). <b>Joystick esquerdo</b> anda, o direito gira. <b>A / X</b> trocam de arma. <b>B, Y e GRIP direito</b> ativam as habilidades. <b>GRIP esquerdo</b> (segure) solta a Chuva de Ovos quando estiver carregada.<br>
-     <b>PC:</b> <b>WASD</b> anda, o mouse mira, <b>clique</b> atira (segure), <b>botão direito</b> dá zoom, <b>1-9, 0, -</b> ou a roda trocam de arma, <b>Q / E / F</b> habilidades, <b>R</b> Chuva de Ovos, <b>M</b> música, <b>Esc</b> pausa.<br>
-     <b>Celular:</b> arraste para mirar, toque para atirar e use os botões na tela.
+     Você está na cadeira de rodas da varanda e as galinhas estão no quintal. Os aliens querem levar todas. <b>Sua munição é ovo</b> — toda arma atira ovos.<br><br>
+     <b>VR:</b> na wave 1, balance o controle para arremessar ovos. Estilingue: o gatilho esquerdo pega o elástico, puxe e solte. Pistolas: um gatilho em cada mão. As outras armas usam o gatilho direito (segure). <b>Joystick esquerdo</b> anda, o direito gira. <b>A / X</b> trocam de arma. <b>GRIP esquerdo</b> (segure) solta a Chuva de Ovos quando estiver carregada.<br>
+     <b>PC:</b> <b>WASD</b> anda, o mouse mira, <b>clique</b> atira (segure), <b>botão direito</b> dá zoom, <b>1-8</b> ou a roda trocam de arma, <b>R</b> Chuva de Ovos, <b>M</b> música, <b>Esc</b> pausa.<br>
+     <b>Celular:</b> arraste para mirar, toque na nave para atirar e use os botões na tela.<br>
+     <b>Entre as waves</b> você escolhe 1 de 3 melhorias. Elas valem para o resto do jogo.
    </div>
    <div class="card" id="s-new"><h3>✨ NOVO NA 3.0</h3><ul>
-     <li><b>Visual novo</b>: estilo cartoon com contorno, céu e pôr do sol novos, rancho vivo</li>
-     <li><b>Som novo</b>: música que muda com o dia e com o chefão, som 3D das naves</li>
+     <li><b>8 waves mais rápidas</b> e com menos naves: partida curta e dinâmica</li>
+     <li><b>Tudo é ovo</b>: 8 armas, uma nova por wave, com física de verdade</li>
+     <li><b>Melhorias simples e permanentes</b>: força, rapidez, ovo duplo, ovo esperto, coração e ninhada</li>
+     <li><b>3 caixas de paraquedas</b>: ovo de ouro, câmera lenta e cura</li>
      <li><b>Chuva de Ovos</b>: abates carregam o especial que derruba ovos gigantes do céu</li>
-     <li><b>Nota de cada wave</b> com até 3 estrelas: galinhas salvas, precisão e dano</li>
-     <li><b>Mais leve no Quest</b>: ovos, galinhas e efeitos desenhados por instâncias</li>
-     <li>12 waves, 11 armas, 11 naves, chefões, nave-mãe e a <b>cadeira voadora</b></li>
+     <li>Visual cartoon com sombras da cor do céu, música que muda com o dia, chefão, nave-mãe e a <b>cadeira voadora</b></li>
    </ul></div>
    <div class="card" id="s-set"><h3 id="s-set-h">⚙️ AJUSTES</h3>
      <div class="set"><label id="l-music">🎵 Música</label><input id="set-music" type="range" min="0" max="100"></div>
@@ -185,7 +194,7 @@ body:not(.ready) #start .ctas{opacity:.5;pointer-events:none}
 
 <div id="hud">
   <div class="tl">
-    <div class="pill"><span id="h-wave">WAVE 1/12</span> · <span id="h-weapon"></span></div>
+    <div class="pill"><span id="h-wave">WAVE 1/8</span> · <span id="h-weapon"></span></div>
     <div class="pill" id="h-chk"></div>
     <div id="h-hp"><div id="h-hpfill"></div><div id="h-hptxt"></div></div>
     <div id="h-power"></div>
@@ -197,7 +206,7 @@ body:not(.ready) #start .ctas{opacity:.5;pointer-events:none}
 <div id="ultbtn"><span>🥚</span><em>0%</em></div>
 <div id="crosshair"></div>
 <button id="m-switch">🔄</button>
-<div id="pause"><h2 id="p-h">PAUSADO</h2><p id="p-p">clique pra continuar</p><div class="keys" id="p-keys"><b>W</b><b>A</b><b>S</b><b>D</b> andar · <b>mouse</b> mirar · <b>clique</b> atirar · <b>botão direito</b> zoom<br><b>1</b>…<b>0</b> <b>-</b> / roda: arma · <b>Q</b> <b>E</b> <b>F</b> habilidades · <b>R</b> Chuva de Ovos · <b>M</b> música · <b>Esc</b> pausa</div></div>
+<div id="pause"><h2 id="p-h">PAUSADO</h2><p id="p-p">clique pra continuar</p><div class="keys" id="p-keys"><b>W</b><b>A</b><b>S</b><b>D</b> andar · <b>mouse</b> mirar · <b>clique</b> atirar · <b>botão direito</b> zoom<br><b>1</b>…<b>8</b> / roda: arma · <b>R</b> Chuva de Ovos · <b>M</b> música · <b>Esc</b> pausa</div></div>
 
 <script>
 // Idioma: pt (padrão), en, fi. Escolhido na tela inicial e salvo em localStorage.
@@ -211,20 +220,20 @@ body:not(.ready) #start .ctas{opacity:.5;pointer-events:none}
     en: {
       's-tag': 'Defend the chicken coop from the alien invasion — with eggs!',
       's-best': 'BEST', 'cta': '🖥️ PLAY ON PC', 's-hint': 'On Meta Quest: press ENTER VR · PC: mouse + keyboard · phone: touch',
-      's-how': '<h3>🎮 HOW TO PLAY</h3>You sit in a wheelchair on the porch and the chickens are in the yard. The aliens want to take them all. <b>Your ammo is eggs.</b><br><br><b>VR:</b> in wave 1, swing the controller to throw eggs. Slingshot and crossbow: the left trigger grabs the band, pull and release. Pistols: one trigger per hand. Other weapons use the right trigger (hold). <b>Left stick</b> walks, the right one turns. <b>A / X</b> switch weapons. <b>B, Y and right GRIP</b> trigger skills. <b>Left GRIP</b> (hold) unleashes the Egg Storm when charged.<br><b>PC:</b> <b>WASD</b> walks, the mouse aims, <b>click</b> shoots (hold), <b>right click</b> zooms, <b>1-9, 0, -</b> or the wheel switch weapons, <b>Q / E / F</b> skills, <b>R</b> Egg Storm, <b>M</b> music, <b>Esc</b> pause.<br><b>Phone:</b> drag to aim, tap to shoot and use the on-screen buttons.',
-      's-new': '<h3>✨ NEW IN 3.0</h3><ul><li><b>New look</b>: outlined cartoon style, new sky and sunsets, a living ranch</li><li><b>New sound</b>: music that follows the time of day and the bosses, 3D saucer sounds</li><li><b>Egg Storm</b>: kills charge a special that drops giant eggs from the sky</li><li><b>Wave grade</b> up to 3 stars: chickens saved, accuracy and damage</li><li><b>Lighter on Quest</b>: eggs, chickens and effects are instanced</li><li>12 waves, 11 weapons, 11 saucers, bosses, the mothership and the <b>flying wheelchair</b></li></ul>',
+      's-how': '<h3>🎮 HOW TO PLAY</h3>You sit in a wheelchair on the porch and the chickens are in the yard. The aliens want to take them all. <b>Your ammo is eggs</b> — every weapon shoots eggs.<br><br><b>VR:</b> in wave 1, swing the controller to throw eggs. Slingshot: the left trigger grabs the band, pull and release. Pistols: one trigger per hand. Other weapons use the right trigger (hold). <b>Left stick</b> walks, the right one turns. <b>A / X</b> switch weapons. <b>Left GRIP</b> (hold) unleashes the Egg Storm when charged.<br><b>PC:</b> <b>WASD</b> walks, the mouse aims, <b>click</b> shoots (hold), <b>right click</b> zooms, <b>1-8</b> or the wheel switch weapons, <b>R</b> Egg Storm, <b>M</b> music, <b>Esc</b> pause.<br><b>Phone:</b> drag to aim, tap a saucer to shoot and use the on-screen buttons.<br><b>Between waves</b> you pick 1 of 3 upgrades. They last for the rest of the game.',
+      's-new': '<h3>✨ NEW IN 3.0</h3><ul><li><b>8 faster waves</b> with fewer saucers: a short, punchy game</li><li><b>Everything is an egg</b>: 8 weapons, a new one each wave, with real physics</li><li><b>Simple permanent upgrades</b>: strength, quick hands, double egg, smart egg, heart and new brood</li><li><b>3 parachute crates</b>: golden egg, slow motion and heal</li><li><b>Egg Storm</b>: kills charge a special that drops giant eggs from the sky</li><li>Cartoon look with sky-tinted shadows, music that follows the day, boss, mothership and the <b>flying wheelchair</b></li></ul>',
       's-set-h': '⚙️ SETTINGS', 'l-music': '🎵 Music', 'l-sfx': '🔊 Effects', 'l-vig': '🥽 Vignette', 'l-turn': '↻ Snap turn',
       'v2link': 'version 2.1', 'v1link': 'original version 1.0', 'h-lbl': 'SCORE · BEST', 'p-h': 'PAUSED', 'p-p': 'click to continue',
-      'p-keys': '<b>W</b><b>A</b><b>S</b><b>D</b> walk · <b>mouse</b> aim · <b>click</b> shoot · <b>right click</b> zoom<br><b>1</b>…<b>0</b> <b>-</b> / wheel: weapon · <b>Q</b> <b>E</b> <b>F</b> skills · <b>R</b> Egg Storm · <b>M</b> music · <b>Esc</b> pause'
+      'p-keys': '<b>W</b><b>A</b><b>S</b><b>D</b> walk · <b>mouse</b> aim · <b>click</b> shoot · <b>right click</b> zoom<br><b>1</b>…<b>8</b> / wheel: weapon · <b>R</b> Egg Storm · <b>M</b> music · <b>Esc</b> pause'
     },
     fi: {
       's-tag': 'Puolusta kanalaa avaruusolentojen hyökkäykseltä — munilla!',
       's-best': 'ENNÄTYS', 'cta': '🖥️ PELAA PC:LLÄ', 's-hint': 'Meta Questissa: paina ENTER VR · PC: hiiri + näppäimistö · puhelin: kosketus',
-      's-how': '<h3>🎮 NÄIN PELAAT</h3>Istut pyörätuolissa kuistilla ja kanat ovat pihalla. Alienit haluavat viedä ne kaikki. <b>Ammuksesi ovat munia.</b><br><br><b>VR:</b> aallossa 1 heilauta ohjainta heittääksesi munia. Ritsa ja varsijousi: vasen liipaisin tarttuu kuminauhaan, vedä ja päästä. Pistoolit: yksi liipaisin kummallekin kädelle. Muut aseet käyttävät oikeaa liipaisinta (pidä pohjassa). <b>Vasen tikku</b> liikuttaa, oikea kääntää. <b>A / X</b> vaihtavat asetta. <b>B, Y ja oikea GRIP</b> aktivoivat kyvyt. <b>Vasen GRIP</b> (pidä pohjassa) päästää munasateen, kun se on latautunut.<br><b>PC:</b> <b>WASD</b> liikuttaa, hiiri tähtää, <b>klikkaus</b> ampuu (pidä), <b>oikea klikkaus</b> zoomaa, <b>1-9, 0, -</b> tai rulla vaihtavat asetta, <b>Q / E / F</b> kyvyt, <b>R</b> munasade, <b>M</b> musiikki, <b>Esc</b> tauko.<br><b>Puhelin:</b> tähtää vetämällä, ammu napauttamalla ja käytä näytön nappeja.',
-      's-new': '<h3>✨ UUTTA 3.0:SSA</h3><ul><li><b>Uusi ilme</b>: ääriviivoitettu sarjakuvatyyli, uusi taivas ja auringonlaskut, elävä maatila</li><li><b>Uusi ääni</b>: musiikki muuttuu vuorokaudenajan ja pomojen mukaan, 3D-lautasäänet</li><li><b>Munasade</b>: tuhot lataavat erikoisiskun, joka pudottaa jättimunia taivaalta</li><li><b>Aaltoarvosana</b> enintään 3 tähteä: pelastetut kanat, tarkkuus ja vahinko</li><li><b>Kevyempi Questissa</b>: munat, kanat ja efektit piirretään instansseina</li><li>12 aaltoa, 11 asetta, 11 lautasta, pomot, emoalus ja <b>lentävä pyörätuoli</b></li></ul>',
+      's-how': '<h3>🎮 NÄIN PELAAT</h3>Istut pyörätuolissa kuistilla ja kanat ovat pihalla. Alienit haluavat viedä ne kaikki. <b>Ammuksesi ovat munia</b> — jokainen ase ampuu munia.<br><br><b>VR:</b> aallossa 1 heilauta ohjainta heittääksesi munia. Ritsa: vasen liipaisin tarttuu kuminauhaan, vedä ja päästä. Pistoolit: yksi liipaisin kummassakin kädessä. Muut aseet: oikea liipaisin (pidä). <b>Vasen tikku</b> liikkuu, oikea kääntää. <b>A / X</b> vaihtavat asetta. <b>Vasen GRIP</b> (pidä pohjassa) päästää munasateen, kun se on latautunut.<br><b>PC:</b> <b>WASD</b> liikkuu, hiiri tähtää, <b>klikkaus</b> ampuu (pidä), <b>oikea nappi</b> zoomaa, <b>1-8</b> tai rulla vaihtavat asetta, <b>R</b> munasade, <b>M</b> musiikki, <b>Esc</b> tauko.<br><b>Puhelin:</b> vedä tähdätäksesi, napauta lautasta ampuaksesi ja käytä ruudun nappeja.<br><b>Aaltojen välissä</b> valitset 1 parannuksen kolmesta. Ne kestävät koko pelin.',
+      's-new': '<h3>✨ UUTTA 3.0:SSA</h3><ul><li><b>8 nopeampaa aaltoa</b> ja vähemmän lautasia: lyhyt ja vauhdikas peli</li><li><b>Kaikki on munaa</b>: 8 asetta, uusi joka aallossa, oikealla fysiikalla</li><li><b>Yksinkertaiset pysyvät parannukset</b>: voima, nopeat kädet, tuplamuna, fiksu muna, sydän ja poikue</li><li><b>3 laskuvarjolaatikkoa</b>: kultamuna, hidastus ja parannus</li><li><b>Munasade</b>: tappot lataavat erikoisen, joka pudottaa jättimunia taivaalta</li><li>Sarjakuvatyyli taivaan sävyisillä varjoilla, päivän mukaan vaihtuva musiikki, pomo, emoalus ja <b>lentävä pyörätuoli</b></li></ul>',
       's-set-h': '⚙️ ASETUKSET', 'l-music': '🎵 Musiikki', 'l-sfx': '🔊 Efektit', 'l-vig': '🥽 Vinjetti', 'l-turn': '↻ Porraskääntö',
       'v2link': 'versio 2.1', 'v1link': 'alkuperäinen versio 1.0', 'h-lbl': 'PISTEET · ENNÄTYS', 'p-h': 'TAUKO', 'p-p': 'klikkaa jatkaaksesi',
-      'p-keys': '<b>W</b><b>A</b><b>S</b><b>D</b> liiku · <b>hiiri</b> tähtää · <b>klikkaus</b> ammu · <b>oikea klikkaus</b> zoom<br><b>1</b>…<b>0</b> <b>-</b> / rulla: ase · <b>Q</b> <b>E</b> <b>F</b> kyvyt · <b>R</b> munasade · <b>M</b> musiikki · <b>Esc</b> tauko'
+      'p-keys': '<b>W</b><b>A</b><b>S</b><b>D</b> liiku · <b>hiiri</b> tähtää · <b>klikkaus</b> ammu · <b>oikea klikkaus</b> zoom<br><b>1</b>…<b>8</b> / rulla: ase · <b>R</b> munasade · <b>M</b> musiikki · <b>Esc</b> tauko'
     }
   };
   var T = H[L];

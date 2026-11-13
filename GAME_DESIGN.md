@@ -16,6 +16,29 @@
 > **visual toon com contorno, personagens instanciados, especial carregado por abates, nota de wave e menu VR de atirar**.
 > As armas estão na **seção 3** (com o guia de portar na 3.6).
 
+**Versão 3.4 (mais curta, mais simples, tudo é ovo) — vale por cima das tabelas antigas abaixo:**
+- **8 waves** (antes 12) e ~1/3 das naves, chegando mais rápido. Tabela em `src/config.js` (`WAVES`). Chefão pequeno na 3,
+  chefão na 6, nave-mãe + cadeira voadora na 8. Saíram as naves sniper e ladra da campanha (seguem no modo infinito).
+- **8 armas, todas de OVO**, uma nova por wave: ovos na mão, estilingue, pistolas, espingarda, lança-ovo, gatling,
+  ovo-foguete teleguiado e ovo-rojão. Saíram besta, laser e raio tesla.
+- **Física:** todo ovo tem gravidade e velocidade de ovo (30–42 m/s nas armas de fogo, antes 60–75), tabela `BAL` em
+  `weapons.js`. No PC/celular a mira resolve a parábola até o alvo (`launchVel` → `solveThrow` com velocidade fixa) e
+  mira à frente de nave andando; no VR o ovo sai na direção do cano. O ovo dá **cambalhota mostrando o perfil** para a
+  câmera (antes apontava para onde voava e, de trás, parecia uma bola) e tem contorno.
+- **A mira entende a distância** (`resolveAim` em `player.js`): nave sob a mira → a distância dela; até ~7° da mira → a
+  distância da nave mais próxima (mantendo a direção); chão → o ponto do chão; céu vazio → 22 m. Antes, mirar um pouco
+  ao lado de uma nave virava "alvo a 40 m" e o arco mudava. A distância muda suave entre quadros.
+- **Melhorias permanentes** (antes: 14 habilidades ativas de 8 s com botão): Força (+25% dano, 3 níveis), Mão Rápida
+  (+20% cadência, 3), Ovo Duplo (+1 ovo por tiro, 2), Ovo Esperto (ovos curvam até as naves, 2), Coração de Galo
+  (+25 vida máx e cura, 2) e Ninhada (+2 galinhas). 1 de 3 depois de cada wave; aparecem no HUD e no painel do colo.
+  Os botões B/Y/GRIP direito e Q/E/F não fazem mais nada.
+- **Só 3 caixas de paraquedas:** ovo de ouro (dano ×2, 8 s), câmera lenta (metade da velocidade, 6 s) e cura (+30).
+- **Código secreto (testar waves):** `?wave=N` no endereço · PC: digitar **OVOS** no menu e escolher 1–8 · celular:
+  5 toques no título · VR: **B + Y juntos** no menu avançam a wave inicial (mostrada na placa). Começa com as armas daquela
+  wave e N−1 melhorias aleatórias; o recorde não conta.
+- **Menu VR** 0,6 m para a esquerda. **Qualidade automática também no PC/celular** (pixel ratio, grama e partículas
+  baixam se ficar abaixo de ~45 fps).
+
 **Versão 3.0 (refeita do zero):**
 - **Engine:** Three.js r186 + WebGL2 (WebGPU dentro do WebXR ainda é experimental no Quest Browser em nov/2026;
   o IWSDK da Meta exige build com npm sem ganho real para este jogo). Código dividido em 17 módulos.

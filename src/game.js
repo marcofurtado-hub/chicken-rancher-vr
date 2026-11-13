@@ -5,14 +5,14 @@ import { THREE, renderer, scene, camera, rig, camPos, camDir, U, xrActive, isTou
 import { G, clamp, rand, pick, shuffle, fmt, tmpV, save, playing, comboWindow, MAX_CHICKENS } from './core.js';
 import { tr } from './i18n.js';
 import { WEAPONS, WEAPON_ORDER, WAVES, UFO_TYPES, WEAPON_TIPS, getWave, POWERS } from './config.js';
-import { updateFx, clearFx, showBanner, hideBanner, popup, ov, fxAdd, randDir, sparks, confetti, seg, glow, SHAPE, friedEgg, debrisBurst, blast, bolt, smoke, fireball, feathers } from './fx.js';
+import { updateFx, clearFx, showBanner, hideBanner, popup, popupAhead, ov, fxAdd, randDir, sparks, confetti, seg, glow, SHAPE, friedEgg, debrisBurst, blast, bolt, smoke, fireball, feathers } from './fx.js';
 import { sfx, loop, music, stinger, setListener, heartbeat, initAudio } from './audio.js';
 import { initWorld, updateWorld, setTOD, nightAmount } from './world.js';
 import { chickens, spawnInitialFlock, clearChickens, chickensAlive, spawnChicken, removeChicken, respawnChicken, setChickenShield, updateChickens, drawChickens, INITIAL_FLOCK } from './chickens.js';
 import { ufos, spawnRegular, spawnBoss, spawnMothership, updateUfos, refreshAllParts, updateEproj, updateCrates, clearUfos, isAlive, aliveRegulars, stopAllHums, spawnCrate, fireEnemy, EP_DEF, crates } from './ufos.js';
 import { castSegment, resetCombo, healPlayer, hitStop, killUfo } from './combat.js';
 import { updateProjectiles, clearProjectiles, equipWeapon, updateWeapons, trackHands, setLaser, desktopShoot, fireUltimate, projs, aimInfo, THROW, throwEgg, spawnEgg } from './weapons.js';
-import { updateSkills, refreshUp, resetSkillsForWave, showUpgradeCards, clearCards, updateCards, cards, updateBirds, clearBirds, useSkill, buildOffer, spawnBirds } from './skills.js';
+import { updateSkills, refreshUp, resetSkillsForWave, showUpgradeCards, clearCards, updateCards, cards, updateBirds, clearBirds, useSkill, buildOffer, spawnBirds, grantRandomUpgrades } from './skills.js';
 import { updatePlayer, resetPlayer, flight, flightActive, startFlightEvent, clearFlightChair, CTRL, applyPcView, playerInput, lockPointer, moveRig, selectWeapon, pcAim, pcAimVel } from './player.js';
 import { updateHud, drawSign, updateStartBest, waveLabel, initHud } from './hud.js';
 import { groundHeightAt } from './world.js';
@@ -109,7 +109,7 @@ function advanceFromComplete() {
 }
 function finalizeScore() {
   G.lastScore = G.score;
-  G.newRecord = G.score > G.best;
+  G.newRecord = !G.testWave && G.score > G.best;
   if (G.newRecord) { G.best = G.score; save('cr3_best', G.best); }
   updateStartBest();
   drawSign();
@@ -147,7 +147,7 @@ export function resetGame() {
   clearBirds();
   G.score = 0; resetCombo(); G.multiN = 0; G.killsSinceDrop = 0; G.waveLost = 0;
   G.power.golden = G.power.boom = G.power.slow = 0;
-  G.slots.length = 0; refreshUp();
+  G.slots.length = 0; for (const k in G.lv) delete G.lv[k]; refreshUp();
   G.pendingPicks = 0; G.ult = 0; G.ultActive = 0;
   G.unlocked.clear(); G.unlocked.add('hands');
   G.wave = 0; G.waveDef = WAVES[0]; W.queue = []; W.bossSpawned = false;
@@ -168,7 +168,19 @@ export function startGame() {
   initAudio();
   const s = document.getElementById('start');
   if (s && s.style.display !== 'none') { s.style.display = 'none'; lockPointer(); }
-  startWave(0);
+  const w0 = Math.min(Math.max(0, G.testWave | 0), WAVES.length - 1);
+  if (w0 > 0) grantRandomUpgrades(w0);
+  startWave(w0);
+  if (w0 > 0) popupAhead('🧪 ' + tr('MODO TESTE · WAVE ', 'TEST MODE · WAVE ', 'TESTITILA · AALTO ') + (w0 + 1), '#60e0ff', 1.1, 2.5);
+}
+/** Código secreto: escolhe a wave inicial (0 = normal). */
+export function setTestWave(n) {
+  G.testWave = ((n % WAVES.length) + WAVES.length) % WAVES.length;
+  drawSign();
+  const pick = document.getElementById('wavepick');
+  if (pick) for (const b of pick.querySelectorAll('button')) b.classList.toggle('on', +b.dataset.w === G.testWave);
+  const lab = document.getElementById('wavepick-label');
+  if (lab) lab.textContent = G.testWave ? tr('🧪 MODO TESTE: começa na wave ', '🧪 TEST MODE: starts at wave ', '🧪 TESTITILA: alkaa aallosta ') + (G.testWave + 1) + tr(' (recorde não conta)', ' (best score not saved)', ' (ennätystä ei tallenneta)') : tr('🧪 escolha a wave inicial', '🧪 pick the starting wave', '🧪 valitse aloitusaalto');
 }
 /** Gatilho / clique / espaço fora de combate. Retorna true se consumiu o input. */
 export function handleMenuAdvance(ctrl) {
@@ -274,7 +286,7 @@ export function gameLoop(time, xrFrame, forcedDt) {
   updateSkills(dt);
   ov.slow = (G.power.slow > 0 || G.up.slowSkill < 1) ? 1 : 0;
   ov.bubble = G.up.bubble ? 1 : 0;
-  const targetScale = Math.min(G.power.slow > 0 ? 0.35 : 1, G.up.slowSkill);
+  const targetScale = Math.min(G.power.slow > 0 ? 0.5 : 1, G.up.slowSkill);   // câmera lenta: metade da velocidade
   G.timeScale += (targetScale - G.timeScale) * Math.min(1, dt * 5);
   let edt = dt * G.timeScale;
   if (G.hitStop > 0) { G.hitStop -= dt; edt *= 0.08; }
