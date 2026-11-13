@@ -230,7 +230,8 @@ export function killUfo(u, hitPos) {
   eggBurst(pos, G.power.golden > 0, 8);
   debrisBurst(pos, u.T.color, u.kind === 'boss' ? 18 : 6, 3);
   sfx('ufoExplode', { pos });
-  if (u.kind === 'boss') {
+  if (u.kind === 'boss' && u.vet) { blast(pos, 3, 0xff8030); pulseAll(0.6, 120); confetti(pos, 20, 4); }
+  else if (u.kind === 'boss') {
     blast(pos, 4, 0xff8030); pulseAll(0.95, 250); hitStop(0.25); confetti(pos, 50, 5);
     sfx('bossDeath', { pos });
     showBanner((u.D ? u.D.name + ' ' : '') + tr('DERROTADO!', 'DEFEATED!', 'KUKISTETTU!'), '', '', '#ffd040', 2.2);

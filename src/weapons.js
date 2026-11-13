@@ -254,7 +254,7 @@ export function spawnEgg(pos, vel, o = {}) {
     life: 0, damage: (o.damage || 1) * G.up.dmg * (golden ? 2 : 1),
     gravity: !!o.gravity, gScale: o.gScale != null ? o.gScale : 1,
     vis: o.giant ? 'giant' : o.firework ? 'fw' : o.rocket ? 'rocket' : o.arrow ? 'arrow' : 'egg',
-    scale: o.scale || 1, maxLife: o.maxLife || 5, magnet: (o.magnet || 0) * G.up.magnet,
+    scale: (o.scale || 1) * (1 + (G.up.dmg - 1) * 0.6), maxLife: o.maxLife || 5, magnet: (o.magnet || 0) * G.up.magnet,
     golden, boom, boomR: o.boomR || 2.8, boomDmg: o.boomDmg || 2, pierce: G.up.pierce + (o.pierce || 0), ricochet: o.noRicochet ? 0 : G.up.ricochet,
     hitSet: null, firework: !!o.firework, giant: !!o.giant, homing: o.homing ? { target: null } : null, extraR: o.extraR || 0, spin: rand(0, 6), dead: false,
     col: golden ? GOLD_COL : boom ? BOOM_COL : G.up.fire ? FIRE_COL : G.up.ice ? ICE_COL : EGG_COL,
@@ -544,7 +544,7 @@ function fireLaserPulse() {
   const origin = muzzleWorld('laser', t0).clone();
   const fwd = shotDir(origin, CTRL.right, t1).clone();
   fwd.x += rand(-0.012, 0.012); fwd.y += rand(-0.012, 0.012); fwd.z += rand(-0.012, 0.012); fwd.normalize();
-  const dmg = 2 * G.up.dmg * (G.power.golden > 0 ? 3 : 1);
+  const dmg = 5 * G.up.dmg * (G.power.golden > 0 ? 3 : 1);   // arma final: a mais forte num alvo só
   laserSegs.length = 0;
   G.waveShots++;
   volleyDirs(fwd).slice(0, 7).forEach(v => {
@@ -586,7 +586,7 @@ const TESLA_R = 7;
 function fireTesla() {
   const origin = muzzleWorld('tesla', t0).clone();
   const aim = shotDir(origin, CTRL.right, t1).clone();
-  const base = 3 * G.up.dmg * (G.power.golden > 0 ? 3 : 1);
+  const base = 6 * G.up.dmg * (G.power.golden > 0 ? 3 : 1);
   const zapped = new Set();
   let total = 0, popAt = null;
   G.waveShots++;

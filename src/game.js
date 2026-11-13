@@ -24,13 +24,15 @@ const [t0, t1, t2] = tmpV(3);
 const W = { queue: [], spawnT: 0, spawned: 0, total: 0, bossSpawned: false, fwT: 0 };
 
 // ---------- Fluxo ----------
-function buildQueue(mix, intro) {
+function buildQueue(mix, intro, vets) {
   const q = [];
   for (const [k, n] of Object.entries(mix)) for (let i = 0; i < n; i++) q.push(k);
   shuffle(q);
   const pullFront = (type, idx) => { const j = q.indexOf(type, idx); if (j > idx) { q.splice(j, 1); q.splice(idx, 0, type); } };
   pullFront('saucer', 0); pullFront('saucer', 1);
   if (intro && intro !== 'saucer') pullFront(intro, 2);
+  // chefes já vencidos voltam como inimigos comuns, espalhados pela segunda metade da wave
+  (vets || []).forEach((id, i) => q.splice(Math.min(q.length, Math.round(q.length * (0.4 + 0.45 * i / vets.length)) + i), 0, 'vet:' + id));
   return q;
 }
 export function clearQueue() { W.queue.length = 0; }
@@ -38,7 +40,7 @@ export function clearQueue() { W.queue.length = 0; }
 export function startWave(idx) {
   const w = getWave(idx);
   G.wave = idx; G.waveDef = w;
-  W.queue = buildQueue(w.mix, w.intro);
+  W.queue = buildQueue(w.mix, w.intro, w.vets);
   W.total = W.queue.length; W.spawned = 0; W.spawnT = 1.0;
   W.bossSpawned = false;
   G.waveLost = 0; G.waveKills = 0; G.waveShots = 0; G.waveHits = 0; G.waveDamage = 0;
@@ -211,11 +213,18 @@ function updateWaveLogic(edt) {
     const w = G.waveDef;
     W.spawnT -= edt;
     if (W.queue.length && W.spawnT <= 0 && aliveRegulars() < w.maxAlive) {
-      spawnRegular(W.queue.shift());
+      const k = W.queue.shift();
+      if (k.startsWith('vet:')) spawnBoss(k.slice(4), true, true); else spawnRegular(k);
       W.spawned++;
       W.spawnT = w.interval * rand(0.7, 1.3);
     }
     if (w.flight && !flight.done && G.stateT > 8) startFlightEvent();
+    if (G.wave === 0 && !W.hinted && G.stateT > 5 && !isTouch) {   // primeira wave: avisa que andar é opcional
+      W.hinted = true;
+      const vr = xrActive();
+      showBanner(tr('DICA', 'TIP', 'VINKKI'), vr ? tr('dá pra jogar sentado, sem sair da varanda', 'you can play seated, without leaving the porch', 'voit pelata istuen, poistumatta kuistilta') : tr('dá pra jogar sem sair da varanda', 'you can play without leaving the porch', 'voit pelata poistumatta kuistilta'),
+        vr ? tr('analógico esquerdo anda (opcional)', 'left stick walks (optional)', 'vasen sauva liikuttaa (valinnainen)') : tr('WASD anda (opcional) · [ e ] mudam a sensibilidade do mouse', 'WASD walks (optional) · [ and ] change mouse sensitivity', 'WASD liikkuu (valinnainen) · [ ja ] säätävät hiiren herkkyyttä'), '#8dff4a', 5);
+    }
     // o chefe só chega no FIM da wave: fila vazia e nenhuma nave comum viva
     const cleared = !W.queue.length && !ufos.some(u => !u.removed && (u.kind !== 'ufo' || isAlive(u)) && u.state !== 'escaping');
     if (cleared && w.boss && !W.bossSpawned) { spawnBoss(w.boss); W.bossSpawned = true; }

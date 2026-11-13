@@ -65,7 +65,8 @@ export function refreshUp() {
   const up = G.up;
   Object.assign(up, UP_DEFAULTS);
   up.dmg = 1 + 0.25 * lvOf('forca');
-  up.rate = 1 + 0.2 * lvOf('rapidez');
+  up.rate = 1 + 0.2 * lvOf('rapidez');   // (melhoria antiga; não é mais oferecida)
+  up.ricochet = lvOf('ricochete');
   up.front = lvOf('duplo');
   up.magnet = 1 + 0.6 * lvOf('mira');
 }

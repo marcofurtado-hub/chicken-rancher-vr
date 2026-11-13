@@ -60,7 +60,7 @@ export const G = {
   pendingPicks: 0,
   tod: 0, todTarget: 0,
   paused: false,
-  settings: Object.assign({ vignette: true, turn: 'smooth', turnSpeed: 1, music: 0.45, sfx: 1, hand: 'right' }, load('cr3_settings', {})),
+  settings: Object.assign({ vignette: true, turn: 'smooth', turnSpeed: 1, music: 0.45, sfx: 1, hand: 'right', mouse: 1.3 }, load('cr3_settings', {})),
 };
 export function saveSettings() { save('cr3_settings', G.settings); }
 

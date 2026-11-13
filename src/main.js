@@ -39,6 +39,7 @@ function bindToggle(id, get, set) {
 const applyVol = () => setVolumes({ music: S.music, sfx: S.sfx });
 bindRange('set-music', 'music', applyVol);
 bindRange('set-sfx', 'sfx', applyVol);
+bindRange('set-mouse', 'mouse', () => {});
 bindToggle('set-vig', () => S.vignette, () => { S.vignette = !S.vignette; });
 bindToggle('set-turn', () => S.turn === 'snap', () => { S.turn = S.turn === 'snap' ? 'smooth' : 'snap'; });
 

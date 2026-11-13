@@ -329,7 +329,14 @@ addEventListener('keydown', e => {
     if (secretBuf === 'OVOS') { openWavePick(); secretBuf = ''; }
   }
   const m = e.code.match(/^Digit(\d)$/);
-  if (m) { const n = parseInt(m[1], 10); if (G.state === 'idle' && wavePickOpen()) setTestWave(n - 1); else selectWeapon(WEAPON_ORDER[n - 1]); }
+  if (m) { const n = (parseInt(m[1], 10) + 9) % 10; if (G.state === 'idle' && wavePickOpen()) setTestWave(n); else selectWeapon(WEAPON_ORDER[n]); }   // 1..9 e 0 = décima
+  // [ e ] ajustam a sensibilidade do mouse no meio do jogo
+  if (e.code === 'BracketLeft' || e.code === 'BracketRight') {
+    const S = G.settings; S.mouse = clamp(Math.round(((S.mouse || 1) + (e.code === 'BracketRight' ? 0.1 : -0.1)) * 10) / 10, 0.3, 3);
+    save('cr3_settings', S);
+    const el = document.getElementById('set-mouse'); if (el) el.value = Math.round(S.mouse * 100);
+    popupAhead(tr('🖱 SENSIBILIDADE ', '🖱 SENSITIVITY ', '🖱 HERKKYYS ') + Math.round(S.mouse * 100) + '%', '#8dff4a', 0.8);
+  }
 });
 function musicToggle() { return toggleMusic(); }
 let wheelT = 0;
@@ -357,7 +364,7 @@ renderer.domElement.addEventListener('click', () => {
 });
 addEventListener('mousemove', e => {
   if (!P.mouseLocked || xrActive()) return;
-  const sens = 0.0025 * (camera.fov / 78);
+  const sens = 0.0025 * (camera.fov / 78) * (G.settings.mouse || 1);
   P.yaw -= e.movementX * sens;
   P.pitch = clamp(P.pitch - e.movementY * sens, -Math.PI / 2 + 0.1, Math.PI / 2 - 0.1);
   if (!flightActive()) applyPcView(); else camera.rotation.set(P.pitch, 0, 0), rig.rotation.y = P.yaw;

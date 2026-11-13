@@ -21,20 +21,26 @@
   de `config.js`). O chefe **só chega no FIM da wave**, depois que todas as naves comuns foram embora. A wave 10
   termina em **VITÓRIA** e mostra o ranking. Saíram a nave-mãe, o final da paz e os créditos (`ending.js` apagado) e
   o modo infinito do fluxo.
-- **Os 10 chefes são naves e alienígenas** (nada de balão, cartola, abelha ou galo). Os ids internos ainda são os
-  antigos (entre parênteses):
-  1. **Batedor** (`zepelim`) — disco de reconhecimento com 3 cristais de energia; estourar os 3 derruba.
-  2. **Vigia** (`olhao`) — olho de réptil numa casca de metal; só toma dano aberto; puxa a galinha com o olhar.
-  3. **Comboio** (`centopeia`) — nave-chefe puxando 9 vagões (mini discos); destrua os vagões, depois a nave.
-  4. **Cérebro-Lula** (`polvo`) — alienígena de cérebro à mostra com 4 tentáculos; tiro no tentáculo solta a galinha.
-  5. **Broca** (`minhocao`) — máquina-verme que anda por baixo da terra e sobe mordendo; tiro na boca faz cuspir.
-  6. **Cristal** (`tempestade`) — máquina escondida num aglomerado de 9 cristais que rebrotam; raio no jogador
-     (quebrar um cristal durante a carga faz o raio falhar) e funil que suga galinha.
-  7. **Miragem** (`magico`) — nave-prisma com 2 hologramas; a de verdade tem os olhos brilhando; troca de lugar.
-  8. **Rainha** (`colmeia`) — nave-ninho com 12 zangões (mini caças) que mantêm um escudo e carregam galinha.
-  9. **Ceifador** (`colheitadeira`) — ceifadeira flutuante, frente blindada; tanques vermelhos afogam o motor.
-  10. **Imperador** (`galozilla`) — alienígena gigante num robô atrás da cerca: peito abre (núcleo ×3), mini-aliens
-      roubam galinhas, laser dos olhos (acertar o cérebro cancela) e rugido que chama naves. 3 fases.
+- **Os 10 chefes são naves e alienígenas, em ordem de tamanho e complexidade** (ids internos antigos entre parênteses):
+  1. **Batedor** (`zepelim`, 4 m) — disco de reconhecimento com 3 cristais de energia; estourar os 3 derruba.
+  2. **Vigia** (`olhao`, 4,5 m) — olho de réptil numa casca de metal; só toma dano aberto; puxa a galinha com o olhar.
+  3. **Broca** (`minhocao`, 5 m) — máquina-verme que anda por baixo da terra e sobe mordendo; tiro na boca faz cuspir.
+  4. **Comboio** (`centopeia`, fila de 12 m) — nave-chefe puxando 9 vagões; destrua os vagões, depois a nave.
+  5. **Miragem** (`magico`, 3 naves de 4,5 m) — nave-prisma com 2 hologramas; a de verdade tem os olhos brilhando.
+  6. **Cérebro-Lula** (`polvo`, 8 m) — alienígena de cérebro à mostra com 4 tentáculos que agarram galinhas.
+  7. **Ceifador** (`colheitadeira`, 8 m) — ceifadeira flutuante, frente blindada; tanques vermelhos afogam o motor.
+  8. **Cristal** (`tempestade`, 9 m) — máquina num aglomerado de 9 cristais que rebrotam; raio e funil.
+  9. **Rainha** (`colmeia`, 11 m com os zangões) — nave-ninho com 12 mini caças que mantêm um escudo.
+  10. **Imperador** (`galozilla`, 15 m) — alienígena gigante num robô: peito abre, mini-aliens roubam galinhas, laser
+      (acertar o cérebro cancela), rugido, e **chama um chefe antigo** a cada fase (Batedor, depois Vigia).
+- **O difícil de ontem é o fácil de hoje:** chefes já vencidos voltam no meio das waves seguintes como inimigos comuns
+  (`vets` em `WAVES`; `spawnBoss(id, true, true)`): 60% da vida base, sem faixa de chefão, pontos menores.
+- **10 armas, uma por wave:** ovos na mão, estilingue, pistolas, escopeta, lança-ovo, gatling, teleguiado, rojão,
+  **raio tesla** (wave 9, pula entre naves) e **laser** (wave 10, a mais forte num alvo só). Teclas 1-9 e 0.
+- **Melhorias:** saiu a Mão Rápida (invisível); entrou o **Ricochete** (o ovo quica para outra nave) e a Força virou
+  **Ovo Grandão** (o ovo cresce junto com o dano).
+- **Feedback de teste (PC):** sensibilidade do mouse ajustável (ajustes do menu, ou teclas `[` e `]` no jogo; padrão
+  130%); na primeira wave aparece a dica de que dá para jogar sem sair da varanda e que andar é opcional.
 - **Como um chefe é montado** (receita reaproveitável): `base(id)` cria a entidade (esconde o corpo de nave), `piece()`
   monta malhas toon com contorno, `instanced()` desenha peças repetidas, `addPart()` cria as áreas de acerto
   (`body`, `crit`, `armor`, `sub` = peça com vida própria, `tent`), `part.onHit`/`part.onDown`/`u.onDamaged` são os

@@ -85,7 +85,7 @@ function nearestChicken(x, z, maxD = 99) {
 const faceYaw = (obj, x, z) => { obj.rotation.y = Math.atan2(x - obj.position.x, z - obj.position.z); };
 
 // ---------- Base ----------
-function base(id) {
+function base(id, vet) {
   const D = BOSSES[id], idx = BOSS_ORDER.indexOf(id);
   const u = makeEntity('boss', 'boss', 1);
   u.body.visible = false; u.alien.visible = false; u.custom = true;
@@ -93,8 +93,9 @@ function base(id) {
   // A vida acompanha (em parte) o poder de fogo do jogador: quem pegou muita melhoria de ataque ainda
   // mata mais rápido, mas a luta não vira um piscar de olhos. O Zepelim conta balões, não vida.
   const power = G.up.dmg * G.up.rate * (1 + 0.5 * (G.up.front || 0));
-  u.hp = u.maxHp = id === 'zepelim' ? D.hp : Math.round(D.hp * (1 + Math.max(0, G.wave - idx) * 0.3) * Math.pow(Math.max(1, power), 0.7));
-  u.pts = 1500 + idx * 500;
+  u.hp = u.maxHp = id === 'zepelim' ? D.hp : vet ? Math.round(D.hp * 0.6) : Math.round(D.hp * (1 + Math.max(0, G.wave - idx) * 0.3) * Math.pow(Math.max(1, power), 0.7));
+  u.pts = vet ? 400 + idx * 100 : 1500 + idx * 500;
+  u.vet = !!vet;   // veterano: chefe já vencido que volta como inimigo comum (vida base, sem faixa de chefão)
   u.hover = new THREE.Vector3();
   u.bt = 0; u.traitT = 3; u.dmgAcc = 0;
   return u;
@@ -132,7 +133,7 @@ function boomDeath(dur, R, H) {
 // =============================================================================
 // 1 · ZEPELIM
 // =============================================================================
-const BAG_COLS = [0x5effd0, 0xff4fd8, 0xb6ff3a];
+const BAG_COLS = [0x5effd0, 0xff4fd8, 0xb6ff3a], ZS = 0.8;   // ZS = tamanho do Batedor (o menor chefe)
 function mkZepelim(u) {
   // casco de arraia com o piloto na cabine aberta e 3 células de energia em cima
   piece(u, 'sc_hull', g => {
@@ -160,16 +161,17 @@ function mkZepelim(u) {
       torus(g, 0.4, 0.07, 5, 12, 0x8a94a8, 0, -0.72, 0).rotation.x = PI / 2;
     });
     m.position.set((k - 1) * 1.35, 1.72, -0.15);
-    const part = addPart(u, m, { r: 0.8, kind: 'sub', hp: bagHp, maxHp: bagHp, onDown: zepPop });
+    const part = addPart(u, m, { r: 0.8 * ZS, kind: 'sub', hp: bagHp, maxHp: bagHp, onDown: zepPop });
     u.bags.push({ m, part });
   }
-  addPart(u, anchor(u.group, 0, 0.3, 0), { ellip: [2.0, 0.45, 1.0], kind: 'armor' });
+  addPart(u, anchor(u.group, 0, 0.3, 0), { ellip: [2.0 * ZS, 0.45 * ZS, 1.0 * ZS], kind: 'armor' });
   u.armorMsg = tr('ESTOURE OS CRISTAIS!', 'POP THE CRYSTALS!', 'PUHKAISE KRISTALLIT!');
   u.pos.set(rand(-6, 6), 20, 26);
   u.hover.set(rand(-2, 2), 5.0, 7.5);
   u.speed = 1.3; u.beamTime = G.waveDef.beamTime * 1.1; u.descendH = 3.6; u.afterBeam = 'rising';
   u.state = 'entering'; u.idleT = 3; u.tilt = 0;
   u.group.rotation.y = PI;   // a frente (cabine) fica virada para a varanda
+  u.group.scale.setScalar(ZS);
 }
 function zepPop(u, part) {
   confetti(part.c, 16, 3); popup('ZAP!', part.c, '#ffe080', 1.2);
@@ -587,7 +589,8 @@ function upMinhocao(u, dt, edt) {
 // =============================================================================
 // 6 · TEMPESTADE
 // =============================================================================
-const PUFFS = [[0, -0.2, -1.2, 1.3], [1.25, 0, -0.6, 1.2], [-1.25, -0.1, -0.6, 1.2], [0, 0.9, -0.3, 1.15], [0, -1.0, -0.3, 1.15], [0.9, 0.2, 0.9, 1.25], [-0.9, 0.1, 0.9, 1.25], [1.95, -0.2, 0.2, 0.95], [-1.95, 0.1, 0.1, 0.95]];
+const CS = 1.3;   // tamanho do Cristal
+const PUFFS = [[0, -0.2, -1.2, 1.3], [1.25, 0, -0.6, 1.2], [-1.25, -0.1, -0.6, 1.2], [0, 0.9, -0.3, 1.15], [0, -1.0, -0.3, 1.15], [0.9, 0.2, 0.9, 1.25], [-0.9, 0.1, 0.9, 1.25], [1.95, -0.2, 0.2, 0.95], [-1.95, 0.1, 0.1, 0.95]].map(p => p.map(v => v * CS));
 const FUNNEL_GEO = new THREE.CylinderGeometry(1.5, 0.25, 1, 14, 1, true).translate(0, 0.5, 0);
 function mkTempestade(u) {
   piece(u, 'storm_core', g => {
@@ -607,7 +610,8 @@ function mkTempestade(u) {
     const part = addPart(u, a, { r: o[3] * 0.92, kind: 'sub', hp, maxHp: hp, onDown: puffDown, keepVisible: true });
     return { o, a, part, k: 1, regrow: 0, sh: 0.26 + (i % 3) * 0.05 };
   });
-  addPart(u, u.group, { r: 0.85 });
+  addPart(u, u.group, { r: 0.85 * CS });
+  u.group.scale.setScalar(CS);
   u.onDamaged = uu => stormWeaken(uu);
   u.funnel = extra(u, new THREE.Mesh(FUNNEL_GEO, BASIC(0x9098b0, { transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false })));
   u.funnel.visible = false;
@@ -697,16 +701,18 @@ const hatGeo = g => {   // nave-prisma: os hologramas usam a mesma geometria
   sph(g, 0.55, 0x9fe8ff, 0, -0.12, 0.45, 14, 10);
   for (const sx of [-1, 1]) { sph(g, 0.12, 0x08080c, sx * 0.3, -0.14, 0.88, 8, 6); ico(g, 0.22, 0xff4fd8, sx * 1.75, 0.1, 0.2, 0); torus(g, 0.3, 0.04, 4, 12, 0x8a94a8, sx * 1.75, 0.1, 0.2).rotation.x = PI / 2; }
 };
+const MS = 1.25;   // tamanho da Miragem
 function mkMagico(u) {
   piece(u, 'hat', hatGeo);
-  addPart(u, u.group, { ellip: [1.25, 1.0, 1.25] });
+  u.group.scale.setScalar(MS);
+  addPart(u, u.group, { ellip: [1.25 * MS, 1.0 * MS, 1.25 * MS] });
   u.decoys = [];
   for (let k = 0; k < 2; k++) {
     const g = new THREE.Group();
     const C = geo('hat', hatGeo);
     const m = new THREE.Mesh(C.g, u.bodyMat); m.add(new THREE.Mesh(C.o, OUT)); g.add(m);
     extra(u, g); g.visible = false;
-    const part = addPart(u, g, { ellip: [1.25, 1.0, 1.25], kind: 'sub', hp: 1, maxHp: 1, onDown: decoyDown });
+    const part = addPart(u, g, { ellip: [1.25 * MS, 1.0 * MS, 1.25 * MS], kind: 'sub', hp: 1, maxHp: 1, onDown: decoyDown });
     part.active = false;
     u.decoys.push({ g, part, ph: rand(0, 6), base: new THREE.Vector3() });
   }
@@ -744,12 +750,12 @@ function upMagico(u, dt, edt) {
     d.g.position.set(d.base.x, d.base.y + Math.sin(u.age * 1.5 + d.ph) * 0.22, d.base.z);
     faceYaw(d.g, camPos.x, camPos.z);
     d.g.rotation.z = Math.sin(u.age * 1.8 + d.ph) * 0.06;
-    d.g.scale.setScalar(Math.sin(u.age * 2.6 + d.ph) > 0.985 ? 0.9 : 1);   // a ilusão "falha" de vez em quando
+    d.g.scale.setScalar((Math.sin(u.age * 2.6 + d.ph) > 0.985 ? 0.9 : 1) * MS);   // a ilusão "falha" de vez em quando
     if (!d.part.active) d.g.visible = false;
   }
   // só o de verdade tem os olhos brilhando
   const cy = Math.cos(u.group.rotation.y), sy = Math.sin(u.group.rotation.y);
-  for (const sx of [-1, 1]) glow(gp.x + sx * 0.3 * cy + 0.9 * sy, gp.y - 0.14, gp.z - sx * 0.3 * sy + 0.9 * cy, 0.42, 0xffe040, 0.95);
+  for (const sx of [-1, 1]) glow(gp.x + (sx * 0.3 * cy + 0.9 * sy) * MS, gp.y - 0.14 * MS, gp.z + (-sx * 0.3 * sy + 0.9 * cy) * MS, 0.5, 0xffe040, 0.95);
   if (u.state === 'entering') { if (moveToward(gp, u.hover, 8 * edt)) hatShuffle(u); return; }
   if (u.state === 'hover') {
     gp.y = u.slot.y + Math.sin(u.age * 1.5) * 0.22;
@@ -765,7 +771,7 @@ function upMagico(u, dt, edt) {
 // =============================================================================
 // 8 · COLMEIA
 // =============================================================================
-const BEE_N = 12;
+const BEE_N = 12, QS = 1.25;   // QS = tamanho da Rainha
 function mkColmeia(u) {
   piece(u, 'hive', g => {
     lathe(g, [[0.001, -1.3], [0.7, -1.25], [1.15, -0.9], [1.0, -0.62], [1.4, -0.3], [1.2, 0.0], [1.45, 0.32], [1.15, 0.62], [1.2, 0.9], [0.8, 1.15], [0.5, 1.3], [0.001, 1.36]], 22, 0x5a2a80);
@@ -790,8 +796,9 @@ function mkColmeia(u) {
     const part = addPart(u, a, { r: 0.44, kind: 'sub', hp, maxHp: hp, onDown: beeDown, keepVisible: true });
     u.bees.push({ i, a, part, dir: new THREE.Vector3(0, 0, 1) });
   }
-  addPart(u, u.group, { ellip: [1.42, 1.32, 1.42] });
-  u.invuln = 'shield'; u.bubbleR = 2.0;
+  addPart(u, u.group, { ellip: [1.42 * QS, 1.32 * QS, 1.42 * QS] });
+  u.group.scale.setScalar(QS);
+  u.invuln = 'shield'; u.bubbleR = 2.0 * QS;
   u.invulnMsg = tr('ESCUDO! DERRUBE OS ZANGÕES', 'SHIELD! SHOOT THE DRONES', 'SUOJA! AMMU LENNOKIT');
   u.pos.set(0, 26, 36);
   u.hover.set(0, 8, 13.5);
@@ -855,9 +862,9 @@ function upColmeia(u, dt, edt) {
     const ang = b.i / BEE_N * PI * 2 + u.age * 0.9;
     const sq = u.squad && u.squad.bees.indexOf(b);
     if (u.squad && sq >= 0) { const c = u.squad.tgt; t1.set(c.pos.x + Math.cos(sq * 2.09) * 0.42, c.pos.y + 0.6, c.pos.z + Math.sin(sq * 2.09) * 0.42); }
-    else if (f === 0) t1.set(gp.x + Math.cos(ang) * 2.9, gp.y + Math.sin(ang * 3) * 0.3, gp.z + Math.sin(ang) * 2.9);
-    else if (f === 1) t1.set(gp.x + Math.cos(ang) * 2.7, gp.y + Math.sin(ang) * 2.7, gp.z - 0.6);
-    else { const R = b.i % 2 ? 3.3 : 2.1, a2 = b.i % 2 ? -ang : ang; t1.set(gp.x + Math.cos(a2) * R, gp.y + (b.i % 2 ? -0.7 : 0.9), gp.z + Math.sin(a2) * R); }
+    else if (f === 0) t1.set(gp.x + Math.cos(ang) * 2.9 * QS, gp.y + Math.sin(ang * 3) * 0.3, gp.z + Math.sin(ang) * 2.9 * QS);
+    else if (f === 1) t1.set(gp.x + Math.cos(ang) * 2.7 * QS, gp.y + Math.sin(ang) * 2.7 * QS, gp.z - 0.6);
+    else { const R = (b.i % 2 ? 3.3 : 2.1) * QS, a2 = b.i % 2 ? -ang : ang; t1.set(gp.x + Math.cos(a2) * R, gp.y + (b.i % 2 ? -0.7 : 0.9), gp.z + Math.sin(a2) * R); }
     t2.copy(t1).sub(b.a.position);
     const d = t2.length();
     if (d > 1e-3) { t2.divideScalar(d); b.dir.lerp(t2, Math.min(1, dt * 8)).normalize(); b.a.position.addScaledVector(t2, Math.min(d, 7.5 * edt)); }
@@ -872,6 +879,7 @@ function upColmeia(u, dt, edt) {
 // =============================================================================
 // 9 · COLHEITADEIRA
 // =============================================================================
+const HS = 1.4;   // tamanho do Ceifador
 function mkColheitadeira(u) {
   piece(u, 'harv_body', g => {   // ceifadeira flutuante: casco roxo, piloto na bolha, tanques vermelhos, gaiola atrás
     box(g, 2.6, 1.0, 3.0, 0x5a3a90, 0, 1.3, -0.2);
@@ -901,13 +909,14 @@ function mkColheitadeira(u) {
     cyl(g, 0.06, 0.06, 3.4, 6, 0x606068, 0, 0, 0).rotation.z = PI / 2;
   });
   u.reel.position.set(0, 0.75, 2.6);
-  addPart(u, anchor(u.group, 0, 0.7, 2.25), { ellip: [1.95, 0.75, 0.65], kind: 'armor' });
-  addPart(u, anchor(u.group, 0, 1.55, -0.2), { ellip: [1.35, 1.05, 1.6], mult: 0.6 });
-  for (const sx of [-1, 1]) addPart(u, anchor(u.group, sx * 1.75, 1.45, -0.2), { r: 0.58, kind: 'crit', mult: 2, onHit: harvTankHit });
+  u.group.scale.setScalar(HS);
+  addPart(u, anchor(u.group, 0, 0.7, 2.25), { ellip: [1.95 * HS, 0.75 * HS, 0.65 * HS], kind: 'armor' });
+  addPart(u, anchor(u.group, 0, 1.55, -0.2), { ellip: [1.35 * HS, 1.05 * HS, 1.6 * HS], mult: 0.6 });
+  for (const sx of [-1, 1]) addPart(u, anchor(u.group, sx * 1.75, 1.45, -0.2), { r: 0.58 * HS, kind: 'crit', mult: 2, onHit: harvTankHit });
   u.armorMsg = tr('A FRENTE É BLINDADA!', 'THE FRONT IS ARMORED!', 'ETUOSA ON PANSSAROITU!');
   u.pos.set(rand(-4, 4), 17, 13);
   u.state = 'drop'; u.h = PI; u.cage = []; u.stallT = 0; u.stallCD = 0; u.chargeT = 8; u.sub = 'drive'; u.subT = 0; u.scareT = 0;
-  u.deadFn = boomDeath(0.9, 2, 2.5);
+  u.deadFn = boomDeath(0.9, 2.8, 3.5);
 }
 function harvTankHit(u, part, dmg, pos) {
   if (u.stallCD <= 0 && u.state === 'drive') {
@@ -940,7 +949,7 @@ function upColheitadeira(u, dt, edt) {
   } else if (u.sub === 'rev') {
     u.subT -= edt; reelSpd = 26;
     u.group.position.x += Math.sin(u.age * 70) * 0.012;
-    glow(gp.x + sh * 2.6, 0.8, gp.z + ch * 2.6, 3.4, 0xff3020, 0.5);
+    glow(gp.x + sh * 2.6 * HS, 0.8 * HS, gp.z + ch * 2.6 * HS, 3.4 * HS, 0xff3020, 0.5);
     if (u.subT <= 0) { u.sub = 'charge'; u.subT = 1.3; sfx('dive', { pos: gp }); }
   } else if (u.sub === 'charge') {
     u.subT -= edt; speed = 8.5; reelSpd = 26;
@@ -951,12 +960,12 @@ function upColheitadeira(u, dt, edt) {
     const tx = c ? c.pos.x : 0, tz = c ? c.pos.z : 9;
     let d = Math.atan2(tx - gp.x, tz - gp.z) - u.h; d = Math.atan2(Math.sin(d), Math.cos(d));
     u.h += clamp(d, -1.7 * edt, 1.7 * edt);
-    speed = 2.4;
+    speed = 2.1;
     u.chargeT -= edt;
     if (u.chargeT <= 0 && c && Math.abs(d) < 0.3) { u.sub = 'rev'; u.subT = 1.0; sfx('siren', { pos: gp }); }
   }
-  gp.x = clamp(gp.x + Math.sin(u.h) * speed * edt, -8.3, 8.3);
-  gp.z = clamp(gp.z + Math.cos(u.h) * speed * edt, 5.2, 16.8);
+  gp.x = clamp(gp.x + Math.sin(u.h) * speed * edt, -7.6, 7.6);
+  gp.z = clamp(gp.z + Math.cos(u.h) * speed * edt, 6.4, 16.2);
   u.group.rotation.y = u.h;
   u.reel.rotation.x += edt * reelSpd;
   // colhe quem está na frente da plataforma; espanta quem está do lado
@@ -965,11 +974,11 @@ function upColheitadeira(u, dt, edt) {
     if (!okChicken(c) || c.pos.y > 1.2) continue;
     const rx = c.pos.x - gp.x, rz = c.pos.z - gp.z;
     const lz = rx * sh + rz * ch, lx = rx * ch - rz * sh;
-    if (Math.abs(lx) < 1.8 && lz > 1.5 && lz < 3.1 && u.stallT <= 0 && u.cage.length < 3) {
+    if (Math.abs(lx) < 1.8 * HS && lz > 1.5 * HS && lz < 3.1 * HS && u.stallT <= 0 && u.cage.length < 3) {
       hold(u, c); u.cage.push({ c, t: 0 });
       feathers(c.pos, 10, 0xffffff); sfx('thiefGrab', { pos: gp });
       popup(tr('CEIFOU UMA GALINHA!', 'REAPED A CHICKEN!', 'NIITTI KANAN!'), t0.set(gp.x, 3.6, gp.z), '#ff6060', 1.1);
-    } else if (u.scareT <= 0 && Math.abs(lx) < 2.7 && lz < 1.5 && lz > -2.6) scareChicken(c, gp);
+    } else if (u.scareT <= 0 && Math.abs(lx) < 2.7 * HS && lz < 1.5 * HS && lz > -2.6 * HS) scareChicken(c, gp);
   }
   if (u.scareT <= 0) u.scareT = 0.4;
   // gaiola: 7 s para afogar o motor antes de a galinha ser levada
@@ -977,9 +986,9 @@ function upColheitadeira(u, dt, edt) {
     const k = u.cage[i];
     if (!holds(u, k.c)) { u.cage.splice(i, 1); continue; }
     if (u.stallT <= 0) k.t += edt;
-    const lx = -0.5 + i * 0.5, lz = -1.0;
-    k.c.pos.set(gp.x + lx * ch + lz * sh, 2.15, gp.z - lx * sh + lz * ch);
-    if (k.t > 7) { eat(u, k.c); u.cage.splice(i, 1); }
+    const lx = (-0.5 + i * 0.5) * HS, lz = -1.0 * HS;
+    k.c.pos.set(gp.x + lx * ch + lz * sh, 2.15 * HS, gp.z - lx * sh + lz * ch);
+    if (k.t > 9) { eat(u, k.c); u.cage.splice(i, 1); }
   }
 }
 
@@ -1127,7 +1136,7 @@ function upGalozilla(u, dt, edt) {
         pitchGoal = 0.7;
         if (!A.f && A.t >= 0.8) {
           A.f = true;
-          let n = phase;
+          let n = Math.min(2, phase);
           for (const k of u.chicks) if (n > 0 && !k.part.active) { k.part.active = true; k.part.hp = k.part.maxHp; k.mode = 'run'; k.tgt = null; k.a.position.set(rand(-1.5, 1.5), 0, GZ_Z - 2.2); n--; }
           sfx('hatch', { pos: gp }); popup(tr('MINI-ALIENS!', 'MINI-ALIENS!', 'MINIALIENIT!'), t0.set(0, 3, GZ_Z - 3), '#ffd040', 1.3);
         }
@@ -1157,6 +1166,7 @@ function upGalozilla(u, dt, edt) {
           popup(tr('RUGIDO DO IMPERADOR!', 'THE EMPEROR ROARS!', 'KEISARI KARJUU!'), t1.set(0, 6, GZ_Z - 6), '#ffe080', 1.8, 1.6);
           for (const c of chickens) scareChicken(c, gp);
           for (let k = 0; k < 2; k++) if (aliveRegulars() < G.waveDef.maxAlive) spawnRegular('zippy', t1.set(rand(-6, 6), 11, GZ_Z - 2));
+          if (phase >= 2 && (u.called || 1) < phase) { u.called = phase; spawnBoss(phase === 2 ? 'zepelim' : 'olhao', true, true); }   // uma vez por fase: chama um chefe antigo
         }
         if (A.t >= 2.0) { u.act = null; u.bt = 3.2; }
       }
@@ -1178,14 +1188,14 @@ function upGalozilla(u, dt, edt) {
         k.yaw = Math.atan2(t0.x - p.x, t0.z - p.z);
         const d = Math.hypot(t0.x - p.x, t0.z - p.z);
         if (d < 0.5 && k.tgt.pos.y < 0.8) { hold(u, k.tgt); k.mode = 'carry'; sfx('thiefGrab', { pos: p }); }
-        else { p.x += Math.sin(k.yaw) * Math.min(d, 2.8 * edt); p.z += Math.cos(k.yaw) * Math.min(d, 2.8 * edt); }
+        else { p.x += Math.sin(k.yaw) * Math.min(d, 2.4 * edt); p.z += Math.cos(k.yaw) * Math.min(d, 2.4 * edt); }
       }
     } else {
       if (!holds(u, k.tgt)) { k.mode = 'run'; k.tgt = null; }
       else {
         t0.set(clamp(p.x, -6, 6), 0, GZ_Z - 3.5);
         k.yaw = Math.atan2(t0.x - p.x, t0.z - p.z);
-        p.x += Math.sin(k.yaw) * 2.0 * edt; p.z += Math.cos(k.yaw) * 2.0 * edt;
+        p.x += Math.sin(k.yaw) * 1.6 * edt; p.z += Math.cos(k.yaw) * 1.6 * edt;
         if (p.z > 20.5) { eat(u, k.tgt); k.tgt = null; k.part.active = false; continue; }
       }
     }
@@ -1205,11 +1215,12 @@ function upGalozilla(u, dt, edt) {
 // =============================================================================
 const MK = { zepelim: mkZepelim, olhao: mkOlhao, centopeia: mkCentopeia, polvo: mkPolvo, minhocao: mkMinhocao, tempestade: mkTempestade, magico: mkMagico, colmeia: mkColmeia, colheitadeira: mkColheitadeira, galozilla: mkGalozilla };
 const UP = { zepelim: upZepelim, olhao: upOlhao, centopeia: upCentopeia, polvo: upPolvo, minhocao: upMinhocao, tempestade: upTempestade, magico: upMagico, colmeia: upColmeia, colheitadeira: upColheitadeira, galozilla: upGalozilla };
-const BAR = { zepelim: [3.4, 4.2], olhao: [3.1, 3.6], centopeia: [1.5, 1.6], polvo: [4.6, 4.2], minhocao: [1.3, 0], tempestade: [2.6, 4.5], magico: [2.3, 2.6], colmeia: [3.6, 3], colheitadeira: [4.0, 4.5], galozilla: [15.0, 9] };
+const BAR = { zepelim: [2.9, 3.6], olhao: [3.1, 3.6], centopeia: [1.5, 1.6], polvo: [4.6, 4.2], minhocao: [1.3, 0], tempestade: [3.5, 5.8], magico: [2.9, 3.2], colmeia: [4.5, 3.8], colheitadeira: [5.6, 6.3], galozilla: [15.0, 9] };
 /** Cria o chefe da wave. id = chave de BOSSES. */
-export function spawnBoss(id, silent = false) {
+export function spawnBoss(id, silent = false, vet = false) {
   if (!MK[id]) id = 'zepelim';
-  const u = base(id);
+  const u = base(id, vet);
+  if (vet) popup(u.D.name + tr(' VOLTOU!', ' IS BACK!', ' PALASI!'), t5.set(0, 4.5, 9), '#ffb060', 1.6, 1.2);
   MK[id](u);
   return finish(u, BAR[id][0], BAR[id][1], silent);
 }
