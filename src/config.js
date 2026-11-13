@@ -37,17 +37,37 @@ export const UFO_TYPES = {
   boss:     { name: tr('CHEFÃO', 'BOSS', 'POMO'),         desc: '',                                    role: 'boss',    hp: 0, scale: 2.4,  speed: 0.75, beam: 0.8,  color: 0x3c3c4c, glow: 0xff3838, pts: 1500, drop: 1 },
 };
 
-// 3.4: jogo mais curto e dinâmico — 8 waves, ~1/3 das naves da 3.0, naves chegando mais rápido.
+// 12 waves (8 armas de ovo até a wave 8). Da wave 2 à 11 tem um CHEFE diferente por wave,
+// cada um com uma mecânica nova (não só maior). A 12 é a nave-mãe e depois vem o FINAL.
 export const WAVES = [
-  { weapon: 'hands',     mix: { saucer: 5 }, interval: 1.3, speed: 1.1, beamTime: 7.0, maxAlive: 3, hpMult: 1, boss: 0, ufoScale: 1.7, tod: 0, close: true, intro: 'saucer', aggro: 0 },
-  { weapon: 'slingshot', mix: { saucer: 5, zippy: 3 }, interval: 1.1, speed: 1.5, beamTime: 6.3, maxAlive: 4, hpMult: 1, boss: 0, ufoScale: 1.45, tod: 0.5, intro: 'zippy', aggro: 0 },
-  { weapon: 'pistols',   mix: { saucer: 5, zippy: 2, tank: 2 }, interval: 1.0, speed: 1.7, beamTime: 5.9, maxAlive: 5, hpMult: 1, boss: 14, ufoScale: 1.3, tod: 1.0, intro: 'tank', aggro: 0.6 },
-  { weapon: 'shotgun',   mix: { saucer: 5, zippy: 2, tank: 2, gunner: 3 }, interval: 0.9, speed: 1.9, beamTime: 5.6, maxAlive: 6, hpMult: 1.5, boss: 0, ufoScale: 1.2, tod: 1.5, intro: 'gunner', aggro: 1 },
-  { weapon: 'launcher',  mix: { saucer: 5, zippy: 2, tank: 2, gunner: 2, kamikaze: 3 }, interval: 0.8, speed: 2.1, beamTime: 5.3, maxAlive: 7, hpMult: 1.5, boss: 0, ufoScale: 1.1, tod: 2.0, intro: 'kamikaze', aggro: 1.1 },
-  { weapon: 'gatling',   mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 3 }, interval: 0.75, speed: 2.3, beamTime: 5.0, maxAlive: 8, hpMult: 2, boss: 60, bossGoo: 2, ufoScale: 1.0, tod: 2.6, intro: 'splitter', aggro: 1.3 },
-  { weapon: 'homing',    mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, ghost: 3 }, interval: 0.7, speed: 2.5, beamTime: 4.8, maxAlive: 9, hpMult: 2, boss: 0, ufoScale: 0.92, tod: 3.2, intro: 'ghost', aggro: 1.5 },
-  { weapon: 'fireworks', mix: { saucer: 6, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 2, bomber: 2 }, interval: 0.65, speed: 2.7, beamTime: 4.5, maxAlive: 10, hpMult: 2.5, boss: 'mothership', motherPod: 30, motherCore: 100, ufoScale: 0.88, tod: 4, intro: 'bomber', aggro: 1.7, flight: true },
+  { weapon: 'hands',     mix: { saucer: 6 }, interval: 1.4, speed: 1.1, beamTime: 7.0, maxAlive: 3, hpMult: 1, boss: 0, ufoScale: 1.7, tod: 0, close: true, intro: 'saucer', aggro: 0 },
+  { weapon: 'slingshot', mix: { saucer: 6, zippy: 3 }, interval: 1.2, speed: 1.4, beamTime: 6.5, maxAlive: 4, hpMult: 1, boss: { id: 'grandao', hp: 50 }, ufoScale: 1.5, tod: 0.35, intro: 'zippy', aggro: 0 },
+  { weapon: 'pistols',   mix: { saucer: 6, zippy: 3, tank: 2 }, interval: 1.1, speed: 1.6, beamTime: 6.0, maxAlive: 5, hpMult: 1, boss: { id: 'turbo', hp: 70 }, ufoScale: 1.35, tod: 0.7, intro: 'tank', aggro: 0.5 },
+  { weapon: 'shotgun',   mix: { saucer: 6, zippy: 3, tank: 2, gunner: 3 }, interval: 1.0, speed: 1.8, beamTime: 5.7, maxAlive: 6, hpMult: 1, boss: { id: 'atirador', hp: 90 }, ufoScale: 1.25, tod: 1.1, intro: 'gunner', aggro: 0.9 },
+  { weapon: 'launcher',  mix: { saucer: 6, zippy: 3, tank: 2, gunner: 2, kamikaze: 2 }, interval: 0.95, speed: 2.0, beamTime: 5.4, maxAlive: 7, hpMult: 1.3, boss: { id: 'couracado', hp: 100 }, ufoScale: 1.15, tod: 1.5, intro: 'kamikaze', aggro: 1.0 },
+  { weapon: 'gatling',   mix: { saucer: 6, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 3 }, interval: 0.9, speed: 2.1, beamTime: 5.2, maxAlive: 8, hpMult: 1.5, boss: { id: 'semeador', hp: 130 }, ufoScale: 1.08, tod: 1.9, intro: 'splitter', aggro: 1.1 },
+  { weapon: 'homing',    mix: { saucer: 6, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2 }, interval: 0.85, speed: 2.3, beamTime: 5.0, maxAlive: 9, hpMult: 2, boss: { id: 'gemeos', hp: 150 }, ufoScale: 1.0, tod: 2.3, intro: 'shielder', aggro: 1.2 },
+  { weapon: 'fireworks', mix: { saucer: 6, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 3 }, interval: 0.8, speed: 2.4, beamTime: 4.8, maxAlive: 10, hpMult: 2, boss: { id: 'escudeiro', hp: 160 }, ufoScale: 0.95, tod: 2.7, intro: 'ghost', aggro: 1.3 },
+  { weapon: null,        mix: { saucer: 6, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 2, bomber: 3 }, interval: 0.75, speed: 2.5, beamTime: 4.7, maxAlive: 10, hpMult: 2, boss: { id: 'fantasma', hp: 180 }, ufoScale: 0.92, tod: 3.1, intro: 'bomber', aggro: 1.4 },
+  { weapon: null,        mix: { saucer: 6, zippy: 4, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 2, bomber: 2, sniper: 2 }, interval: 0.72, speed: 2.6, beamTime: 4.6, maxAlive: 11, hpMult: 2.5, boss: { id: 'bombardeiro', hp: 210 }, ufoScale: 0.9, tod: 3.5, intro: 'sniper', aggro: 1.5 },
+  { weapon: null,        mix: { saucer: 6, zippy: 4, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 2, bomber: 2, sniper: 2, thief: 3 }, interval: 0.68, speed: 2.7, beamTime: 4.5, maxAlive: 11, hpMult: 2.5, boss: { id: 'ladrao', hp: 230 }, ufoScale: 0.88, tod: 3.8, intro: 'thief', aggro: 1.6 },
+  { weapon: null,        mix: { saucer: 6, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 2, bomber: 2, sniper: 2, thief: 2 }, interval: 0.65, speed: 2.8, beamTime: 4.4, maxAlive: 12, hpMult: 2.5, boss: 'mothership', motherPod: 35, motherCore: 120, ufoScale: 0.86, tod: 4, aggro: 1.7, flight: true },
 ];
+
+// Chefes: um por wave (2 a 11). Cada um ensina uma coisa nova.
+export const BOSSES = {
+  grandao:     { scale: 2.4, tint: 0xffffff, name: tr('GRANDÃO', 'BIG ONE', 'ISO KIHO'),               hint: tr('mire na luz vermelha embaixo dele', 'aim at the red light underneath', 'tähtää punaiseen valoon sen alla') },
+  turbo:       { scale: 1.9, tint: 0x80d8ff, name: tr('TURBO', 'TURBO', 'TURBO'),                       hint: tr('ele dispara de um lado pro outro: mire onde ele vai parar', 'it dashes around: aim where it stops', 'se syöksyy: tähtää minne se pysähtyy') },
+  atirador:    { scale: 2.1, tint: 0xb8ff80, name: tr('ATIRADOR', 'GUNSLINGER', 'PYSSYMIES'),          hint: tr('cospe gosma em leque: acerte a gosma no ar', 'spits goo in a fan: shoot the goo midair', 'sylkee limaa viuhkana: ammu lima ilmassa') },
+  couracado:   { scale: 2.4, tint: 0xb8bcc8, name: tr('COURAÇADO', 'IRONCLAD', 'PANSSARI'),           hint: tr('quebre as 4 placas, depois a luz vermelha', 'break the 4 plates, then the red light', 'riko 4 levyä, sitten punainen valo') },
+  semeador:    { scale: 2.2, tint: 0xffa868, name: tr('SEMEADOR', 'SPAWNER', 'KYLVÄJÄ'),                hint: tr('solta kamikazes: derrube antes que mergulhem', 'drops kamikazes: shoot them before they dive', 'pudottaa kamikazeja: ammu ne ennen syöksyä') },
+  gemeos:      { scale: 2.3, tint: 0x80ffe0, name: tr('GÊMEOS', 'TWINS', 'KAKSOSET'),                  hint: tr('na metade da vida ele vira dois', 'at half health it becomes two', 'puolessa välissä siitä tulee kaksi') },
+  escudeiro:   { scale: 2.3, tint: 0x9ab8ff, name: tr('ESCUDEIRO', 'WARDEN', 'VARTIJA'),               hint: tr('derrube os 3 drones pra desligar o escudo', 'shoot the 3 drones to drop the shield', 'ammu 3 droonia pudottaaksesi suojan') },
+  fantasma:    { scale: 2.2, tint: 0xd8c0ff, name: tr('FANTASMA', 'PHANTOM', 'AAVE'),                  hint: tr('some e aparece em outro lugar: fique de olho', 'vanishes and reappears elsewhere: keep watch', 'katoaa ja ilmestyy muualle: pidä silmällä') },
+  bombardeiro: { scale: 2.3, tint: 0x8a8a92, name: tr('BOMBARDEIRO', 'BOMBARDIER', 'POMMITTAJA'),       hint: tr('passa soltando bombas: saia do círculo vermelho', 'drops bombs on passes: leave the red circle', 'pudottaa pommeja: poistu punaisesta ympyrästä') },
+  ladrao:      { scale: 2.0, tint: 0xffd060, name: tr('LADRÃO-MOR', 'MASTER THIEF', 'MESTARIVARAS'),    hint: tr('rouba galinhas e foge: derrube antes que suma', 'steals chickens and flees: down it before it escapes', 'varastaa kanoja ja pakenee: ammu se ennen kuin se katoaa') },
+};
+export const BOSS_ORDER = ['grandao', 'turbo', 'atirador', 'couracado', 'semeador', 'gemeos', 'escudeiro', 'fantasma', 'bombardeiro', 'ladrao'];
 
 export function endlessWave(n) {
   return {

@@ -16,6 +16,22 @@
 > **visual toon com contorno, personagens instanciados, especial carregado por abates, nota de wave e menu VR de atirar**.
 > As armas estão na **seção 3** (com o guia de portar na 3.6).
 
+**Branch `chefes-e-final` (teste) — 12 waves, um chefe por wave e um final:**
+- **12 waves** de novo (8 armas de ovo até a wave 8). Quantidade de naves entre a 3.0 e a 3.4.
+- **Um chefe diferente por wave (2 a 11)**, `BOSSES` em `config.js`, lógica em `updateBoss` (`ufos.js`). Cada um ensina
+  uma mecânica: Grandão (ponto fraco vermelho) · Turbo (arrancadas) · Atirador (leque de gosma, não abduz) ·
+  Couraçado (4 placas com vida; corpo blindado até quebrar) · Semeador (solta kamikazes) · Gêmeos (vira dois na
+  metade) · Escudeiro (3 drones em órbita mantêm um escudo; voltam depois de 11 s) · Fantasma (some e reaparece em
+  outro lugar) · Bombardeiro (passes rasantes com bombas e círculo de aviso) · Ladrão-Mor (rouba galinha e foge; volta).
+  Peças com vida própria são partes `kind: 'sub'`; com o corpo protegido (`u.invuln`), o raio prefere a peça.
+- **Final** (`ending.js`, depois da nave-mãe): câmera lenta no mundo (`G.finaleSlow` escala o `dt` de galinhas,
+  efeitos, naves e cenário); nave da paz de 26 m pousa no fundo do quintal; comporta desce em diagonal até a grama;
+  fumaça iluminada com 3 SILHUETAS enormes (planos com textura recortada); a fumaça baixa e são 3 alienzinhos de
+  bandeira branca descendo a rampa → "ELES VIERAM EM PAZ" → créditos com 7 desenhos 2D feitos em canvas (eles
+  ajudando no rancho) num painel 3D na frente do jogador (funciona no VR) → vitória. Gatilho/clique pula os créditos.
+  Tudo é criado escondido no boot (`prepareFinale`) para os shaders já virem compilados.
+- **Testar:** `?wave=13`, botão **FIM** no seletor (PC: digitar OVOS) ou **B+Y** no menu VR até "VER O FINAL".
+
 **Versão 3.4 (mais curta, mais simples, tudo é ovo) — vale por cima das tabelas antigas abaixo:**
 - **8 waves** (antes 12) e ~1/3 das naves, chegando mais rápido. Tabela em `src/config.js` (`WAVES`). Chefão pequeno na 3,
   chefão na 6, nave-mãe + cadeira voadora na 8. Saíram as naves sniper e ladra da campanha (seguem no modo infinito).

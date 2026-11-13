@@ -6,7 +6,7 @@
 import { THREE, scene, camPos, rig, toon, toonUnique, outlineMat, outlineGeo, bakeWith, bake, sph, cyl, box, cone, torus, lathe, ico, canvasTex, TEX, FONT } from './render.js';
 import { G, clamp, lerp, rand, pick, tmpV, playing } from './core.js';
 import { tr } from './i18n.js';
-import { UFO_TYPES, POWERS, CHICKEN_KINDS } from './config.js';
+import { UFO_TYPES, POWERS, CHICKEN_KINDS, BOSSES, BOSS_ORDER } from './config.js';
 import { fxAdd, fxAlpha, sparks, smoke, fireball, feathers, blast, debrisBurst, popup, showBanner, glow, blob, seg, SHAPE, twinkle } from './fx.js';
 import { sfx, loop } from './audio.js';
 import { chickens, setChickenShield, scareChicken, chickenCenter } from './chickens.js';
@@ -225,6 +225,7 @@ export function removeUfo(u) {
   if (u.beam && u.beam.parent) u.beam.parent.remove(u.beam);
   if (u.hpBar) { scene.remove(u.hpBar); u.hpBar = null; }
   if (u.bubble) { scene.remove(u.bubble); u.bubble = null; }
+  if (u.subs) for (const p of u.subs) if (p.obj.parent === scene) scene.remove(p.obj);
   dropLinks(u);
   if (u.beamLoop) { u.beamLoop.stop(0.2); u.beamLoop = null; }
   if (u.hum) { u.hum.stop(0.3); u.hum = null; }
@@ -299,33 +300,94 @@ export function spawnRegular(typeKey, fromPos = null) {
   return u;
 }
 
-export function spawnBoss(hp) {
-  const u = makeEntity('boss', 'boss', 2.4);
+// =============================================================================
+// CHEFES — um por wave, cada um com uma mecânica (BOSSES em config.js)
+// =============================================================================
+const PLATE_GEO = bakeWith(g => { box(g, 0.62, 0.16, 0.3, 0xc8ccd6, 0, 0, 0); box(g, 0.5, 0.05, 0.32, 0x7a808e, 0, 0.09, 0); });
+const DRONE_GEO = bakeWith(g => { sph(g, 0.3, 0x9ab8ff, 0, 0, 0, 12, 10); torus(g, 0.36, 0.045, 5, 16, 0xffffff, 0, 0, 0).rotation.x = Math.PI / 2; });
+const SPIKE_GEO = bakeWith(g => cone(g, 0.08, 0.32, 6, 0xff8040, 0, 0, 0));
+const CLAW_GEO = bakeWith(g => { cyl(g, 0.03, 0.03, 0.7, 6, 0x606068, 0, -0.35, 0); for (let k = 0; k < 3; k++) { const f = box(g, 0.05, 0.28, 0.05, 0xd8b040, Math.cos(k * 2.09) * 0.12, -0.78, Math.sin(k * 2.09) * 0.12); f.rotation.z = Math.cos(k * 2.09) * 0.5; f.rotation.x = -Math.sin(k * 2.09) * 0.5; } });
+const SUB_MAT = toon({ ramp: 4 });
+/** cfg: { id, hp } (ou só um número = vida, modo infinito: chefe aleatório) */
+export function spawnBoss(cfg, fromPos = null, child = false) {
+  if (typeof cfg === 'number') cfg = { id: pick(BOSS_ORDER), hp: cfg };
+  const D = BOSSES[cfg.id] || BOSSES.grandao;
+  const sc = child ? D.scale * 0.72 : D.scale;
+  const u = makeEntity('boss', 'boss', sc);
   const w = G.waveDef;
-  u.hp = u.maxHp = hp;
+  u.bid = cfg.id; u.D = D; u.child = child;
+  u.hp = u.maxHp = cfg.hp;
   u.speed = w.speed * 0.75;
   u.beamTime = w.beamTime * 0.8;
   u.pts = 1500 + G.wave * 250;
   u.state = 'entering';
   u.pos.set(rand(-8, 8), 26, 40);
+  if (fromPos) u.pos.copy(fromPos);
   u.hover = new THREE.Vector3(rand(-3, 3), 7.5, 10);
   u.idleT = 2.5; u.descendH = 5.6; u.afterBeam = 'rising';
-  u.gooCD = 3;
-  u.minionMarks = [0.66, 0.33];
+  u.gooCD = 3; u.traitT = 2.5; u.minionMarks = [];
+  u.bodyMat.color.setHex(D.tint);
   // ponto fraco: esfera vermelha embaixo
   u.orb = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), new THREE.MeshBasicMaterial({ color: 0xff3030 }));
   u.orb.position.y = -0.27;
   u.group.add(u.orb);
-  addPart(u, u.orb, { r: 0.16 * 2.4 + 0.12, kind: 'crit', mult: 2 });
-  addPart(u, u.group, { ellip: [1.42, 0.55, 1.42] });
+  u.orbPart = addPart(u, u.orb, { r: 0.16 * sc + 0.12, kind: 'crit', mult: 2 });
+  addPart(u, u.group, { ellip: [0.6 * sc, 0.24 * sc, 0.6 * sc] });
+  u.subs = [];
+  // ---- acessórios e regras de cada chefe
+  if (u.bid === 'couracado') {
+    for (let k = 0; k < 4; k++) {
+      const m = new THREE.Mesh(PLATE_GEO, SUB_MAT); const a = k * Math.PI / 2 + Math.PI / 4;
+      m.position.set(Math.cos(a) * 0.74, 0.0, Math.sin(a) * 0.74); m.rotation.y = -a; m.scale.setScalar(0.45);   // fora do corpo: dá pra acertar
+      u.group.add(m);
+      const php = 4 + Math.round(G.wave * 0.6);
+      u.subs.push(addPart(u, m, { r: 0.5, kind: 'sub', hp: php, maxHp: php }));
+    }
+    u.invuln = 'armor'; u.orb.visible = false; u.orbPart.active = false;
+  }
+  if (u.bid === 'escudeiro') makeDrones(u);
+  if (u.bid === 'semeador') for (let k = 0; k < 6; k++) { const m = new THREE.Mesh(SPIKE_GEO, SUB_MAT); const a = k * Math.PI / 3; m.position.set(Math.cos(a) * 0.52, 0.04, Math.sin(a) * 0.52); m.rotation.z = -Math.cos(a) * 1.2; m.rotation.x = Math.sin(a) * 1.2; u.group.add(m); }
+  if (u.bid === 'ladrao') { u.claw = new THREE.Mesh(CLAW_GEO, SUB_MAT); u.claw.position.y = -0.2; u.group.add(u.claw); }
+  if (u.bid === 'fantasma') { u.bodyMat.transparent = true; u.bodyMat.needsUpdate = true; u.cloakT = 3; }
+  if (u.bid === 'atirador') { u.state = 'entering'; u.hover.set(rand(-4, 4), 6.5, 11); }
+  if (u.bid === 'bombardeiro') { u.passes = 0; }
+  if (u.bid === 'ladrao') { u.hover.set(rand(-4, 4), 6, 12); }
   u.hpBar = makeHpBar(2.0, 0.28);
   drawHpBar(u);
   u.prev.copy(u.pos);
   refreshParts(u);
   ufos.push(u);
-  sfx('bossSpawn'); pulseAll(0.6, 200);
-  showBanner(tr('⚠ CHEFÃO ⚠', '⚠ BOSS ⚠', '⚠ POMO ⚠'), tr('mire na luz vermelha embaixo dele', 'aim at the red light underneath', 'tähtää punaiseen valoon sen alla'), '', '#ff4040', 2.6);
+  if (!child) {
+    sfx('bossSpawn'); pulseAll(0.6, 200);
+    showBanner('⚠ ' + D.name + ' ⚠', D.hint, tr('CHEFÃO', 'BOSS', 'POMO'), '#ff4040', 3.2);
+  }
   return u;
+}
+function makeDrones(u) {
+  for (const p of u.subs) if (p.obj.parent) p.obj.parent.remove(p.obj);
+  u.parts = u.parts.filter(p => p.kind !== 'sub');
+  u.subs = [];
+  for (let k = 0; k < 3; k++) {
+    const m = new THREE.Mesh(DRONE_GEO, SUB_MAT);
+    scene.add(m);
+    const hp = 5 + Math.round(G.wave * 0.6);
+    u.subs.push(addPart(u, m, { r: 0.6, kind: 'sub', hp, maxHp: hp, ang: k * 2.094 }));
+  }
+  u.invuln = 'shield'; u.droneT = 0;
+  refreshParts(u);
+}
+/** Uma peça do chefe (placa/drone) foi destruída. */
+export function bossSubDown(u, part) {
+  if (!u.subs || u.subs.some(p => p.active)) return;
+  u.invuln = null;
+  if (u.bid === 'couracado') {
+    u.orb.visible = true; u.orbPart.active = true;
+    showBanner(tr('BLINDAGEM QUEBRADA!', 'ARMOR BROKEN!', 'PANSSARI RIKKI!'), tr('agora a luz vermelha', 'now the red light', 'nyt punainen valo'), '', '#ffd040', 2.2);
+  } else if (u.bid === 'escudeiro') {
+    u.droneT = 11;   // os drones voltam depois de um tempo
+    showBanner(tr('ESCUDO DESLIGADO!', 'SHIELD DOWN!', 'SUOJA POIS!'), tr('ataque agora!', 'attack now!', 'hyökkää nyt!'), '', '#80c0ff', 2.0);
+  }
+  sfx('shieldDown', { pos: u.pos });
 }
 
 // ---------- Nave-mãe ----------
@@ -566,22 +628,122 @@ function updateShielder(u, dt, edt) {
   for (let k = 0; k < u.links.length; k++) seg(gp, u.links[k].pos, 0.03 + Math.sin(G.time * 20 + k) * 0.01, 0x60a8ff);
 }
 
-function updateBoss(u, dt, edt) {
+function bossHoverMove(u, edt, amp = 5, k = 1.5) {
   const gp = u.pos;
-  if (u.orb) { u.orb.scale.setScalar(1 + Math.sin(G.time * 8) * 0.15); bellyPos(u, t3); glow(t3.x, t3.y - 0.1, t3.z, 1.0, 0xff2020, 0.8); }
+  const tx = u.hover.x + Math.sin(u.age * 0.5) * amp, ty = u.hover.y + Math.sin(u.age * 1.1) * 0.5;
+  gp.x += (tx - gp.x) * Math.min(1, edt * k);
+  gp.y += (ty - gp.y) * Math.min(1, edt * k);
+  gp.z += (u.hover.z - gp.z) * Math.min(1, edt);
+}
+function newHover(u) { u.hover.set(rand(-7, 7), rand(6, 9), rand(8, 14)); }
+function updateBoss(u, dt, edt) {
+  const gp = u.pos, B = u.bid;
+  if (u.orb && u.orb.visible) { u.orb.scale.setScalar(1 + Math.sin(G.time * 8) * 0.15); bellyPos(u, t3); glow(t3.x, t3.y - 0.1, t3.z, 1.0, 0xff2020, 0.8); }
+  // peças (placas/drones): piscam quando acertadas; drones orbitam e ligam o escudo
+  if (u.subs) for (const p of u.subs) if (p.active) {
+    if (p.flashT > 0) p.flashT -= dt;
+    if (B === 'escudeiro') {
+      p.ang += edt * 0.6;
+      const R = 1.35 * u.scaleW;
+      p.obj.position.set(gp.x + Math.cos(p.ang) * R, gp.y + 0.3 + Math.sin(p.ang * 2) * 0.3, gp.z + Math.sin(p.ang) * R);
+      p.obj.scale.setScalar(p.flashT > 0 ? 1.3 : 1);
+      seg(p.obj.position, gp, 0.025 + Math.sin(G.time * 20) * 0.008, 0x80b0ff);
+      glow(p.obj.position.x, p.obj.position.y, p.obj.position.z, 0.7, 0x80b0ff, 0.6);
+    } else p.obj.scale.setScalar(p.flashT > 0 ? 0.52 : 0.45);
+  }
+  if (B === 'escudeiro' && !u.invuln && u.droneT > 0) {
+    u.droneT -= edt;
+    if (u.droneT <= 0 && isAlive(u)) { makeDrones(u); showBanner(tr('DRONES DE VOLTA!', 'DRONES ARE BACK!', 'DROONIT PALASIVAT!'), '', '', '#80c0ff', 1.6); }
+  }
   if (u.state === 'entering') {
-    if (moveToward(gp, u.hover, 6 * edt)) { u.state = 'hover'; u.idleT = 2; }
-  } else if (u.state === 'hover') {
-    const tx = u.hover.x + Math.sin(u.age * 0.5) * 5, ty = u.hover.y + Math.sin(u.age * 1.1) * 0.5;
-    gp.x += (tx - gp.x) * Math.min(1, edt * 1.5);
-    gp.y += (ty - gp.y) * Math.min(1, edt * 1.5);
-    gp.z += (u.hover.z - gp.z) * Math.min(1, edt);
+    if (moveToward(gp, u.hover, 6 * edt)) { u.state = B === 'bombardeiro' ? 'turn' : 'hover'; u.idleT = 2; u.bombCD = 0; }
+    return;
+  }
+  // ---------------- comportamento de cada chefe ----------------
+  if (B === 'atirador') {
+    // não abduz: fica longe cuspindo leques de gosma (dá pra derrubar no ar)
+    bossHoverMove(u, edt, 6, 1.2);
+    u.traitT -= edt;
+    u.chargeK = u.traitT < 0.9 ? 1 - u.traitT / 0.9 : 0;
+    if (u.traitT < 0.9 && Math.random() < 0.6) { bellyPos(u, t3); _c.setHex(0x8aff50); fxAdd.spawn(t3.x + rand(-0.3, 0.3), t3.y, t3.z + rand(-0.3, 0.3), 0, 0.8, 0, _c, 0.1, 0.3); }
+    if (u.traitT <= 0) {
+      const n = 3 + Math.min(2, Math.floor(G.wave / 4));
+      bellyPos(u, t3);
+      for (let k = 0; k < n; k++) fireEnemy('goo', t3, 0.05 + (k - (n - 1) / 2) * 0.09);
+      sfx('gooCharge', { pos: gp });
+      u.traitT = 3.0;
+    }
+    return;
+  }
+  if (B === 'bombardeiro') {
+    // passes rasantes soltando bombas na varanda (com círculo de aviso), depois respira
+    updateBomber(u, dt, edt);
+    if (u.state === 'pass' && Math.random() < 0.08) { bellyPos(u, t3); fireEnemy('bomb', t3); }
+    return;
+  }
+  if (B === 'ladrao') {
+    // rouba uma galinha e foge baixo; se fugir, volta pra roubar outra
+    if (u.state === 'hover') { bossHoverMove(u, edt, 4); u.idleT -= edt; if (u.idleT <= 0) { u.state = 'descending'; u.target = pickUfoTarget(); } if (u.claw) u.claw.rotation.y += edt * 2; return; }
+    updateThief(u, dt, edt);
+    if (u.state === 'escaping') { u.state = 'rising'; u.target = null; }
+    if (u.state === 'rising') { if (moveToward(gp, u.hover, 5 * edt)) { u.state = 'hover'; u.idleT = 2.5; } }
+    return;
+  }
+  if (B === 'fantasma') {
+    // some (não dá pra acertar), aparece em outro lugar
+    if (u.state === 'hover' || u.state === 'rising') {
+      u.cloakT -= edt;
+      if (u.cloakT <= 0) {
+        u.cloaked = !u.cloaked; u.cloakT = u.cloaked ? 1.8 : 3.2;
+        sfx('ghostFade', { pos: gp });
+        if (u.cloaked) newHover(u);
+      }
+    } else u.cloaked = false;
+    u.fade += ((u.cloaked ? 0.06 : 1) - u.fade) * Math.min(1, dt * 6);
+    u.bodyMat.opacity = u.fade; u.alien.visible = u.fade > 0.5; u.outline.visible = u.fade > 0.5;
+    u.orb.visible = u.fade > 0.5;
+    for (const p of u.parts) p.active = !u.cloaked;
+    if (u.cloaked) { gp.lerp(u.hover, Math.min(1, edt * 2.5)); return; }
+  }
+  if (B === 'turbo' && u.state === 'hover') {
+    // arrancadas: escolhe outro ponto e dispara até lá
+    u.traitT -= edt;
+    if (u.traitT <= 0) { newHover(u); u.dashT = 0.9; u.traitT = 2.6; sfx('dive', { pos: gp }); }
+    if (u.dashT > 0) { u.dashT -= edt; moveToward(gp, u.hover, 15 * edt); smoke(gp, 1, 0xb0e0ff, 0.3, 0.5, 0.1); }
+  }
+  if (B === 'semeador' && u.state !== 'entering') {
+    // solta kamikazes de tempos em tempos (no máximo 4 por aí)
+    u.traitT -= edt;
+    if (u.traitT < 1 && Math.random() < 0.5) glow(gp.x, gp.y - 0.4, gp.z, 1.4, 0xff8030, 0.7);
+    if (u.traitT <= 0) {
+      u.traitT = 5.5;
+      const mine = ufos.filter(o => o.typeKey === 'kamikaze' && isAlive(o)).length;
+      if (mine < 4) for (let k = 0; k < 2; k++) spawnRegular('kamikaze', t0.copy(gp).add(t1.set(k ? 1.2 : -1.2, -0.6, 0)));
+      popup(tr('KAMIKAZES!', 'KAMIKAZES!', 'KAMIKAZET!'), t2.copy(gp).setY(gp.y + 1.2), '#ff9040', 1.1);
+    }
+  }
+  if (B === 'gemeos' && !u.child && !u.split && u.hp <= u.maxHp * 0.5) {
+    // vira dois: este encolhe e nasce um irmão com a mesma vida
+    u.split = true;
+    const half = Math.max(4, Math.round(u.hp * 0.6));
+    u.hp = half; u.maxHp = half; drawHpBar(u);
+    u.scaleW *= 0.72; u.group.scale.setScalar(u.scaleW);
+    u.parts[0].r = 0.16 * u.scaleW + 0.12;
+    const sib = spawnBoss({ id: 'gemeos', hp: half }, t0.copy(gp).add(t1.set(1.5, 0, 0)), true);
+    sib.split = true; sib.state = 'hover'; sib.hover.set(-u.hover.x, u.hover.y, u.hover.z);
+    blast(gp, 2.5, 0x80ffe0); sfx('explosionSmall', { pos: gp });
+    showBanner(tr('VIROU DOIS!', 'THERE ARE TWO!', 'NIITÄ ON KAKSI!'), '', '', '#80ffe0', 1.8);
+  }
+  // ---------------- base: paira e desce para abduzir ----------------
+  if (u.state === 'hover') {
+    if (!(B === 'turbo' && u.dashT > 0)) bossHoverMove(u, edt);
     u.idleT -= edt;
     if (u.idleT <= 0) { u.target = pickUfoTarget(); if (u.target) u.state = 'descending'; else u.idleT = 1; }
   } else if (u.state === 'rising') {
     if (moveToward(gp, u.hover, 4 * edt)) { u.state = 'hover'; u.idleT = 3.5; }
   } else {
-    updateAbductor(u, dt, edt);
+    if (B === 'turbo') { u.zigAmp = 2.2; updateAbductor(u, dt, edt * 1.25); }
+    else updateAbductor(u, dt, edt);
   }
   if (G.waveDef.bossGoo && u.state !== 'entering') {
     u.gooCD -= edt;
@@ -862,7 +1024,7 @@ function drawUfo(u, dt, night) {
   }
   u.prev.copy(gp);
   // bolha do escudo
-  if (u.shieldedBy && isAlive(u.shieldedBy)) {
+  if ((u.shieldedBy && isAlive(u.shieldedBy)) || u.invuln === 'shield') {
     if (!u.bubble) { u.bubble = new THREE.Mesh(BUBBLE_GEO, BUBBLE_MAT); scene.add(u.bubble); }
     u.bubble.visible = true;
     u.bubble.position.copy(gp);

@@ -17,6 +17,7 @@ import { updatePlayer, resetPlayer, flight, flightActive, startFlightEvent, clea
 import { updateHud, drawSign, updateStartBest, waveLabel, initHud } from './hud.js';
 import { groundHeightAt } from './world.js';
 import { qualityFrame, Q as QUALITY } from './quality.js';
+import { startFinale, updateFinale, finaleSkip, clearFinale, prepareFinale } from './ending.js';
 
 const [t0, t1, t2] = tmpV(3);
 const W = { queue: [], spawnT: 0, spawned: 0, total: 0, bossSpawned: false, fwT: 0 };
@@ -103,8 +104,8 @@ function waveComplete() {
   if (stars === 3) confetti(t0.copy(camPos).add(t1.copy(camDir).multiplyScalar(3)), 60, 4);
 }
 function advanceFromComplete() {
-  if (G.wave === WAVES.length - 1) { enterVictory(); return; }
-  G.pendingPicks = G.waveDef.boss ? 1 : 0;
+  if (G.wave === WAVES.length - 1) { startFinale(enterVictory); return; }   // nave-mãe caiu: vem o FINAL
+  G.pendingPicks = 0;   // 1 melhoria por wave (agora quase toda wave tem chefe)
   showUpgradeCards(G.wave === 0 ? 'first' : 'normal');
 }
 function finalizeScore() {
@@ -139,6 +140,7 @@ export function enterGameOver(reason = 'chickens') {
   heartbeat(false);
 }
 export function resetGame() {
+  clearFinale();
   clearUfos(); stopAllHums();
   clearProjectiles();
   clearCards();
@@ -168,6 +170,10 @@ export function startGame() {
   initAudio();
   const s = document.getElementById('start');
   if (s && s.style.display !== 'none') { s.style.display = 'none'; lockPointer(); }
+  if (G.testWave === WAVES.length) {   // código secreto: ver o FINAL direto
+    startWave(WAVES.length - 1); clearQueue(); clearUfos();
+    startFinale(enterVictory); return;
+  }
   const w0 = Math.min(Math.max(0, G.testWave | 0), WAVES.length - 1);
   if (w0 > 0) grantRandomUpgrades(w0);
   startWave(w0);
@@ -175,12 +181,14 @@ export function startGame() {
 }
 /** Código secreto: escolhe a wave inicial (0 = normal). */
 export function setTestWave(n) {
-  G.testWave = ((n % WAVES.length) + WAVES.length) % WAVES.length;
+  const N = WAVES.length + 1;   // 0..11 = waves · 12 = o FINAL
+  G.testWave = ((n % N) + N) % N;
   drawSign();
   const pick = document.getElementById('wavepick');
   if (pick) for (const b of pick.querySelectorAll('button')) b.classList.toggle('on', +b.dataset.w === G.testWave);
   const lab = document.getElementById('wavepick-label');
-  if (lab) lab.textContent = G.testWave ? tr('🧪 MODO TESTE: começa na wave ', '🧪 TEST MODE: starts at wave ', '🧪 TESTITILA: alkaa aallosta ') + (G.testWave + 1) + tr(' (recorde não conta)', ' (best score not saved)', ' (ennätystä ei tallenneta)') : tr('🧪 escolha a wave inicial', '🧪 pick the starting wave', '🧪 valitse aloitusaalto');
+  if (lab) lab.textContent = G.testWave === WAVES.length ? tr('🧪 MODO TESTE: ver o FINAL', '🧪 TEST MODE: watch the ENDING', '🧪 TESTITILA: katso LOPPU')
+    : G.testWave ? tr('🧪 MODO TESTE: começa na wave ', '🧪 TEST MODE: starts at wave ', '🧪 TESTITILA: alkaa aallosta ') + (G.testWave + 1) + tr(' (recorde não conta)', ' (best score not saved)', ' (ennätystä ei tallenneta)') : tr('🧪 escolha a wave inicial', '🧪 pick the starting wave', '🧪 valitse aloitusaalto');
 }
 /** Gatilho / clique / espaço fora de combate. Retorna true se consumiu o input. */
 export function handleMenuAdvance(ctrl) {
@@ -192,6 +200,7 @@ export function handleMenuAdvance(ctrl) {
     }
     startGame(); return true;
   }
+  if (G.state === 'finale') { finaleSkip(); return true; }
   if (G.state === 'game_over') { if (G.stateT > 1.5) resetGame(); return true; }
   if (G.state === 'victory') { if (G.stateT > 2) startEndless(); return true; }
   if (G.state === 'wave_complete') { if (G.stateT > 1.2 && !flightActive()) advanceFromComplete(); return true; }
@@ -229,7 +238,8 @@ function updateWaveLogic(edt) {
 let musicMode = '';
 function updateMusic() {
   let mode = 'menu', inten = 0.3;
-  if (G.state === 'victory') mode = 'victory';
+  if (G.state === 'finale') mode = G.finaleMusic || 'victory';
+  else if (G.state === 'victory') mode = 'victory';
   else if (G.state === 'game_over') mode = 'gameover';
   else if (G.state !== 'idle') {
     mode = G.tod < 1.6 ? 'day' : G.tod < 3.2 ? 'dusk' : 'night';
@@ -288,7 +298,9 @@ export function gameLoop(time, xrFrame, forcedDt) {
   ov.bubble = G.up.bubble ? 1 : 0;
   const targetScale = Math.min(G.power.slow > 0 ? 0.5 : 1, G.up.slowSkill);   // câmera lenta: metade da velocidade
   G.timeScale += (targetScale - G.timeScale) * Math.min(1, dt * 5);
-  let edt = dt * G.timeScale;
+  // no final, tudo anda em câmera lenta (G.finaleSlow) enquanto a nave gigante desce
+  const sdt = dt * (1 - 0.85 * (G.finaleSlow || 0));
+  let edt = sdt * G.timeScale;
   if (G.hitStop > 0) { G.hitStop -= dt; edt *= 0.08; }
   if (G.comboT > 0) { G.comboT -= dt; if (G.comboT <= 0) resetCombo(); }
 
@@ -298,18 +310,19 @@ export function gameLoop(time, xrFrame, forcedDt) {
     G.tod += clamp(G.todTarget - G.tod, -dt * rate, dt * rate);
   }
   setTOD(G.tod);
-  updateWorld(dt);
+  updateWorld(sdt);
   updateMusic();
+  if (G.state === 'finale') updateFinale(dt);
 
   if (xr) trackHands(dt);
   updateWeapons(dt, xr, held.r, held.l);
   updateWaveLogic(edt);
-  updateChickens(dt, ufos);
-  updateUfos(dt, edt);
+  updateChickens(sdt, ufos);
+  updateUfos(sdt, edt);
   refreshAllParts();
   updateEproj(dt, edt);
   updateCrates(dt, edt);
-  updateProjectiles(dt);
+  updateProjectiles(sdt);
   // mira (para destacar cards) + raio-guia do controle no menu e nas cartas
   let aimO = null, aimD = null;
   if (G.state === 'upgrade' || G.state === 'idle') {
@@ -326,7 +339,7 @@ export function gameLoop(time, xrFrame, forcedDt) {
   drawChickens();
   if (G.state === 'victory') celebrate(dt);
 
-  updateFx(dt);
+  updateFx(sdt);
   updateHud(dt);
   if (!skipRender) renderer.render(scene, camera);
 }
@@ -346,6 +359,8 @@ function warmupShaders() {
   try {
     G.waveDef = WAVES[WAVES.length - 1];
     for (const k of Object.keys(UFO_TYPES)) if (UFO_TYPES[k].role !== 'boss') spawnRegular(k, P);
+    for (const id of ['couracado', 'escudeiro', 'semeador', 'ladrao', 'fantasma']) spawnBoss({ id, hp: 50 }, P, true);
+    prepareFinale();
     spawnBoss(100);
     spawnMothership();
     for (const k of Object.keys(POWERS)) spawnCrate(k, P);
@@ -401,7 +416,7 @@ export function boot() {
     setHold: v => { playerInput.mouseDown = v; },
     aimAt: p => { const d = new THREE.Vector3().copy(p).sub(camPos).normalize(); playerInput.yaw = Math.atan2(-d.x, -d.z); playerInput.pitch = Math.asin(clamp(d.y, -1, 1)); applyPcView(); },
     flight, startFlightEvent, rig, shoot: desktopShoot, ult: fireUltimate,
-    projs, pcAim, pcAimVel, updateProjectiles, clearProjectiles, camPos, camera, renderer, scene, aimInfo, THROW, throwEgg, quality: QUALITY, spawnCrate, crates,
+    projs, pcAim, pcAimVel, updateProjectiles, clearProjectiles, camPos, camera, renderer, scene, aimInfo, THROW, throwEgg, quality: QUALITY, spawnCrate, crates, finale: () => startFinale(enterVictory), spawnBoss,
     step: (n, dt = 1 / 30, render = false) => { skipRender = !render; for (let i = 0; i < n; i++) gameLoop(0, null, dt); skipRender = false; },
   };
 }

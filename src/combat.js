@@ -8,7 +8,7 @@ import { tr } from './i18n.js';
 import { UFO_TYPES, POWERS, CHICKEN_KINDS } from './config.js';
 import { sparks, fireball, blast, popup, popupStack, popupAhead, eggBurst, feathers, bolt, flashScreen, ov, debrisBurst, showBanner, confetti, twinkle } from './fx.js';
 import { sfx, stinger } from './audio.js';
-import { ufos, eproj, crates, isAlive, removeUfo, removeCrate, destroyEproj, spawnRegular, stopBeam, exposeCore, drawHpBar, spawnCrate, EP_DEF, CRATE_RX, CRATE_RY } from './ufos.js';
+import { ufos, eproj, crates, isAlive, removeUfo, removeCrate, destroyEproj, spawnRegular, stopBeam, exposeCore, drawHpBar, spawnCrate, EP_DEF, CRATE_RX, CRATE_RY, bossSubDown } from './ufos.js';
 import { chickens, chickensAlive, removeChicken, respawnChicken, scareChicken, INITIAL_FLOCK } from './chickens.js';
 import { pulseAll } from './player.js';
 import { enterGameOver, clearQueue } from './game.js';
@@ -35,7 +35,7 @@ export function rayEllipsoidT(o, d, c, ax, ay, az, maxT) {
 }
 /** Primeiro acerto ao longo de o + d·t, t ∈ [0, maxT]. */
 export function castSegment(o, d, maxT, extraR = 0, skip = null) {
-  let best = null, bt = Infinity;
+  let best = null, bt = Infinity, subHit = null;
   for (const u of ufos) {
     if (!isAlive(u) || (skip && skip.has(u))) continue;
     for (const p of u.parts) {
@@ -44,8 +44,11 @@ export function castSegment(o, d, maxT, extraR = 0, skip = null) {
         ? rayEllipsoidT(o, d, p.c, p.ellip[0] + extraR, p.ellip[1] + extraR, p.ellip[2] + extraR, maxT)
         : rayEllipsoidT(o, d, p.c, p.r + extraR, p.r + extraR, p.r + extraR, maxT);
       if (t >= 0 && t < bt) { bt = t; best = { kind: 'ufo', u, part: p, t }; }
+      if (t >= 0 && p.kind === 'sub' && (!subHit || t < subHit.t)) subHit = { kind: 'ufo', u, part: p, t };
     }
   }
+  // chefe protegido: se o raio passa por uma placa/drone dele, ela tem prioridade sobre o corpo blindado
+  if (best && best.kind === 'ufo' && best.u.invuln && subHit && subHit.u === best.u) { best = subHit; bt = subHit.t; }
   for (const g of eproj) {
     if (g.dead) continue;
     const r = EP_DEF[g.type].r + extraR, t = rayEllipsoidT(o, d, g.pos, r, r, r, maxT);
@@ -132,6 +135,28 @@ export function hitPart(u, part, dmg, pos, fx = true) {
     if (G.time - u.lastPop > 1.4) { popup(tr('ESCUDO!', 'SHIELD!', 'SUOJA!'), pos, '#80c0ff', 0.8, 0.8); u.lastPop = G.time; }
     return;
   }
+  // peças de chefe (placas do Couraçado, drones do Escudeiro): têm vida própria
+  if (part.kind === 'sub') {
+    if (fx) { G.waveHits++; G.hitMarkT = 0.12; }
+    part.hp -= dmg; part.flashT = 0.1;
+    sparks(pos, 0xc0d0ff, 5, 3); sfx('tink', { pos });
+    if (part.hp <= 0) {
+      part.active = false; part.obj.visible = false;
+      fireball(part.c, 0.6); debrisBurst(part.c, 0x9aa0b0, 8, 3); sfx('explosionSmall', { pos: part.c }); pulseAll(0.5, 80);
+      addScore(300, part.c, '+300', '#c0d0ff', 1);
+      bossSubDown(u, part);
+    }
+    return;
+  }
+  // chefe protegido (placas ou escudo de drones): o corpo não toma dano
+  if (u.invuln) {
+    sparks(pos, u.invuln === 'shield' ? 0x70b0ff : 0xffe080, 5, 3); sfx(u.invuln === 'shield' ? 'shieldTink' : 'tink', { pos });
+    if (G.time - u.lastPop > 1.4) {
+      popup(u.invuln === 'shield' ? tr('ESCUDO! ACERTE OS DRONES', 'SHIELD! HIT THE DRONES', 'SUOJA! AMMU DROONIT') : tr('BLINDADO! QUEBRE AS PLACAS', 'ARMORED! BREAK THE PLATES', 'PANSSAROITU! RIKO LEVYT'), pos, '#cccccc', 0.9, 1);
+      u.lastPop = G.time;
+    }
+    return;
+  }
   if (part.kind === 'armor') {
     sparks(pos, 0xffe080, 5, 3); sfx('tink', { pos });
     if (G.time - u.lastPop > 1.6) { popup(tr('BLINDADO!', 'ARMORED!', 'PANSSAROITU!'), pos, '#cccccc', 0.9, 0.8); u.lastPop = G.time; }
@@ -211,7 +236,8 @@ export function killUfo(u, hitPos) {
   if (u.kind === 'boss') {
     blast(pos, 4, 0xff8030); pulseAll(0.95, 250); hitStop(0.25); confetti(pos, 50, 5);
     sfx('bossDeath', { pos });
-    showBanner(tr('CHEFÃO DERROTADO!', 'BOSS DEFEATED!', 'POMO KUKISTETTU!'), '', '', '#ffd040', 2.2);
+    const twinLeft = u.bid === 'gemeos' && ufos.some(o => o !== u && o.bid === 'gemeos' && isAlive(o));
+    showBanner(twinLeft ? tr('FALTA O OUTRO GÊMEO!', 'ONE TWIN LEFT!', 'TOINEN KAKSONEN JÄLJELLÄ!') : (u.D ? u.D.name + ' ' : '') + tr('DERROTADO!', 'DEFEATED!', 'KUKISTETTU!'), '', '', '#ffd040', 2.2);
   } else pulseAll(0.45, 80);
   if (u.typeKey === 'splitter') {
     for (let k = 0; k < 2; k++) spawnRegular('mini', t0.copy(pos).add(t1.set(k ? 0.7 : -0.7, 0.2, 0)));

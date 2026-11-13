@@ -195,8 +195,9 @@ export function drawSign() {
   fitText(x, '🏆 ' + tr('RECORDE: ', 'BEST: ', 'ENNÄTYS: ') + fmt(G.best), 512, 262, 900, 54, FONT, '#ffffff');
   if (G.lastScore > 0) fitText(x, tr('última partida: ', 'last game: ', 'viime peli: ') + fmt(G.lastScore), 512, 318, 900, 34, FONT_UI, '#f0d8a8', false, '700');
   fitText(x, tr('APERTE O GATILHO PRA COMEÇAR', 'PULL THE TRIGGER TO START', 'ALOITA LIIPAISIMELLA'), 512, 394, 950, 56, FONT, '#8dff4a', true);
-  if (G.testWave) fitText(x, tr('🧪 COMEÇAR NA WAVE ', '🧪 START AT WAVE ', '🧪 ALOITA AALLOSTA ') + (G.testWave + 1) + tr(' (B+Y muda)', ' (B+Y changes)', ' (B+Y vaihtaa)'), 512, 470, 950, 36, FONT, '#60e0ff');
-  else fitText(x, tr('8 WAVES · 8 ARMAS DE OVO · CHEFÃO · NAVE-MÃE · CADEIRA VOADORA', '8 WAVES · 8 EGG WEAPONS · BOSS · MOTHERSHIP · FLYING WHEELCHAIR', '8 AALTOA · 8 MUNA-ASETTA · POMO · EMOALUS · LENTÄVÄ PYÖRÄTUOLI'), 512, 470, 950, 32, FONT_UI, '#ffc890', false, '800');
+  if (G.testWave === WAVES.length) fitText(x, tr('🧪 VER O FINAL', '🧪 WATCH THE ENDING', '🧪 KATSO LOPPU') + tr(' (B+Y muda)', ' (B+Y changes)', ' (B+Y vaihtaa)'), 512, 470, 950, 36, FONT, '#60e0ff');
+  else if (G.testWave) fitText(x, tr('🧪 COMEÇAR NA WAVE ', '🧪 START AT WAVE ', '🧪 ALOITA AALLOSTA ') + (G.testWave + 1) + tr(' (B+Y muda)', ' (B+Y changes)', ' (B+Y vaihtaa)'), 512, 470, 950, 36, FONT, '#60e0ff');
+  else fitText(x, tr('12 WAVES · 10 CHEFES · 8 ARMAS DE OVO · NAVE-MÃE · E UM FINAL...', '12 WAVES · 10 BOSSES · 8 EGG WEAPONS · MOTHERSHIP · AND AN ENDING...', '12 AALTOA · 10 POMOA · 8 MUNA-ASETTA · EMOALUS · JA LOPPU...'), 512, 470, 950, 32, FONT_UI, '#ffc890', false, '800');
   fitText(x, tr('conforto: aponte e atire nos botões abaixo', 'comfort: aim and shoot the buttons below', 'mukavuus: tähtää ja ammu alla olevia nappeja'), 512, 520, 950, 26, FONT_UI, '#d0b090', false, '700');
   signTex.needsUpdate = true;
   drawButtons();
@@ -239,7 +240,7 @@ function updateSkillBar() {
   }).join('');
 }
 export function updateHtmlHud() {
-  const show = !xrActive() && G.state !== 'idle';
+  const show = !xrActive() && G.state !== 'idle' && G.state !== 'finale';
   hudEl.classList.toggle('show', show);
   wbarEl.classList.toggle('show', show && G.unlocked.size > 1);
   skillbarEl.classList.toggle('show', show && upgList().length > 0);

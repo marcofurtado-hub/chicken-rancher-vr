@@ -56,6 +56,7 @@ export const G = {
   up: Object.assign({}, UP_DEFAULTS),
   lv: {},            // níveis das melhorias permanentes (forca, rapidez, duplo, mira, coracao)
   testWave: 0,       // código secreto: começa nesta wave (0 = normal). Recorde não conta.
+  finaleSlow: 0, finaleMusic: '',   // final: câmera lenta (0..1) e música da cena
   slots: [],              // habilidades equipadas { sk, lv, active, cd }
   pendingPicks: 0,
   tod: 0, todTarget: 0,
