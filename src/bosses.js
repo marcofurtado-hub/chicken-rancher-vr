@@ -84,6 +84,22 @@ function nearestChicken(x, z, maxD = 99) {
 }
 const faceYaw = (obj, x, z) => { obj.rotation.y = Math.atan2(x - obj.position.x, z - obj.position.z); };
 
+// ---------- Ataques compartilhados ----------
+// A complexidade cresce a cada chefe: o 1º só abduz; cada um seguinte ganha mais um tipo de ataque.
+// Tudo que vai no jogador é projétil (gosma, plasma, bomba) e pode ser derrubado a tiros (justo no celular).
+const hpK = u => u.hp / u.maxHp;
+/** n bombas com anel de aviso em volta de (cx, cz), dentro do quintal. */
+function bombsNear(n, cx, cz, R, h = 11) {
+  for (let k = 0; k < n; k++) fireEnemy('bomb', t5.set(clamp(cx + rand(-R, R), -8, 8), h + k * 1.2, clamp(cz + rand(-R, R), 3.2, 16)));
+}
+/** conta o tempo de um ataque: devolve true quando é hora (e já rearma com `every`). */
+function due(u, key, edt, every, first = every) {
+  if (u[key] == null) u[key] = first;
+  u[key] -= edt;
+  if (u[key] > 0) return false;
+  u[key] = every; return true;
+}
+
 // ---------- Base ----------
 function base(id, vet) {
   const D = BOSSES[id], idx = BOSS_ORDER.indexOf(id);
@@ -257,7 +273,11 @@ function upOlhao(u, dt, edt) {
     moveToward(gp, u.hover, 4.5 * edt);
     gp.y += Math.sin(u.age * 2) * 0.004;
     u.bt -= edt;
-    if (u.bt <= 0) { u.state = 'open'; u.gazeT = 0; u.bt = 3.6; u.target = pickUfoTarget(); sfx('ghostFade', { pos: gp }); }
+    if (u.bt <= 0) {
+      u.state = 'open'; u.gazeT = 0; u.bt = 3.6; u.target = pickUfoTarget(); sfx('ghostFade', { pos: gp });
+      u.opens = (u.opens || 0) + 1;
+      if (u.opens % 2 === 0) fireEnemy('goo', gp, 0.02);   // ataque novo: uma lágrima de gosma em você
+    }
     return;
   }
   // aberto
@@ -330,6 +350,11 @@ function cenSegDown(u, part) {
 }
 function upCentopeia(u, dt, edt) {
   const gp = u.pos;
+  if (u.age > 5) {
+    if (u.segs.length) {   // quanto menos vagões, mais nervosos: de 6,6 s até 3,4 s entre tiros
+      if (due(u, 'atkT', edt, 3 + u.segs.length * 0.4, 5)) { const sg = pick(u.segs); fireEnemy('plasma', sg.a.position, 0.05); sg.part.flashT = 0.2; }
+    } else if (gp.y > 2 && due(u, 'atkT', edt, 1.5)) fireEnemy('bomb', t5.set(clamp(gp.x, -8, 8), gp.y - 0.5, clamp(gp.z, 3.2, 16)));   // voo de bombardeio
+  }
   // alvo do movimento
   u.tau += edt * 0.42 * u.speedK;
   t0.set(Math.sin(u.tau * 0.9) * 8.5, 4.8 + Math.sin(u.tau * 1.7) * 1.4, 10.5 + Math.sin(u.tau * 0.6 + 1) * 5);
@@ -429,11 +454,12 @@ function upPolvo(u, dt, edt) {
     if (n) u.hover.set(clamp(cx / n, -6, 6), 6.8, clamp(cz / n + 1, 7, 14)); else u.hover.set(Math.sin(u.age * 0.3) * 4, 6.8, 10.5);
     t0.set(u.hover.x, u.hover.y + Math.sin(u.age * 1.2) * 0.3, u.hover.z);
     moveToward(gp, t0, 2.2 * edt);
+    if (due(u, 'inkT', edt, hpK(u) < 0.5 ? 6.5 : 9, 6)) { t5.set(gp.x, gp.y + 0.6 * PS, gp.z); fireEnemy('goo', t5, 0.03); if (hpK(u) < 0.3) fireEnemy('goo', t5, 0.14); }   // jato de tinta em você
     u.traitT -= edt;
     if (u.traitT <= 0) {
       const busy = u.tents.filter(T => T.state === 'reach' || T.state === 'hold').length;
       const idle = u.tents.filter(T => T.state === 'idle');
-      const tgt = busy < (u.hp < u.maxHp * 0.5 ? 2 : 1) && idle.length ? pickUfoTarget() : null;   // 2 tentáculos de uma vez só na metade final
+      const tgt = busy < (hpK(u) < 0.3 ? 3 : hpK(u) < 0.6 ? 2 : 1) && idle.length ? pickUfoTarget() : null;   // 1, depois 2, depois 3 tentáculos de uma vez
       if (tgt && !u.tents.some(T => T.tgt === tgt)) {
         const T = idle.sort((a, b) => a.tip.distanceTo(tgt.pos) - b.tip.distanceTo(tgt.pos))[0];
         T.state = 'reach'; T.t = 0; T.tgt = tgt; T.from.copy(T.tip);
@@ -548,6 +574,7 @@ function upMinhocao(u, dt, edt) {
       const arrived = moveToward(gp, t0, 2.8 * edt);
       if (arrived || gp.distanceTo(t0) < 0.45 || u.bt > 5.5) {
         u.state = 'rumble'; u.bt = 0.9; sfx('gooCharge', { pos: gp });
+        u.fake = hpK(u) < 0.5 && !u.justFaked && Math.random() < 0.6; u.justFaked = u.fake;   // finta: treme aqui, sai em outro lugar
         for (const k of chickens) if (Math.random() < 0.5 && Math.hypot(k.pos.x - gp.x, k.pos.z - gp.z) < 2.6) scareChicken(k, gp);   // o chão treme: metade percebe e corre
       }
     } else if (u.bt > 3) { u.state = 'rumble'; u.bt = 0.9; }
@@ -558,13 +585,17 @@ function upMinhocao(u, dt, edt) {
     u.mound.position.x = Math.sin(u.age * 70) * 0.08; u.mound.scale.setScalar(1 + (0.9 - u.bt) * 0.35);
     glow(gp.x, 0.1, gp.z, 3.2, 0xff3020, 0.35 + Math.sin(u.age * 30) * 0.2);
     if (Math.random() < dt * 30) { _c.setHex(0x7a5230); fxAlpha.spawn(gp.x + rand(-1, 1), 0.1, gp.z + rand(-1, 1), rand(-1, 1), rand(2, 4), rand(-1, 1), _c, rand(0.1, 0.2), 0.6, 8, 0.2, 0, 1, SHAPE.solid); }
-    if (u.bt <= 0) {
+    if (u.bt <= 0 && u.fake) {
+      u.fake = false; u.state = 'burrow'; u.bt = 2.5; u.target = pickUfoTarget(); u.mound.scale.setScalar(1);
+      smoke(t0.set(gp.x, 0.3, gp.z), 5, 0x9a7a50, 0.6, 0.9, 0.6); popup(tr('ERA FINTA!', 'IT WAS A FAKE!', 'SE OLI HÄMÄYS!'), t0.set(gp.x, 1.6, gp.z), '#ffb060', 1.1);
+    } else if (u.bt <= 0) {
       u.state = 'emerge'; u.bt = 0; u.dmgAcc = 0;
       const c = nearestChicken(gp.x, gp.z, 1.1);
       if (c) { hold(u, c); u.target = c; } else u.target = null;
       t0.set(gp.x, 0.4, gp.z); debrisBurst(t0, 0x7a5230, 14, 5); smoke(t0, 6, 0x9a7a50, 0.6, 1.0, 0.8);
       sfx('explosionSmall', { pos: gp }); pulseAll(0.6, 120);
       for (const k of chickens) if (k !== c && Math.hypot(k.pos.x - gp.x, k.pos.z - gp.z) < 3.2) scareChicken(k, gp);
+      bombsNear(hpK(u) < 0.5 ? 3 : 2, gp.x, gp.z, 4, 6);   // torrões de terra voam e caem em volta
       faceYaw(u.group, camPos.x, camPos.z);
     }
   } else if (u.state === 'emerge') {
@@ -630,6 +661,7 @@ function puffDown(u, part) {
   if (P) { P.regrow = 7; P.k = 0; }
   smoke(part.c, 5, 0xc8ccd8, 0.7, 0.9, 0.5);
   if (u.zap) { u.zap = null; popup(tr('O RAIO FALHOU!', 'LIGHTNING FIZZLED!', 'SALAMA SAMMUI!'), part.c, '#60e0ff', 1.1); }
+  if ((u.shardCD || 0) <= 0) { u.shardCD = 4.5; fireEnemy('plasma', part.c, 0.05); }   // o cristal quebrado devolve um estilhaço
   stormWeaken(u);
 }
 function upTempestade(u, dt, edt) {
@@ -651,7 +683,7 @@ function upTempestade(u, dt, edt) {
   iEnd(I);
   if (u.state === 'entering') return;
   // raio no jogador (com aviso no chão)
-  if (!u.zap) { u.zapT -= edt; if (u.zapT <= 0) { const rp = rig.position; u.zap = { x: rp.x, z: rp.z, t: 1.5 }; u.zapT = 7.5; sfx('sniperCharge', { pos: gp }); } }
+  if (!u.zap) { u.zapT -= edt; if (u.zapT <= 0) { const rp = rig.position; u.zap = { x: rp.x, z: rp.z, t: 1.5 }; u.zapT = hpK(u) < 0.5 ? 5.5 : 7.5; sfx('sniperCharge', { pos: gp }); } }
   else {
     const z = u.zap, y = groundHeightAt(z.x, z.z) + 0.08;
     z.t -= edt;
@@ -667,6 +699,8 @@ function upTempestade(u, dt, edt) {
       u.zap = null;
     }
   }
+  u.shardCD = (u.shardCD || 0) - edt;
+  if (hpK(u) < 0.6 && due(u, 'rainT', edt, 9, 3)) { bombsNear(hpK(u) < 0.3 ? 5 : 3, 0, 9.5, 7, 12); popup(tr('CHUVA DE CRISTAIS!', 'CRYSTAL RAIN!', 'KRISTALLISADE!'), t5.set(gp.x, gp.y - 3, gp.z), '#d0a0ff', 1.3); }
   // tornado: desce da nuvem, persegue uma galinha e suga
   if (!u.tor) {
     u.torT -= edt;
@@ -760,7 +794,12 @@ function upMagico(u, dt, edt) {
   if (u.state === 'hover') {
     gp.y = u.slot.y + Math.sin(u.age * 1.5) * 0.22;
     u.shufT -= edt; u.cardT -= edt; u.trickT -= edt;
-    if (u.cardT <= 0) { fireEnemy('plasma', gp, 0.03); u.cardT = 5.5; }
+    if (u.cardT <= 0) {
+      const hurt = hpK(u) < 0.5;
+      for (let k = 0; k < (hurt ? 3 : 1); k++) fireEnemy('plasma', gp, hurt ? 0.12 : 0.03);
+      u.cardT = hurt ? 5 : 5.5;
+    }
+    if (due(u, 'decT', edt, 6.5, 4)) { const d = pick(u.decoys.filter(x => x.g.visible && x.part.active)); if (d) fireEnemy('goo', d.g.position, 0.04); }
     if (u.trickT <= 0) { u.target = pickUfoTarget(); u.trickT = 9; if (u.target) { u.state = 'descending'; u.dmgAcc = 0; return; } }
     if (u.shufT <= 0) hatShuffle(u);
   } else if (u.state === 'rising') {
@@ -815,14 +854,18 @@ function upColmeia(u, dt, edt) {
   else { t0.set(Math.sin(u.age * 0.3) * 4, u.hover.y + Math.sin(u.age * 0.9) * 0.3, u.hover.z); moveToward(gp, t0, 1.5 * edt); }
   faceYaw(u.group, camPos.x, camPos.z);
   const alive = u.bees.filter(b => b.part.active);
+  if (u.state !== 'entering' && alive.length && due(u, 'volT', edt, hpK(u) < 0.4 ? 4.5 : 6.5, 5)) {   // rajada: 3 zangões atiram
+    for (const b of alive.slice().sort(() => Math.random() - 0.5).slice(0, 3)) { fireEnemy('plasma', b.a.position, 0.07); b.part.flashT = 0.2; }
+  }
   if (u.invuln) {
     if (alive.length < 4 && u.state !== 'entering') {
       u.invuln = null; u.expT = 7;
+      for (let k = 0; k < 2; k++) if (aliveRegulars() < G.waveDef.maxAlive) spawnRegular('mini', t5.set(gp.x + (k ? 1.5 : -1.5), gp.y - 1.5, gp.z));   // sem escudo, solta mini naves
       showBanner(tr('RAINHA EXPOSTA!', 'QUEEN EXPOSED!', 'KUNINGATAR PALJAANA!'), tr('ataque agora!', 'attack now!', 'hyökkää nyt!'), '', '#ffd040', 2);
       sfx('shieldDown', { pos: gp });
     } else {
       u.respT -= edt;
-      if (u.respT <= 0) { u.respT = 2.6; const d = u.bees.find(b => !b.part.active); if (d) { d.part.active = true; d.part.hp = d.part.maxHp; d.a.position.copy(gp); } }
+      if (u.respT <= 0) { u.respT = hpK(u) < 0.4 ? 1.7 : 2.6; const d = u.bees.find(b => !b.part.active); if (d) { d.part.active = true; d.part.hp = d.part.maxHp; d.a.position.copy(gp); } }
     }
   } else {
     u.expT -= edt;
@@ -939,6 +982,15 @@ function upColheitadeira(u, dt, edt) {
     return;
   }
   u.stallCD -= edt;
+  if (u.stallT <= 0) {
+    if (due(u, 'mortT', edt, 8, 5)) { const c = nearestChicken(gp.x, gp.z); bombsNear(hpK(u) < 0.5 ? 3 : 2, c ? c.pos.x : 0, c ? c.pos.z : 9, 3); sfx('launcher', { pos: gp }); }   // morteiro: espalha as galinhas
+    const stage = hpK(u) < 0.33 ? 2 : hpK(u) < 0.66 ? 1 : 0;
+    if (stage > (u.stage || 0)) {   // solta naves kamikaze quando apanha
+      u.stage = stage;
+      spawnRegular('kamikaze', t5.set(gp.x + rand(-1, 1), 4, gp.z));
+      popup(tr('KAMIKAZES!', 'KAMIKAZES!', 'KAMIKAZET!'), t5.set(gp.x, 5.5, gp.z), '#ff8030', 1.3);
+    }
+  }
   const sh = Math.sin(u.h), ch = Math.cos(u.h);
   let speed = 0, reelSpd = 9;
   if (u.stallT > 0) {
@@ -954,7 +1006,7 @@ function upColheitadeira(u, dt, edt) {
   } else if (u.sub === 'charge') {
     u.subT -= edt; speed = 8.5; reelSpd = 26;
     if (Math.random() < dt * 30) smoke(t0.set(gp.x - sh * 1.8, 0.3, gp.z - ch * 1.8), 1, 0xb8a888, 0.5, 0.6, 0.3);
-    if (u.subT <= 0) { u.sub = 'drive'; u.chargeT = 9; }
+    if (u.subT <= 0) { u.sub = 'drive'; u.chargeT = hpK(u) < 0.5 ? 5.5 : 9; }
   } else {
     const c = nearestChicken(gp.x, gp.z);
     const tx = c ? c.pos.x : 0, tz = c ? c.pos.z : 9;
@@ -1110,7 +1162,7 @@ function upGalozilla(u, dt, edt) {
     if (!A) {
       u.bt -= edt * (phase === 3 ? 1.4 : 1);
       if (u.bt <= 0) {
-        const pat = phase === 1 ? ['eggs', 'chicks'] : ['eggs', 'laser', 'chicks', 'crow'];
+        const pat = phase === 1 ? ['eggs', 'chicks', 'cannons'] : phase === 2 ? ['eggs', 'laser', 'chicks', 'cannons', 'crow'] : ['eggs', 'cannons', 'laser', 'chicks', 'cannons', 'crow'];
         u.act = { k: pat[u.seq++ % pat.length], t: 0, f: false };
         if (u.act.k === 'eggs') sfx('coreExposed', { pos: gp });
         if (u.act.k === 'laser') { sfx('sniperCharge', { pos: gp }); u.head.getWorldPosition(t0); t0.y += 2.4; popup(tr('ACERTE O CÉREBRO!', 'HIT THE BRAIN!', 'OSU AIVOIHIN!'), t0, '#ff8080', 1.8, 1.5); }
@@ -1157,6 +1209,14 @@ function upGalozilla(u, dt, edt) {
           if (camPos.distanceTo(u.lockP) < 0.75) damagePlayer(12, 'LASER!', '#ff3050');
         }
         if (A.t >= AIM + 0.6) { u.act = null; u.bt = 2.6; }
+      } else if (A.k === 'cannons') {   // 3 salvas dos canhões dos ombros (plasma: dá pra derrubar)
+        const n = Math.floor((A.t - 0.5) / 0.45);
+        if (n >= 0 && n < 3 && n !== A.n) {
+          A.n = n;
+          for (const sx of [-1, 1]) { u.torso.getWorldPosition(t0); t0.x += sx * 2.78 * GS; t0.y -= 0.1 * GS; t0.z -= 1.6 * GS; fireEnemy('plasma', t0, 0.09); smoke(t0, 2, 0xd0d0d0, 0.5, 0.6, 0.4); }
+          sfx('launcher', { pos: gp, pitch: 1.4 });
+        }
+        if (A.t >= 2.4) { u.act = null; u.bt = 2.2; }
       } else if (A.k === 'crow') {
         pitchGoal = A.t < 1.0 ? -0.75 : -0.2;
         if (!A.f && A.t >= 1.0) {

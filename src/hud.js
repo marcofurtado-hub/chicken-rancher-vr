@@ -196,7 +196,7 @@ export function drawSign() {
   if (G.lastScore > 0) fitText(x, tr('última partida: ', 'last game: ', 'viime peli: ') + fmt(G.lastScore), 512, 318, 900, 34, FONT_UI, '#f0d8a8', false, '700');
   fitText(x, tr('APERTE O GATILHO PRA COMEÇAR', 'PULL THE TRIGGER TO START', 'ALOITA LIIPAISIMELLA'), 512, 394, 950, 56, FONT, '#8dff4a', true);
   if (G.testWave) fitText(x, tr('🧪 COMEÇAR NA WAVE ', '🧪 START AT WAVE ', '🧪 ALOITA AALLOSTA ') + (G.testWave + 1) + tr(' (B+Y muda)', ' (B+Y changes)', ' (B+Y vaihtaa)'), 512, 470, 950, 36, FONT, '#60e0ff');
-  else fitText(x, tr('10 WAVES · 10 CHEFES · 10 ARMAS · RANKING MUNDIAL', '10 WAVES · 10 BOSSES · 10 WEAPONS · WORLD RANKING', '10 AALTOA · 10 POMOA · 10 ASETTA · MAAILMANLISTA'), 512, 470, 950, 32, FONT_UI, '#ffc890', false, '800');
+  else fitText(x, tr('10 WAVES · 10 CHEFES · 11 ARMAS · RANKING MUNDIAL', '10 WAVES · 10 BOSSES · 11 WEAPONS · WORLD RANKING', '10 AALTOA · 10 POMOA · 11 ASETTA · MAAILMANLISTA'), 512, 470, 950, 32, FONT_UI, '#ffc890', false, '800');
   fitText(x, tr('conforto: aponte e atire nos botões abaixo', 'comfort: aim and shoot the buttons below', 'mukavuus: tähtää ja ammu alla olevia nappeja'), 512, 520, 950, 26, FONT_UI, '#d0b090', false, '700');
   signTex.needsUpdate = true;
   drawButtons();

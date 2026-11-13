@@ -330,6 +330,7 @@ addEventListener('keydown', e => {
   }
   const m = e.code.match(/^Digit(\d)$/);
   if (m) { const n = (parseInt(m[1], 10) + 9) % 10; if (G.state === 'idle' && wavePickOpen()) setTestWave(n); else selectWeapon(WEAPON_ORDER[n]); }   // 1..9 e 0 = décima
+  if (e.code === 'Minus') selectWeapon(WEAPON_ORDER[10]);   // 11ª arma
   // [ e ] ajustam a sensibilidade do mouse no meio do jogo
   if (e.code === 'BracketLeft' || e.code === 'BracketRight') {
     const S = G.settings; S.mouse = clamp(Math.round(((S.mouse || 1) + (e.code === 'BracketRight' ? 0.1 : -0.1)) * 10) / 10, 0.3, 3);

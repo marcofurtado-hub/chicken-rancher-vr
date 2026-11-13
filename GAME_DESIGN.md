@@ -35,8 +35,16 @@
       (acertar o cérebro cancela), rugido, e **chama um chefe antigo** a cada fase (Batedor, depois Vigia).
 - **O difícil de ontem é o fácil de hoje:** chefes já vencidos voltam no meio das waves seguintes como inimigos comuns
   (`vets` em `WAVES`; `spawnBoss(id, true, true)`): 60% da vida base, sem faixa de chefão, pontos menores.
-- **10 armas, uma por wave:** ovos na mão, estilingue, pistolas, escopeta, lança-ovo, gatling, teleguiado, rojão,
-  **raio tesla** (wave 9, pula entre naves) e **laser** (wave 10, a mais forte num alvo só). Teclas 1-9 e 0.
+- **11 armas, todas as antigas de volta; a arma nova é a recompensa de passar de wave:** ovos na mão, estilingue,
+  besta, pistolas, escopeta, lança-ovo, gatling, teleguiado, rojão e, na wave 10, **raio tesla + laser** juntos.
+  Teclas 1-9, 0 e `-`.
+- **Ataques dos chefes crescem em complexidade a cada chefe** (tudo que vai no jogador é projétil derrubável a tiros):
+  Batedor só abduz · Vigia cospe gosma a cada 2ª abertura · Broca joga torrões e faz finta abaixo de 50% · Comboio:
+  vagões atiram e a nave-chefe exposta bombardeia · Miragem: hologramas atiram e leque de 3 cartas quando ferida ·
+  Cérebro-Lula: jato de tinta e 1→2→3 tentáculos · Ceifador: morteiro no quintal, kamikaze aos 66% e 33%, mais
+  arrancadas · Cristal: estilhaço de volta, raio mais frequente, chuva de cristais abaixo de 60% · Rainha: rajada de
+  3 zangões, mini naves quando exposta, repõe zangões mais rápido · Imperador: canhões dos ombros no ciclo + chama
+  chefes antigos.
 - **Melhorias:** saiu a Mão Rápida (invisível); entrou o **Ricochete** (o ovo quica para outra nave) e a Força virou
   **Ovo Grandão** (o ovo cresce junto com o dano).
 - **Feedback de teste (PC):** sensibilidade do mouse ajustável (ajustes do menu, ou teclas `[` e `]` no jogo; padrão

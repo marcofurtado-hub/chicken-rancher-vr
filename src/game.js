@@ -46,11 +46,11 @@ export function startWave(idx) {
   G.waveLost = 0; G.waveKills = 0; G.waveShots = 0; G.waveHits = 0; G.waveDamage = 0;
   flight.done = false;
   hideBanner();
-  let newWeapon = null;
+  let newWeapon = null; const newWeapons = [];
   if (w.weapon) {
     const wi = WEAPON_ORDER.indexOf(w.weapon);
     for (let k = 0; k <= wi; k++) {
-      if (!G.unlocked.has(WEAPON_ORDER[k])) { G.unlocked.add(WEAPON_ORDER[k]); if (WEAPON_ORDER[k] === w.weapon) newWeapon = w.weapon; }
+      if (!G.unlocked.has(WEAPON_ORDER[k])) { G.unlocked.add(WEAPON_ORDER[k]); if (WEAPON_ORDER[k] === w.weapon) newWeapon = w.weapon; if (k === wi || k === wi - 1) newWeapons.push(WEAPON_ORDER[k]); }
     }
     equipWeapon(w.weapon);
   } else for (const x of WEAPON_ORDER) G.unlocked.add(x);
@@ -65,7 +65,9 @@ export function startWave(idx) {
   const title = w.endless ? tr('INFINITO ', 'ENDLESS ', 'LOPUTON ') + (w.n + 1) : tr('WAVE ', 'WAVE ', 'AALTO ') + (idx + 1) + '/' + WAVES.length;
   const BD = w.boss && BOSSES[w.boss];
   const sub = BD ? (idx === WAVES.length - 1 ? tr('BATALHA FINAL · ', 'FINAL BATTLE · ', 'LOPPUTAISTELU · ') : tr('⚠ CHEFÃO: ', '⚠ BOSS: ', '⚠ POMO: ')) + BD.name : tr('PREPARE-SE', 'GET READY', 'VALMISTAUDU');
-  const l3 = newWeapon ? tr('NOVA ARMA: ', 'NEW WEAPON: ', 'UUSI ASE: ') + WEAPONS[newWeapon].icon + ' ' + WEAPONS[newWeapon].label : '';
+  // a wave 10 entrega duas armas de uma vez (as duas últimas da lista)
+  const two = newWeapon && newWeapons.length > 1 && idx > 0;
+  const l3 = !newWeapon ? '' : two ? tr('NOVAS ARMAS: ', 'NEW WEAPONS: ', 'UUDET ASEET: ') + newWeapons.map(x => WEAPONS[x].icon + ' ' + WEAPONS[x].label).join(' + ') : tr('NOVA ARMA: ', 'NEW WEAPON: ', 'UUSI ASE: ') + WEAPONS[newWeapon].icon + ' ' + WEAPONS[newWeapon].label;
   const T = w.intro && w.intro !== 'saucer' ? UFO_TYPES[w.intro] : null;
   let l4 = newWeapon ? WEAPON_TIPS[newWeapon][xrActive() ? 0 : 1] : '';
   if (T) l4 = (l4 ? l4 + ' · ' : '') + tr('NOVA AMEAÇA: ', 'NEW THREAT: ', 'UUSI UHKA: ') + T.name + ' (' + T.desc + ')';

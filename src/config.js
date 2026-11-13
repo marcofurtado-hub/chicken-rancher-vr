@@ -18,8 +18,8 @@ export const WEAPONS = {
   fireworks:{ label: tr('ROJÃO', 'FIREWORKS', 'ILOTULITE'),           icon: '🎆' },
 };
 
-// Uma arma nova por wave (10). Raio tesla e laser voltaram para as waves 9 e 10; a besta segue de fora (igual ao estilingue).
-export const WEAPON_ORDER = ['hands', 'slingshot', 'pistols', 'shotgun', 'launcher', 'gatling', 'homing', 'fireworks', 'tesla', 'laser'];
+// TODAS as armas de volta (11): a arma nova é a recompensa de passar de wave. A wave 10 entrega as duas últimas.
+export const WEAPON_ORDER = ['hands', 'slingshot', 'crossbow', 'pistols', 'shotgun', 'launcher', 'gatling', 'homing', 'fireworks', 'tesla', 'laser'];
 
 export const UFO_TYPES = {
   saucer:   { name: tr('NAVE COMUM', 'SAUCER', 'LAUTANEN'),     desc: tr('abduz galinhas com o feixe', 'abducts chickens with its beam', 'sieppaa kanoja säteellään'),          role: 'abduct',  hp: 1, scale: 1.0,  speed: 1.0,  beam: 1.0,  color: 0xb8c2d4, glow: 0x5effd0, pts: 100, drop: 0.07 },
@@ -41,16 +41,16 @@ export const UFO_TYPES = {
 // O chefe só chega no FIM da wave, depois que todas as naves comuns foram embora. A wave 10 termina em VITÓRIA + ranking.
 // `vets`: chefes já vencidos que voltam no meio da wave como inimigos comuns (o difícil de ontem é o fácil de hoje).
 export const WAVES = [
-  { weapon: 'hands',     mix: { saucer: 4 }, interval: 1.6, speed: 1.1, beamTime: 7.0, maxAlive: 3, hpMult: 1, boss: 'zepelim', ufoScale: 1.7, tod: 0, close: true, intro: 'saucer', aggro: 0 },
+  { weapon: 'hands', mix: { saucer: 4 }, interval: 1.6, speed: 1.1, beamTime: 7.0, maxAlive: 3, hpMult: 1, boss: 'zepelim', ufoScale: 1.7, tod: 0, close: true, intro: 'saucer', aggro: 0 },
   { weapon: 'slingshot', mix: { saucer: 5, zippy: 2 }, interval: 1.4, speed: 1.4, beamTime: 6.5, maxAlive: 4, hpMult: 1, boss: 'olhao', ufoScale: 1.5, tod: 0.4, intro: 'zippy', aggro: 0 },
-  { weapon: 'pistols',   mix: { saucer: 5, zippy: 3, tank: 2 }, interval: 1.2, speed: 1.6, beamTime: 6.0, maxAlive: 5, hpMult: 1, boss: 'minhocao', vets: ['zepelim'], ufoScale: 1.35, tod: 0.8, intro: 'tank', aggro: 0.5 },
-  { weapon: 'shotgun',   mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2 }, interval: 1.1, speed: 1.8, beamTime: 5.7, maxAlive: 5, hpMult: 1, boss: 'centopeia', vets: ['olhao'], ufoScale: 1.25, tod: 1.2, intro: 'gunner', aggro: 0.9 },
-  { weapon: 'launcher',  mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2 }, interval: 1.0, speed: 2.0, beamTime: 5.4, maxAlive: 6, hpMult: 1.3, boss: 'magico', vets: ['zepelim', 'minhocao'], ufoScale: 1.15, tod: 1.6, intro: 'kamikaze', aggro: 1.0 },
-  { weapon: 'gatling',   mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2 }, interval: 0.95, speed: 2.1, beamTime: 5.2, maxAlive: 7, hpMult: 1.5, boss: 'polvo', vets: ['olhao', 'centopeia'], ufoScale: 1.08, tod: 2.0, intro: 'splitter', aggro: 1.1 },
-  { weapon: 'homing',    mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2 }, interval: 0.9, speed: 2.3, beamTime: 5.0, maxAlive: 8, hpMult: 2, boss: 'colheitadeira', vets: ['zepelim', 'magico'], ufoScale: 1.0, tod: 2.5, intro: 'shielder', aggro: 1.2 },
-  { weapon: 'fireworks', mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 2 }, interval: 0.85, speed: 2.4, beamTime: 4.8, maxAlive: 8, hpMult: 2, boss: 'tempestade', vets: ['olhao', 'centopeia'], ufoScale: 0.95, tod: 3.0, intro: 'ghost', aggro: 1.3 },
-  { weapon: 'tesla',     mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, ghost: 2, bomber: 2, sniper: 2 }, interval: 0.8, speed: 2.5, beamTime: 4.7, maxAlive: 9, hpMult: 2.3, boss: 'colmeia', vets: ['minhocao', 'polvo'], ufoScale: 0.92, tod: 3.5, intro: 'bomber', aggro: 1.4 },
-  { weapon: 'laser',     mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 2, bomber: 2, thief: 2 }, interval: 0.8, speed: 2.6, beamTime: 4.6, maxAlive: 9, hpMult: 2.5, boss: 'galozilla', vets: ['olhao', 'magico'], ufoScale: 0.9, tod: 4, intro: 'thief', aggro: 1.5, flight: true },
+  { weapon: 'crossbow', mix: { saucer: 5, zippy: 3, tank: 2 }, interval: 1.2, speed: 1.6, beamTime: 6.0, maxAlive: 5, hpMult: 1, boss: 'minhocao', vets: ['zepelim'], ufoScale: 1.35, tod: 0.8, intro: 'tank', aggro: 0.5 },
+  { weapon: 'pistols', mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2 }, interval: 1.1, speed: 1.8, beamTime: 5.7, maxAlive: 5, hpMult: 1, boss: 'centopeia', vets: ['olhao'], ufoScale: 1.25, tod: 1.2, intro: 'gunner', aggro: 0.9 },
+  { weapon: 'shotgun', mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2 }, interval: 1.0, speed: 2.0, beamTime: 5.4, maxAlive: 6, hpMult: 1.3, boss: 'magico', vets: ['zepelim', 'minhocao'], ufoScale: 1.15, tod: 1.6, intro: 'kamikaze', aggro: 1.0 },
+  { weapon: 'launcher', mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2 }, interval: 0.95, speed: 2.1, beamTime: 5.2, maxAlive: 7, hpMult: 1.5, boss: 'polvo', vets: ['olhao', 'centopeia'], ufoScale: 1.08, tod: 2.0, intro: 'splitter', aggro: 1.1 },
+  { weapon: 'gatling', mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2 }, interval: 0.9, speed: 2.3, beamTime: 5.0, maxAlive: 8, hpMult: 2, boss: 'colheitadeira', vets: ['zepelim', 'magico'], ufoScale: 1.0, tod: 2.5, intro: 'shielder', aggro: 1.2 },
+  { weapon: 'homing', mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 2 }, interval: 0.85, speed: 2.4, beamTime: 4.8, maxAlive: 8, hpMult: 2, boss: 'tempestade', vets: ['olhao', 'centopeia'], ufoScale: 0.95, tod: 3.0, intro: 'ghost', aggro: 1.3 },
+  { weapon: 'fireworks', mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, ghost: 2, bomber: 2, sniper: 2 }, interval: 0.8, speed: 2.5, beamTime: 4.7, maxAlive: 9, hpMult: 2.3, boss: 'colmeia', vets: ['minhocao', 'polvo'], ufoScale: 0.92, tod: 3.5, intro: 'bomber', aggro: 1.4 },
+  { weapon: 'laser', mix: { saucer: 5, zippy: 3, tank: 2, gunner: 2, kamikaze: 2, splitter: 2, shielder: 2, ghost: 2, bomber: 2, thief: 2 }, interval: 0.8, speed: 2.6, beamTime: 4.6, maxAlive: 9, hpMult: 2.5, boss: 'galozilla', vets: ['olhao', 'magico'], ufoScale: 0.9, tod: 4, intro: 'thief', aggro: 1.5, flight: true },
 ];
 
 // Chefes (vida base; cada um tem modelo e regras em bosses.js)
@@ -58,12 +58,12 @@ export const BOSSES = {
   zepelim:       { hp: 3,    name: tr('BATEDOR', 'THE SCOUT', 'TIEDUSTELIJA'),              hint: tr('estoure os 3 cristais de energia', 'pop the 3 energy crystals', 'puhkaise 3 energiakristallia') },
   olhao:         { hp: 60,   name: tr('VIGIA', 'THE WATCHER', 'VARTIJA'),                   hint: tr('só toma dano de olho aberto: acerte a pupila', 'only hurts with the eye open: hit the pupil', 'vahinkoa vain silmä auki: osu pupilliin') },
   centopeia:     { hp: 70,   name: tr('COMBOIO', 'THE CONVOY', 'SAATTUE'),                  hint: tr('destrua os vagões, depois a nave-chefe', 'destroy the pods, then the lead ship', 'tuhoa vaunut, sitten johtoalus') },
-  polvo:         { hp: 800,  name: tr('CÉREBRO-LULA', 'BRAIN SQUID', 'AIVOKALMARI'),        hint: tr('atire no tentáculo pra ele soltar a galinha', 'shoot a tentacle to free the chicken', 'ammu lonkeroa niin se päästää kanan') },
-  minhocao:      { hp: 240,  name: tr('BROCA', 'THE DRILL', 'PORA'),                        hint: tr('só sobe pra morder: acerte a boca pra ela cuspir', 'only surfaces to bite: hit the mouth to make it spit', 'nousee vain puremaan: osu suuhun') },
-  tempestade:    { hp: 800,  name: tr('CRISTAL', 'THE CRYSTAL', 'KRISTALLI'),               hint: tr('quebre os cristais e acerte a máquina lá dentro', 'break the crystals and hit the machine inside', 'riko kristallit ja osu koneeseen') },
-  magico:        { hp: 80,  name: tr('MIRAGEM', 'THE MIRAGE', 'KANGASTUS'),                hint: tr('duas são holograma: a de verdade tem os olhos brilhando', 'two are holograms: the real one has glowing eyes', 'kaksi on hologrammeja: aidolla silmät hehkuvat') },
-  colmeia:       { hp: 160,  name: tr('RAINHA', 'THE QUEEN', 'KUNINGATAR'),                 hint: tr('derrube os zangões pra desligar o escudo', 'shoot the drones to drop the shield', 'ammu lennokit niin suoja sammuu') },
-  colheitadeira: { hp: 600, name: tr('CEIFADOR', 'THE REAPER', 'NIITTÄJÄ'),                hint: tr('a frente é blindada: acerte os tanques vermelhos', 'the front is armored: hit the red tanks', 'etuosa on panssaroitu: osu punaisiin säiliöihin') },
+  polvo:         { hp: 600,  name: tr('CÉREBRO-LULA', 'BRAIN SQUID', 'AIVOKALMARI'),        hint: tr('atire no tentáculo pra ele soltar a galinha', 'shoot a tentacle to free the chicken', 'ammu lonkeroa niin se päästää kanan') },
+  minhocao:      { hp: 100,  name: tr('BROCA', 'THE DRILL', 'PORA'),                        hint: tr('só sobe pra morder: acerte a boca pra ela cuspir', 'only surfaces to bite: hit the mouth to make it spit', 'nousee vain puremaan: osu suuhun') },
+  tempestade:    { hp: 200,  name: tr('CRISTAL', 'THE CRYSTAL', 'KRISTALLI'),               hint: tr('quebre os cristais e acerte a máquina lá dentro', 'break the crystals and hit the machine inside', 'riko kristallit ja osu koneeseen') },
+  magico:        { hp: 260,  name: tr('MIRAGEM', 'THE MIRAGE', 'KANGASTUS'),                hint: tr('duas são holograma: a de verdade tem os olhos brilhando', 'two are holograms: the real one has glowing eyes', 'kaksi on hologrammeja: aidolla silmät hehkuvat') },
+  colmeia:       { hp: 500,  name: tr('RAINHA', 'THE QUEEN', 'KUNINGATAR'),                 hint: tr('derrube os zangões pra desligar o escudo', 'shoot the drones to drop the shield', 'ammu lennokit niin suoja sammuu') },
+  colheitadeira: { hp: 800, name: tr('CEIFADOR', 'THE REAPER', 'NIITTÄJÄ'),                hint: tr('a frente é blindada: acerte os tanques vermelhos', 'the front is armored: hit the red tanks', 'etuosa on panssaroitu: osu punaisiin säiliöihin') },
   galozilla:     { hp: 2200, name: tr('IMPERADOR', 'THE EMPEROR', 'KEISARI'),               hint: tr('acerte o cérebro, e o peito quando abrir', 'hit the brain, and the chest when it opens', 'osu aivoihin ja rintaan kun se aukeaa') },
 };
 export const BOSS_ORDER = ['zepelim', 'olhao', 'minhocao', 'centopeia', 'magico', 'polvo', 'colheitadeira', 'tempestade', 'colmeia', 'galozilla'];
