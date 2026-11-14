@@ -43,7 +43,6 @@ function hullParts(g, T, boss = false) {
   ring(g, 0.2, 0.026, 0xc8ccd8, 0.13);                       // aro da cabine
   cyl(g, 0.16, 0.16, 0.012, 20, shade(T.glow, 1), 0, -0.203, 0); // emissor da barriga
   ring(g, 0.17, 0.016, 0x30303a, -0.2);
-  cyl(g, 0.022, 0.022, 0.3, 5, 0x30303a, 0, -0.34, 0);     // haste da placa vermelha
   for (let i = 0; i < N_LIGHTS; i++) {                       // luzes da borda
     const a = i / N_LIGHTS * Math.PI * 2;
     ico(g, boss ? 0.034 : 0.038, boss ? (i % 2 ? 0xff2020 : 0xffa020) : LIGHT_COLS[i % 4], Math.cos(a) * 0.535, 0.012, Math.sin(a) * 0.535, 0);
@@ -88,40 +87,6 @@ const ACCENTS = {
     ring(g, 0.5, 0.03, 0x801818, 0.05);
   },
 };
-// =============================================================================
-// PLACAS VERMELHAS (ponto fraco, estilo Star Fox). Toda nave tem uma pendurada embaixo, virada para
-// você; chefes têm as deles presas no corpo. Acertar a placa dá dano multiplicado. Uma malha
-// instanciada desenha todas (1 draw call).
-// =============================================================================
-const PLATE_MAX = 64;
-const PLATE_GEO = bakeWith(g => {
-  box(g, 0.42, 0.34, 0.03, 0xffd040, 0, 0, -0.012);     // moldura amarela
-  box(g, 0.34, 0.26, 0.045, 0xff2020, 0, 0, 0);         // placa vermelha
-  box(g, 0.2, 0.05, 0.05, 0xff9a9a, 0, 0.06, 0.004);    // brilho
-  for (const sx of [-1, 1]) for (const sy of [-1, 1]) sph(g, 0.022, 0x40101a, sx * 0.18, sy * 0.14, 0.02, 5, 4);
-});
-const plateMesh = new THREE.InstancedMesh(PLATE_GEO, toon({ ramp: 4 }), PLATE_MAX);
-plateMesh.frustumCulled = false; plateMesh.count = 0;
-plateMesh.setColorAt(0, _c.setRGB(1, 1, 1));
-scene.add(plateMesh);
-function drawPlates() {
-  let n = 0;
-  const k = 1.25 + Math.sin(G.time * 7) * 0.3;   // pulsa
-  const put = a => {
-    if (n >= PLATE_MAX) return;
-    a.updateWorldMatrix(true, false);
-    plateMesh.setMatrixAt(n, a.matrixWorld); plateMesh.setColorAt(n, _c.setRGB(k, k * 0.9, k * 0.9)); n++;
-  };
-  for (const u of ufos) {
-    if (!isAlive(u)) continue;
-    if (u.plateA && !u.cloaked) put(u.plateA);
-    if (u.plates) for (const a of u.plates) if (a.part.active && a.shown !== false) put(a);
-  }
-  plateMesh.count = n;
-  plateMesh.instanceMatrix.needsUpdate = true;
-  if (plateMesh.instanceColor) plateMesh.instanceColor.needsUpdate = true;
-}
-
 const _bodyGeoCache = {};
 function bodyGeo(typeKey) {
   if (_bodyGeoCache[typeKey]) return _bodyGeoCache[typeKey];
@@ -272,7 +237,7 @@ export function removeUfo(u) {
 }
 export function clearUfos() {
   for (const u of ufos) removeUfo(u);
-  ufos.length = 0; plateMesh.count = 0;
+  ufos.length = 0;
   for (const g of eproj) killEproj(g);
   eproj.length = 0;
   for (const cr of crates.slice()) removeCrate(cr);
@@ -296,9 +261,6 @@ export function spawnRegular(typeKey, fromPos = null) {
   u.beamTime = w.beamTime * T.beam;
   u.descendH = w.close ? 2.5 : (typeKey === 'zippy' || typeKey === 'mini' ? 3.4 : typeKey === 'tank' ? 4.6 : 4.0);
   addPart(u, u.group, { r: Math.max(0.45, 0.55 * sw + 0.1) });   // esfera da 2.1 (a elipse achatada da 3.0 tinha ~30% menos área)
-  // placa vermelha pendurada embaixo: alvo separado, dano x3
-  u.plateA = new THREE.Object3D(); u.plateA.rotation.order = 'YXZ'; u.plateA.position.set(0, -0.62, 0); u.group.add(u.plateA);
-  u.pPlate = addPart(u, u.plateA, { r: 0.2 * sw + 0.05, kind: 'crit', mult: 3 });
   const gp = u.pos;
   if (fromPos) gp.copy(fromPos);
   else if (w.close) gp.set(rand(-4, 4), rand(12, 16), rand(5, 10));
@@ -644,16 +606,16 @@ function updateMother(u, dt, edt) {
   }
 }
 
-// Naves que abduzem também atiram plasma em você (desde a wave 1; a frequência cresce com `aggro` da wave)
+// Naves que abduzem também atiram plasma em você (a partir da wave 3)
 function abductorShoot(u, edt) {
   const ag = G.waveDef.aggro || 0;
   if (!ag || u.kind !== 'ufo' || u.cloaked || (u.state !== 'descending' && u.state !== 'beaming')) { u.chargeK = 0; return; }
-  if (u.shotCD == null) u.shotCD = rand(2, 5) / ag;
+  if (u.shotCD == null) u.shotCD = rand(3, 7) / ag;
   u.shotCD -= edt;
   u.chargeK = u.shotCD < 0.45 ? 0.6 + Math.sin(G.time * 40) * 0.4 : 0;
   if (u.shotCD <= 0) {
     fireEnemy('plasma', bellyPos(u, t3), 0.03);
-    u.shotCD = rand(4, 7) / ag;
+    u.shotCD = rand(5, 8.5) / ag;
   }
 }
 function updateBomber(u, dt, edt) {
@@ -797,7 +759,6 @@ export function updateUfos(dt, edt) {
     drawUfo(u, dt, night);
   }
   for (let i = ufos.length - 1; i >= 0; i--) if (ufos[i].removed) ufos.splice(i, 1);
-  drawPlates();
   updateHums(dt);
 }
 
@@ -819,7 +780,6 @@ function drawUfo(u, dt, night) {
     u.spin += dt * (1.2 + 3.5 * night);
     u.body.rotation.y = u.spin;
     u.alien.rotation.y = Math.atan2(camPos.x - gp.x, camPos.z - gp.z);
-    if (u.plateA) u.plateA.rotation.set(0.35, u.alien.rotation.y, 0);   // a placa olha para você
     u.alien.position.y = 0.06 + Math.sin(u.age * 6) * 0.008;
     // cor do casco: flash > gelo > fogo > brilho noturno
     const m = u.bodyMat;
