@@ -48,6 +48,17 @@
 - **Placas vermelhas: removidas** (das naves e dos chefes). O que ele quis foram ÁREAS SENSÍVEIS no corpo de cada
   chefe; a ficha proposta está em `~/Desktop/SURTADO GAMES/chicken-rancher-stats-inimigos-e-chefes.md` (aguardando aprovação).
   As naves comuns voltaram à agressividade anterior (`aggro` 0 a 1,5).
+- **Ajustes por plataforma (14/11):**
+  - *Celular:* "toque" agora é ponteiro principal grosso (`pointer: coarse`): notebook com tela de toque continua PC.
+    Em pé (retrato) o campo de visão abre (vertical até 100°, ~64° na horizontal) e aparece a dica de deitar o
+    celular; deitado (tela baixa) o HUD fica compacto. Botão de pause (canto inferior esquerdo) com os mesmos ajustes;
+    tocar fora dos ajustes volta. A sensibilidade da mira vale para mouse e dedo.
+  - *PC/Mac:* segurar **Espaço** ou **F** atira (bom para trackpad); segurar o clique repete o ovo/estilingue/besta.
+    O jogo pausa quando a aba some.
+  - *VR:* botões de volume da música e dos efeitos no menu (0-25-50-75-100%); o jogo pausa sozinho quando o menu do
+    Quest abre ou o headset é tirado.
+  - *Rainha:* zangões voltam a cada 4 s (3 s ferida), escudo aberto por 9 s e só 5 zangões voltam de uma vez:
+    antes só dava para vencer com o rojão.
 - **Pause (PC):** volume da música, dos efeitos e sensibilidade do mouse, sincronizados com os ajustes do menu.
 - **Melhorias:** saiu a Mão Rápida (invisível); entrou o **Ricochete** (o ovo quica para outra nave) e a Força virou
   **Ovo Grandão** (o ovo cresce junto com o dano).

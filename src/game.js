@@ -206,6 +206,8 @@ const _q = new THREE.Quaternion();
 export function setPaused(on) {
   G.paused = on;
   document.getElementById('pause').classList.toggle('show', on);
+  document.documentElement.classList.toggle('paused', on);
+  if (on && isTouch) document.getElementById('p-p').textContent = tr('toque fora dos ajustes pra continuar', 'tap outside the settings to continue', 'napauta asetusten ulkopuolelle jatkaaksesi');
   if (on) { playerInput.mouseDown = false; playerInput.zoom = false; for (const k in playerInput.keys) playerInput.keys[k] = false; }
 }
 

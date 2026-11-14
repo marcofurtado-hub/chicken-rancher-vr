@@ -5,8 +5,8 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { renderer, isTouch } from './render.js';
 import { G, saveSettings } from './core.js';
 import { initAudio, setVolumes } from './audio.js';
-import { boot, startGame, setTestWave } from './game.js';
-import { lockPointer, openWavePick } from './player.js';
+import { boot, startGame, setTestWave, setPaused } from './game.js';
+import { lockPointer, openWavePick, pausable } from './player.js';
 import { playerName, setPlayerName, refreshHtmlRanking } from './ranking.js';
 
 // Botão "ENTRAR NO VR" (só aparece se o navegador suporta)
@@ -71,7 +71,14 @@ document.getElementById('cta').addEventListener('click', e => {
   setTimeout(startGame, 150);
 });
 for (const el of document.querySelectorAll('#start a, #start button:not(#cta), #start input')) el.addEventListener('click', e => e.stopPropagation());
-document.getElementById('pause').addEventListener('click', () => lockPointer());
+document.getElementById('pause').addEventListener('click', () => { if (isTouch) setPaused(false); else lockPointer(); });
+{
+  const b = document.getElementById('m-pause');
+  if (b) {
+    const go = e => { e.preventDefault(); e.stopPropagation(); if (pausable()) setPaused(true); };
+    b.addEventListener('touchstart', go, { passive: false }); b.addEventListener('click', go);
+  }
+}
 
 // Espera as fontes (os textos 3D são desenhados em canvas) e começa
 const fontsReady = document.fonts && document.fonts.load

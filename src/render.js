@@ -29,7 +29,10 @@ THREE.ShaderChunk.lights_toon_pars_fragment = THREE.ShaderChunk.lights_toon_pars
 /** Multiplicador das sombras projetadas (manchas no chão): tom do céu escurecido. world.setTOD atualiza. */
 export const SHADOW_COLOR = new THREE.Color(0x101828);
 
-export const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+// celular/tablet = ponteiro principal grosso (dedo). Notebook com tela de toque tem mouse/trackpad: continua PC.
+const _mq = q => { try { return matchMedia(q).matches; } catch (e) { return false; } };
+export const isTouch = _mq('(pointer: coarse)') || ((('ontouchstart' in window) || navigator.maxTouchPoints > 0) && !_mq('(any-pointer: fine)'));
+if (isTouch) document.documentElement.classList.add('touch');
 
 // ---------- Renderer ----------
 export const renderer = new THREE.WebGLRenderer({

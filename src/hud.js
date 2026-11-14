@@ -7,7 +7,7 @@ import { G, clamp, fmt, tmpV, load, save, saveSettings, comboMult, comboWindow, 
 import { tr } from './i18n.js';
 import { WEAPONS, WEAPON_ORDER, WAVES, POWERS, RARITY, SKILLS } from './config.js';
 import { fitText, popupAhead } from './fx.js';
-import { sfx } from './audio.js';
+import { sfx, setVolumes } from './audio.js';
 import { chickensAlive, flockCounts } from './chickens.js';
 import { uiTargets } from './combat.js';
 import { skillKey, skillCooldown, SKILL_KEYS_PC, useSkill } from './skills.js';
@@ -142,7 +142,9 @@ signMesh.rotation.y = Math.PI;
 scene.add(signMesh);
 // botões de conforto (criados no initHud: dependem de outros módulos já carregados)
 const BTN_W = 0.62, BTN_H = 0.2;
-let btnVig = null, btnTurn = null;
+let btnVig = null, btnTurn = null, btnMus = null, btnSfx = null;
+const VOL_STEPS = [0, 0.25, 0.5, 0.75, 1];
+const nextVol = v => VOL_STEPS[(VOL_STEPS.findIndex(x => x >= v - 0.01) + 1) % VOL_STEPS.length];
 function makeButton(x, y) {
   const c = document.createElement('canvas'); c.width = 384; c.height = 128;
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
@@ -160,6 +162,10 @@ export function initHud() {
   btnVig = makeButton(0.38, 1.46); btnTurn = makeButton(-0.38, 1.46);
   btnVig.target.onHit = () => { G.settings.vignette = !G.settings.vignette; saveSettings(); btnVig.flash = 1; sfx('uiClick'); drawButtons(); };
   btnTurn.target.onHit = () => { G.settings.turn = G.settings.turn === 'smooth' ? 'snap' : 'smooth'; saveSettings(); btnTurn.flash = 1; sfx('uiClick'); drawButtons(); };
+  // volume no VR (no PC/celular fica no menu e no pause): cada tiro sobe um degrau 0-25-50-75-100%
+  btnMus = makeButton(0.38, 1.22); btnSfx = makeButton(-0.38, 1.22);
+  const vol = (b, key) => () => { const S = G.settings; S[key] = nextVol(S[key]); saveSettings(); setVolumes({ music: S.music, sfx: S.sfx }); b.flash = 1; sfx('uiClick'); drawButtons(); };
+  btnMus.target.onHit = vol(btnMus, 'music'); btnSfx.target.onHit = vol(btnSfx, 'sfx');
 }
 function drawButton(b, label, on) {
   const x = b.ctx;
@@ -175,6 +181,8 @@ function drawButtons() {
   if (!btnVig) return;
   drawButton(btnVig, tr('VINHETA: ', 'VIGNETTE: ', 'VINJETTI: ') + (G.settings.vignette ? 'ON' : 'OFF'), G.settings.vignette);
   drawButton(btnTurn, tr('GIRO: ', 'TURN: ', 'KÄÄNTÖ: ') + (G.settings.turn === 'smooth' ? tr('SUAVE', 'SMOOTH', 'TASAINEN') : tr('PASSOS', 'SNAP', 'PORRAS')), true);
+  drawButton(btnMus, tr('🎵 MÚSICA: ', '🎵 MUSIC: ', '🎵 MUSIIKKI: ') + Math.round(G.settings.music * 100) + '%', G.settings.music > 0);
+  drawButton(btnSfx, tr('🔊 EFEITOS: ', '🔊 EFFECTS: ', '🔊 EFEKTIT: ') + Math.round(G.settings.sfx * 100) + '%', G.settings.sfx > 0);
 }
 export function drawSign() {
   const x = signCtx, W = 1024, H = 560;
@@ -205,7 +213,7 @@ function updateSign(dt) {
   const show = G.state === 'idle';
   signMesh.visible = show;
   const showBtns = show && xrActive();
-  if (btnVig) for (const b of [btnVig, btnTurn]) {
+  if (btnVig) for (const b of [btnVig, btnTurn, btnMus, btnSfx]) {
     b.mesh.visible = showBtns;
     b.target.active = showBtns;
     b.flash = Math.max(0, b.flash - dt * 3);
@@ -218,6 +226,8 @@ function updateSign(dt) {
 // HUD HTML (PC / celular)
 // =============================================================================
 const $ = id => document.getElementById(id);
+const mPause = $('m-pause'), rotEl = $('rot-hint');
+let rotT = 0;
 const hudEl = $('hud'), wbarEl = $('wbar'), crossEl = $('crosshair'), skillbarEl = $('skillbar'), ultEl = $('ultbtn'), mSwitch = $('m-switch');
 let lastWbar = '';
 function updateWeaponBar() {
@@ -247,6 +257,11 @@ export function updateHtmlHud() {
   crossEl.classList.toggle('hit', G.hitMarkT > 0);
   ultEl.classList.toggle('show', show && G.state !== 'upgrade');
   mSwitch.classList.toggle('show', isTouch && show && G.unlocked.size > 1);
+  mPause.classList.toggle('show', isTouch && show && G.state !== 'game_over' && G.state !== 'victory');
+  // celular em pé: sugere deitar (uma vez por partida, some sozinho)
+  const portrait = isTouch && innerHeight > innerWidth * 1.1;
+  if (portrait && show && (G.state === 'wave_intro' || G.state === 'playing') && rotT === 0) rotT = performance.now();
+  rotEl.classList.toggle('show', portrait && rotT > 0 && performance.now() - rotT < 6000);
   if (!show) return;
   $('h-score').textContent = fmt(G.score);
   $('h-best').textContent = fmt(Math.max(G.best, G.score));

@@ -828,7 +828,7 @@ function mkColmeia(u) {
     for (const sx of [-1, 1]) { box(g, 0.5, 0.04, 0.26, 0x3c4254, sx * 0.38, 0, -0.1).rotation.y = -sx * 0.5; sph(g, 0.06, 0xff4fd8, sx * 0.6, 0, -0.24, 6, 4); }
     sph(g, 0.1, 0xff9030, 0, 0, -0.42, 6, 4);
   }, BEE_N, 0.035);
-  const hp = 4 + Math.round(G.wave * 0.4);
+  const hp = 4 + Math.round(G.wave * 0.25);
   u.bees = [];
   for (let i = 0; i < BEE_N; i++) {
     const a = new THREE.Object3D();
@@ -841,7 +841,7 @@ function mkColmeia(u) {
   u.invulnMsg = tr('ESCUDO! DERRUBE OS ZANGÕES', 'SHIELD! SHOOT THE DRONES', 'SUOJA! AMMU LENNOKIT');
   u.pos.set(0, 26, 36);
   u.hover.set(0, 8, 13.5);
-  u.state = 'entering'; u.respT = 2.4; u.expT = 0; u.squadT = 6; u.squad = null;
+  u.state = 'entering'; u.respT = 4; u.expT = 0; u.squadT = 6; u.squad = null;
   for (const b of u.bees) b.a.position.copy(u.pos);
 }
 function beeDown(u, part) {
@@ -859,18 +859,19 @@ function upColmeia(u, dt, edt) {
   }
   if (u.invuln) {
     if (alive.length < 4 && u.state !== 'entering') {
-      u.invuln = null; u.expT = 7;
+      u.invuln = null; u.expT = 9;
       for (let k = 0; k < 2; k++) if (aliveRegulars() < G.waveDef.maxAlive) spawnRegular('mini', t5.set(gp.x + (k ? 1.5 : -1.5), gp.y - 1.5, gp.z));   // sem escudo, solta mini naves
       showBanner(tr('RAINHA EXPOSTA!', 'QUEEN EXPOSED!', 'KUNINGATAR PALJAANA!'), tr('ataque agora!', 'attack now!', 'hyökkää nyt!'), '', '#ffd040', 2);
       sfx('shieldDown', { pos: gp });
     } else {
       u.respT -= edt;
-      if (u.respT <= 0) { u.respT = hpK(u) < 0.4 ? 1.7 : 2.6; const d = u.bees.find(b => !b.part.active); if (d) { d.part.active = true; d.part.hp = d.part.maxHp; d.a.position.copy(gp); } }
+      if (u.respT <= 0) { u.respT = hpK(u) < 0.4 ? 3 : 4; const d = u.bees.find(b => !b.part.active); if (d) { d.part.active = true; d.part.hp = d.part.maxHp; d.a.position.copy(gp); } }
     }
   } else {
     u.expT -= edt;
     if (u.expT <= 0) {
-      for (const b of u.bees) if (!b.part.active) { b.part.active = true; b.part.hp = b.part.maxHp; b.a.position.copy(gp); }
+      let back = 5;   // voltam só 5 zangões (o resto vem aos poucos): a próxima janela abre mais rápido
+      for (const b of u.bees) if (!b.part.active && back > 0) { b.part.active = true; b.part.hp = b.part.maxHp; b.a.position.copy(gp); back--; }
       u.invuln = 'shield'; sfx('shieldUp', { pos: gp });
       popup(tr('OS ZANGÕES VOLTARAM!', 'THE DRONES ARE BACK!', 'LENNOKIT PALASIVAT!'), gp, '#ffd040', 1.2);
     }

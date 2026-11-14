@@ -246,7 +246,8 @@ function updatePcControls(dt) {
       moveRig((mx * cs + mz * sn) * sp, (-mx * sn + mz * cs) * sp);
     }
   }
-  const fov = P.zoom ? 42 : 78;
+  const base = baseFov();
+  const fov = P.zoom ? base * 42 / 78 : base;
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 12); camera.updateProjectionMatrix(); }
   // ponto sob a mira: todas as armas convergem para ele (e a parábola é calculada até ele)
   const dir = camera.getWorldDirection(t3);
@@ -298,13 +299,21 @@ function aimFromTap(cx, cy) {
   if (hit && hit.kind === 'ufo') { tapAim.copy(hit.part.c); targetVel(hit, tapAimVel); return; }
   tapAim.copy(o).addScaledVector(dir, resolveAim(o, dir, 0.7, tapAimVel));
 }
+/** 78° na tela deitada; em pé (retrato) abre até ~64° na horizontal (máx. 100° na vertical). */
+function baseFov() {
+  const a = camera.aspect;
+  if (a >= 1) return 78;
+  const v = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(32)) / a) * 180 / Math.PI;
+  return clamp(v, 78, 100);
+}
 export function applyPcView() { rig.rotation.y = P.yaw; camera.rotation.set(P.pitch, 0, 0); }
 
 const startEl = document.getElementById('start');
-const pausable = () => !xrActive() && !isTouch && startEl.style.display === 'none' && G.state !== 'idle' && G.state !== 'game_over' && G.state !== 'victory';
+export const pausable = () => !xrActive() && startEl.style.display === 'none' && G.state !== 'idle' && G.state !== 'game_over' && G.state !== 'victory';
+document.addEventListener('visibilitychange', () => { if (document.hidden && pausable()) setPaused(true); });
 document.addEventListener('pointerlockchange', () => {
   P.mouseLocked = document.pointerLockElement === renderer.domElement;
-  if (!P.mouseLocked) { P.mouseDown = false; P.zoom = false; if (pausable()) setPaused(true); }
+  if (!P.mouseLocked) { P.mouseDown = false; P.zoom = false; if (!isTouch && pausable()) setPaused(true); }
   else if (G.paused) setPaused(false);
 });
 export function lockPointer() { if (!isTouch && !xrActive()) { try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
@@ -374,7 +383,7 @@ addEventListener('mousemove', e => {
 // ---------- Toque (celular) ----------
 let touchStartTime = 0, touchMoveDist = 0, lastTX = 0, lastTY = 0, touchId = null, lastTouchId = null;
 function onTouchStart(e) {
-  if (xrActive()) return;
+  if (xrActive() || G.paused) return;
   e.preventDefault();
   const t = e.changedTouches[0];
   if (touchId !== null) return;
@@ -391,8 +400,9 @@ function onTouchMove(e) {
   for (const t of e.changedTouches) {
     if (t.identifier !== touchId) continue;
     const dx = t.clientX - lastTX, dy = t.clientY - lastTY;
-    P.yaw -= dx * 0.006;
-    P.pitch = clamp(P.pitch - dy * 0.006, -Math.PI / 2 + 0.1, Math.PI / 2 - 0.1);
+    const ts = 0.006 * (G.settings.mouse || 1.3) / 1.3;
+    P.yaw -= dx * ts;
+    P.pitch = clamp(P.pitch - dy * ts, -Math.PI / 2 + 0.1, Math.PI / 2 - 0.1);
     applyPcView();
     lastTX = t.clientX; lastTY = t.clientY;
     touchMoveDist += Math.hypot(dx, dy);
@@ -425,6 +435,13 @@ if (isTouch) {
 // ---------- Entrar / sair do VR ----------
 renderer.xr.addEventListener('sessionstart', () => {
   initAudio(); resumeAudio();
+  // menu do Quest aberto (botão Oculus) ou headset tirado: o jogo para e volta sozinho
+  const ses = renderer.xr.getSession();
+  if (ses) ses.addEventListener('visibilitychange', () => {
+    const away = ses.visibilityState !== 'visible';
+    if (away && G.state !== 'idle' && !G.paused) { G.pausedByXR = true; setPaused(true); }
+    else if (!away && G.pausedByXR) { G.pausedByXR = false; setPaused(false); }
+  });
   startEl.style.display = 'none';
   setPaused(false);
   rig.position.set(0, PLAYER_Y, 0);
@@ -612,7 +629,9 @@ export function updatePlayer(dt) {
     wheelchair.position.set(0, 0, 0);   // fixa sob o corpo (como na 2.1): inclinar para ler o painel não o empurra
   } else { wheelchair.rotation.y = Math.PI; wheelchair.position.set(0, 0, 0); }
   ov.move = xr && G.settings.vignette && (P.moving || P.turning > 0 || flightActive()) ? 1 : 0;
-  held.r = xr ? triggerHeld(CTRL.right) : (P.mouseDown || P.touchActive);
+  const fireKey = !xr && !isTouch && (P.keys.Space || P.keys.KeyF) && canShoot();
+  held.r = xr ? triggerHeld(CTRL.right) : (P.mouseDown || P.touchActive || fireKey);
+  if (!xr && (P.mouseDown || fireKey) && canShoot() && isTapWeapon()) desktopShoot();   // segurar = repetir (respeita a recarga)
   held.l = xr ? triggerHeld(CTRL.left) : false;
   return held;
 }
