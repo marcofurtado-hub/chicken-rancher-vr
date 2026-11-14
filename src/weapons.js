@@ -164,6 +164,9 @@ handEggL.visible = handEggR.visible = false; scene.add(handEggL); scene.add(hand
 const pouchMesh = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.026, 0.026), toon({ color: 0x4a2a14, vertexColors: false }));
 pouchMesh.visible = false; scene.add(pouchMesh);
 const pebbleMesh = new THREE.Mesh(HAND_EGG_GEO, W_MAT); pebbleMesh.visible = false; scene.add(pebbleMesh);
+// contorno preto também no ovo da mão (e no ovo do estilingue/besta), igual às armas e aos ovos arremessados
+const HAND_EGG_OUT = outlineGeo(HAND_EGG_GEO);
+for (const m of [handEggL, handEggR, pebbleMesh]) m.add(new THREE.Mesh(HAND_EGG_OUT, W_OUT));
 const elasticMat = toon({ color: 0xc83828, vertexColors: false });
 const UNIT_CYL = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true);
 const elasticL = new THREE.Mesh(UNIT_CYL, elasticMat), elasticR = new THREE.Mesh(UNIT_CYL, elasticMat);
