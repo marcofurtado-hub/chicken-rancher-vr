@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#120a24">
+<title>Chicken Rancher Mobile</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐔%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--g:#8dff4a;--y:#ffd040;--r:#ff5a6a;--b:#5ad0ff;--ink:#140a24;--line:rgba(255,255,255,.16);
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;background:#120a24;overflow:hidden;overscroll-behavior:none;touch-action:none;
+  font-family:'Nunito','Helvetica Neue',Arial,sans-serif;font-weight:800;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;color:#fff}
+canvas#game{display:block;position:fixed;inset:0}
+.disp{font-family:'Lilita One','Arial Black',Impact,sans-serif;font-weight:400;letter-spacing:.5px}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+#err{position:fixed;bottom:0;left:0;right:0;background:#600;color:#fff;font:12px monospace;padding:10px;z-index:90;display:none;white-space:pre-wrap;max-height:40vh;overflow:auto}
+#err.show{display:block}
+
+/* ---------- Camada de toque: metade esquerda olha, metade direita atira ---------- */
+#pad{position:fixed;inset:0;z-index:5;touch-action:none}
+#gest{position:fixed;inset:0;width:100%;height:100%;z-index:6;pointer-events:none}
+.g-ring{fill:rgba(14,6,26,.28);stroke:rgba(255,255,255,.7);stroke-width:3}
+.g-knob{fill:rgba(255,255,255,.85);stroke:rgba(0,0,0,.35);stroke-width:2}
+.g-trail{stroke:rgba(255,255,255,.75);stroke-width:9;stroke-linecap:round}
+.g-band{stroke:#fff;stroke-width:6;stroke-linecap:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.g-fork{fill:#8a5a30;stroke:#3a2414;stroke-width:3}
+.g-hold{fill:rgba(255,128,48,.22);stroke:rgba(255,208,64,.9);stroke-width:4}
+#g-egg{position:fixed;left:0;top:0;z-index:7;pointer-events:none;display:none;font-size:38px;line-height:1;margin:-19px 0 0 -19px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+#g-egg.show{display:block}
+#g-aim{position:fixed;left:0;top:0;z-index:7;pointer-events:none;display:none;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;border:4px dashed rgba(255,255,255,.95);box-shadow:0 0 0 2px rgba(0,0,0,.4)}
+#g-aim.show{display:block}
+#g-aim::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#fff}
+#g-aim.on{border-style:solid;border-color:var(--y);box-shadow:0 0 16px var(--y)}
+#g-aim.on::after{background:var(--y)}
+/* marcas dos polegares (somem quando o dedo encosta) */
+.zone{position:fixed;bottom:calc(26px + var(--sb));z-index:6;pointer-events:none;display:none;flex-direction:column;align-items:center;justify-content:center;width:108px;height:108px;border-radius:50%;
+  border:2.5px dashed rgba(255,255,255,.55);background:rgba(14,6,26,.3);font-size:11.5px;letter-spacing:.5px;text-align:center;line-height:1.15;text-shadow:0 1px 2px #000;color:#fff}
+.zone.show{display:flex}
+.zone b{font-size:30px;font-weight:400;line-height:1.1}
+#zl{left:calc(22px + var(--sl))} #zr{right:calc(22px + var(--sr))}
+
+/* ---------- Tela inicial ---------- */
+#start{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:calc(14px + var(--st)) calc(18px + var(--sr)) calc(18px + var(--sb)) calc(18px + var(--sl));overflow:hidden;
+  background:radial-gradient(130% 75% at 50% -8%,#ffb45a 0%,#e0603a 22%,#7a2a6a 46%,#2a1240 70%,#120a24 100%)}
+#start::before{content:'';position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(2px 2px at 20% 30%,rgba(255,255,255,.5),transparent),radial-gradient(1.5px 1.5px at 70% 20%,rgba(255,255,255,.4),transparent),
+  radial-gradient(1.5px 1.5px at 85% 55%,rgba(255,255,255,.35),transparent),radial-gradient(2px 2px at 35% 65%,rgba(255,255,255,.3),transparent)}
+#start>*{position:relative}
+#lang{display:flex;gap:6px;align-self:flex-end}
+#lang button{font:800 12px 'Nunito',sans-serif;letter-spacing:.5px;color:#fff;background:rgba(0,0,0,.25);border:1.5px solid rgba(255,255,255,.3);border-radius:20px;padding:7px 12px}
+#lang button.on{background:#fff;color:var(--ink);border-color:#fff}
+.hero{margin-top:auto;line-height:1}
+.ufo{font-size:64px;display:inline-block;animation:hover 3s ease-in-out infinite}
+.hen{font-size:46px;display:inline-block;animation:hop 1.4s ease-in-out infinite;margin-left:4px}
+@keyframes hover{50%{transform:translateY(-10px) rotate(-6deg)}}
+@keyframes hop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-9px)}}
+h1{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:clamp(46px,15vw,84px);line-height:.9;color:#fff6c8;margin-top:8px;
+  text-shadow:0 6px 0 #8a3a10,0 10px 24px rgba(0,0,0,.45);letter-spacing:1px}
+h1 .v{display:inline-block;font-size:.34em;color:var(--ink);background:var(--g);border-radius:12px;padding:5px 12px 3px;transform:rotate(-6deg) translateY(-10px);
+  text-shadow:none;box-shadow:0 4px 0 #1d6a10,0 0 26px rgba(141,255,74,.55);letter-spacing:1.5px}
+.tag{margin-top:12px;font-size:clamp(15px,4.2vw,18px);color:#ffe6d0;letter-spacing:.3px}
+.how{display:flex;gap:8px;margin-top:18px;width:100%;max-width:440px}
+.how div{flex:1;background:rgba(20,8,36,.5);border:1px solid var(--line);border-radius:16px;padding:10px 4px 9px;font-size:12.5px;line-height:1.25;color:#f0e6ff}
+.how b{display:block;font-size:26px;line-height:1.1;margin-bottom:3px;font-weight:400}
+.best{display:inline-flex;gap:8px;align-items:center;margin-top:16px;background:rgba(0,0,0,.28);border:1.5px solid rgba(255,208,64,.6);color:var(--y);padding:7px 18px;border-radius:30px;font-size:15px;letter-spacing:1px}
+.best b{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:20px}
+.cta{margin-top:auto;width:100%;max-width:440px;min-height:76px;font-family:'Lilita One',Impact,sans-serif;font-size:34px;letter-spacing:2px;color:var(--ink);
+  background:linear-gradient(180deg,#c4ff8a,#6ee02a);border-radius:26px;box-shadow:0 8px 0 #2f7a10,0 16px 34px rgba(141,255,74,.35);transition:transform .08s,box-shadow .08s}
+.cta:active{transform:translateY(6px);box-shadow:0 2px 0 #2f7a10}
+body:not(.ready) .cta{opacity:.55;pointer-events:none;font-size:22px}
+.foot{margin-top:14px;font-size:13px;color:#d8c0e8}
+.foot a{color:var(--y)}
+
+/* ---------- HUD ---------- */
+#mh{position:fixed;inset:0;z-index:6;pointer-events:none;display:none}
+#mh.show{display:block}
+.mh-l{position:absolute;top:calc(10px + var(--st));left:calc(10px + var(--sl));display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.mh-r{position:absolute;top:calc(8px + var(--st));right:calc(12px + var(--sr));text-align:right}
+.mh-l .row{display:flex;gap:6px;align-items:center}
+.chip{display:flex;align-items:center;gap:6px;background:rgba(14,6,26,.66);border:1.5px solid var(--line);border-radius:16px;padding:3px 12px 3px 9px;font-size:22px;line-height:1.2;text-shadow:0 1px 2px #000}
+.chip b{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:30px;min-width:20px;text-align:center}
+.chip small{font-size:14px;opacity:.6}
+.chip.warn b{color:#ffb040}.chip.bad{border-color:#ff5050;animation:pulseR .6s ease-in-out infinite}.chip.bad b{color:#ff5050}
+#mh-hp{position:relative;width:158px;height:26px;border-radius:14px;background:rgba(14,6,26,.66);border:1.5px solid var(--line);overflow:hidden}
+#mh-hpfill{position:absolute;left:0;top:0;bottom:0;border-radius:12px;transition:width .2s}
+#mh-hptxt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;text-shadow:0 1px 2px #000}
+#mh-hp::before{content:'❤️';position:absolute;left:7px;top:2px;font-size:15px;z-index:2}
+#mh-hp.low{animation:pulseR .6s ease-in-out infinite}
+@keyframes pulseR{50%{box-shadow:0 0 16px #ff3040}}
+#mh-pow .pw{font-size:15px;color:var(--pc);text-shadow:0 1px 3px #000;background:rgba(14,6,26,.5);border-radius:10px;padding:2px 9px;margin-top:2px}
+#mh-score{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:44px;line-height:1;color:var(--y);text-shadow:0 3px 0 #7a4a08,0 0 16px rgba(0,0,0,.6)}
+#mh-wave{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:17px;letter-spacing:1px;margin-top:3px;text-shadow:0 2px 3px #000}
+#mh-combo{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:24px;color:var(--g);opacity:0;transition:opacity .2s;text-shadow:0 2px 0 #1d5a10;margin-top:2px}
+#mh-combo.on{opacity:1}
+/* barra do chefe */
+#mh-boss{position:absolute;left:50%;top:calc(112px + var(--st));transform:translateX(-50%);width:min(78vw,420px);display:none;text-align:center}
+#mh-boss.show{display:block}
+#mh-boss span{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:17px;letter-spacing:1.5px;color:#ffb0b0;text-shadow:0 2px 3px #000}
+#mh-boss div{height:16px;margin-top:2px;border-radius:9px;background:rgba(14,6,26,.7);border:1.5px solid rgba(255,90,90,.75);overflow:hidden}
+#mh-boss i{display:block;height:100%;background:linear-gradient(180deg,#ff7a6a,#e02838);border-radius:7px;transition:width .15s}
+
+/* banner (o canvas que o jogo desenha, mostrado grande) */
+#mbanner{position:fixed;left:50%;top:calc(150px + var(--st));width:min(98vw,560px);height:auto;z-index:7;pointer-events:none;display:none;transform:translateX(-50%);transform-origin:50% 40%}
+#mbanner.show{display:block}
+
+/* mira */
+#m-cross{position:fixed;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;z-index:6;pointer-events:none;display:none;border-radius:50%;
+  border:3px solid rgba(255,255,255,.9);box-shadow:0 0 0 1.5px rgba(0,0,0,.45),inset 0 0 0 1.5px rgba(0,0,0,.35);transition:transform .08s,border-color .08s}
+#m-cross.show{display:block}
+#m-cross::after{content:'';position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:#fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.5)}
+#m-cross.on{border-color:var(--y);transform:scale(.8)}
+#m-cross.on::after{background:var(--y)}
+#m-cross.hit{border-color:#ff4050;transform:scale(1.12)}
+#m-cross.hit::after{background:#ff4050}
+#m-cross.small{width:22px;height:22px;margin:-11px 0 0 -11px;border-width:2px;opacity:.7}
+
+/* setas: algo importante fora da tela (toque na seta pra mirar lá) */
+.arrow{position:fixed;left:0;top:0;z-index:7;width:58px;height:58px;margin:-29px 0 0 -29px;display:none;align-items:center;justify-content:center;border-radius:50%;
+  background:rgba(14,6,26,.74);border:2.5px solid var(--y);font-size:24px;pointer-events:auto}
+.arrow.show{display:flex}
+.arrow.urgent{border-color:#ff4050;animation:arrowP .5s ease-in-out infinite}
+.arrow i{position:absolute;inset:-12px;border-radius:50%;transform:rotate(var(--a,0deg))}
+.arrow i::after{content:'';position:absolute;left:50%;top:-4px;margin-left:-9px;border:9px solid transparent;border-bottom:14px solid var(--y);border-top:0}
+.arrow.urgent i::after{border-bottom-color:#ff4050}
+@keyframes arrowP{50%{box-shadow:0 0 18px #ff4050}}
+
+/* botões no alcance do polegar */
+#mb-ult{position:fixed;left:50%;margin-left:-41px;bottom:calc(30px + var(--sb));width:82px;height:82px;border-radius:50%;z-index:8;display:none;align-items:center;justify-content:center;flex-direction:column;
+  background:conic-gradient(#ffd040 var(--p,0%),rgba(14,6,26,.7) 0);border:2.5px solid rgba(255,255,255,.35)}
+#mb-ult.show{display:flex}
+#mb-ult::before{content:'';position:absolute;inset:8px;border-radius:50%;background:rgba(20,10,30,.9)}
+#mb-ult span{position:relative;font-size:34px;line-height:1}
+#mb-ult em{position:relative;font-style:normal;font-size:13px;color:#ffe080;margin-top:1px}
+#mb-ult.full{animation:ultp .7s ease-in-out infinite;border-color:#ffe060}
+#mb-ult.full::before{background:rgba(96,60,4,.92)}
+@keyframes ultp{50%{box-shadow:0 0 30px #ffd040;transform:scale(1.08)}}
+#mb-pause{flex:0 0 46px;width:46px;height:46px;border-radius:50%;visibility:hidden;display:flex;align-items:center;justify-content:center;pointer-events:auto;
+  background:rgba(14,6,26,.66);border:2px solid rgba(255,255,255,.7)}
+#mb-pause.show{visibility:visible}
+
+/* dica do começo */
+#hint{position:fixed;left:50%;bottom:calc(160px + var(--sb));transform:translateX(-50%);z-index:7;pointer-events:none;display:none;text-align:center;width:max-content;max-width:92vw;
+  background:rgba(14,6,26,.82);border:1.5px solid var(--line);border-radius:18px;padding:8px 18px 10px;font-size:17px;line-height:1.3;text-shadow:0 1px 2px #000}
+#hint small{display:block;font-size:13px;color:#d8c8f0;margin-top:2px}
+#hint.show{display:block}
+#hint b{display:block;font-size:32px;font-weight:400;animation:nudge 1.1s ease-in-out infinite}
+@keyframes nudge{0%,100%{transform:translateY(6px)}50%{transform:translateY(-8px)}}
+
+/* ---------- Melhorias (1 de 3) ---------- */
+#upg{position:fixed;inset:0;z-index:20;display:none;flex-direction:column;justify-content:flex-end;align-items:center;
+  padding:calc(12px + var(--st)) calc(12px + var(--sr)) calc(16px + var(--sb)) calc(12px + var(--sl));background:linear-gradient(180deg,rgba(10,4,20,.15),rgba(10,4,20,.8) 45%)}
+#upg.show{display:flex}
+#upg h2{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:clamp(26px,7.6vw,36px);color:var(--g);text-shadow:0 4px 0 #1d5a10,0 0 18px rgba(0,0,0,.6);letter-spacing:1px}
+#upg p{font-size:14px;color:#e8def4;margin:2px 0 12px;text-shadow:0 1px 2px #000}
+#upg-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:460px}
+.uc{display:flex;align-items:center;gap:12px;width:100%;min-height:92px;text-align:left;border-radius:22px;padding:10px 14px;border:3px solid var(--rc,#9fd090);
+  background:linear-gradient(180deg,var(--b0,#1f4a1a),var(--b1,#0a1f0a));box-shadow:0 6px 0 rgba(0,0,0,.45);animation:ucin .32s cubic-bezier(.2,1.4,.4,1) both;transition:transform .08s}
+.uc:nth-child(2){animation-delay:.07s}.uc:nth-child(3){animation-delay:.14s}
+.uc:active{transform:translateY(4px) scale(.98)}
+.uc.picked{animation:ucpick .5s ease-out both}
+.uc.gone{opacity:.25;transform:scale(.96);transition:opacity .2s,transform .2s}
+@keyframes ucin{from{opacity:0;transform:translateY(40px) scale(.9)}}
+@keyframes ucpick{40%{transform:scale(1.06);box-shadow:0 0 34px var(--rc)}100%{transform:scale(1.02);box-shadow:0 0 18px var(--rc)}}
+.uc .ic{flex:0 0 62px;height:62px;border-radius:50%;background:radial-gradient(rgba(255,255,255,.24),rgba(255,255,255,.04));display:flex;align-items:center;justify-content:center;font-size:38px}
+.uc .tx{flex:1;min-width:0}
+.uc .tt{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:23px;line-height:1.05;color:var(--y);letter-spacing:.5px;text-shadow:0 2px 0 rgba(0,0,0,.5)}
+.uc .ds{font-size:14.5px;line-height:1.25;color:#fff;margin-top:3px}
+.uc .lv{font-size:12.5px;color:var(--rc);margin-top:3px;letter-spacing:.3px}
+
+/* ---------- Fim de partida ---------- */
+#end{position:fixed;inset:0;z-index:25;display:none;flex-direction:column;align-items:center;text-align:center;
+  padding:calc(18px + var(--st)) calc(18px + var(--sr)) calc(18px + var(--sb)) calc(18px + var(--sl));background:rgba(12,6,24,.86);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#end.show{display:flex;animation:fade .35s ease-out both}
+#end:not(.lose){background:rgba(12,6,24,.7)}   /* na vitória os fogos aparecem atrás */
+@keyframes fade{from{opacity:0}}
+#end h2{margin-top:auto;font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:clamp(46px,14vw,74px);line-height:1;color:var(--y);text-shadow:0 6px 0 #7a4a08}
+#end.lose h2{color:#ff6a6a;text-shadow:0 6px 0 #6a1018}
+#end-sub{font-size:16px;color:#e8def4;margin-top:8px}
+#end-score{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:clamp(54px,17vw,84px);line-height:1;color:#fff;margin-top:14px;text-shadow:0 5px 0 rgba(0,0,0,.45)}
+#end-rec{display:none;margin-top:8px;font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:20px;color:var(--ink);background:var(--g);border-radius:14px;padding:5px 14px 3px;letter-spacing:1px;animation:hop 1s ease-in-out infinite}
+#end-rec.show{display:inline-block}
+#end-stats{display:flex;gap:8px;margin-top:16px;width:100%;max-width:440px}
+#end-stats div{flex:1;background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:14px;padding:8px 4px;font-size:12.5px;color:#d8c8f0}
+#end-stats b{display:block;font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:24px;color:#fff}
+#end-toph{margin-top:14px;font-size:12.5px;letter-spacing:1px;color:#b8a8d8}
+#end-top{list-style:none;width:100%;max-width:440px;margin-top:4px;font-size:15px}
+#end-top li{display:flex;gap:8px;padding:5px 12px;border-radius:10px}
+#end-top li b{color:var(--y);min-width:22px;text-align:left}
+#end-top li span{flex:1;text-align:left;color:#d8c8f0}
+#end-top li i{font-style:normal;font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:17px}
+#end-top li.me{background:rgba(141,255,74,.2);color:var(--g)}
+#end-top li.me span{color:var(--g)}
+#end .cta{margin-top:auto}
+
+/* ---------- Pausa ---------- */
+#pause{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;
+  padding:calc(16px + var(--st)) calc(18px + var(--sr)) calc(18px + var(--sb)) calc(18px + var(--sl));background:rgba(10,4,20,.78);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#pause.show{display:flex}
+@media (min-height:501px){#pause{justify-content:flex-end;padding-bottom:calc(13vh + var(--sb))}}   /* botões perto do polegar */
+#pause h2{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:clamp(46px,14vw,68px);color:var(--y);text-shadow:0 5px 0 #7a4a08}
+#p-p{display:none}
+#pause .pset{margin:14px 0 18px;width:100%;max-width:440px;background:rgba(20,8,36,.78);border:1px solid var(--line);border-radius:18px;padding:8px 18px;text-align:left}
+.set{display:flex;align-items:center;gap:12px;min-height:50px}
+.set label{flex:0 0 108px;font-size:16px}
+.set input[type=range]{flex:1;height:34px;accent-color:var(--g)}
+#pause .cta{margin-top:0}
+.ghost{margin-top:14px;min-height:54px;padding:0 26px;border-radius:20px;border:2px solid rgba(255,255,255,.5);font:800 17px 'Nunito',sans-serif;background:rgba(255,255,255,.06)}
+html.paused #mb-pause,html.paused #mh,html.paused #mbanner,html.paused #gest,html.paused .zone,html.paused #g-egg,html.paused #g-aim,html.paused #mb-ult,html.paused #mb-pause,html.paused #m-cross,html.paused .arrow,html.paused #hint{visibility:hidden}
+
+/* ---------- Celular deitado (tela baixa) ---------- */
+@media (max-height:500px){
+  #start{flex-direction:row;flex-wrap:wrap;align-content:center;justify-content:center;column-gap:22px;padding-top:calc(8px + var(--st))}
+  #lang{position:absolute!important;top:calc(8px + var(--st));right:calc(12px + var(--sr))}
+  .hero{margin-top:0;flex-basis:100%} .ufo{font-size:34px} .hen{font-size:26px}
+  h1{font-size:44px;flex-basis:100%;margin-top:0} h1 br{display:none}
+  .tag{flex-basis:100%;margin-top:6px;font-size:14px}
+  .how{margin-top:10px;max-width:380px} .how div{padding:6px 4px;font-size:11.5px} .how b{font-size:20px}
+  .best{margin-top:10px}
+  .cta{margin-top:10px;min-height:58px;font-size:26px;max-width:300px}
+  .foot{flex-basis:100%;margin-top:8px}
+  .mh-l{top:calc(6px + var(--st));flex-direction:row;align-items:center;flex-wrap:wrap;max-width:46vw} .chip{font-size:17px;padding:2px 10px 2px 8px} .chip b{font-size:23px}
+  #mh-hp{width:118px;height:22px} #mh-hptxt{font-size:13px} #mh-hp::before{font-size:12px}
+  #mh-score{font-size:32px} #mh-wave{font-size:14px} #mh-combo{font-size:18px}
+  #mbanner{top:calc(26px + var(--st));width:min(42vw,400px)}
+  #mh-boss{top:calc(8px + var(--st));width:min(28vw,300px)} #mh-boss span{font-size:14px} #mh-boss div{height:13px}
+  #mb-ult{width:70px;height:70px;margin-left:-35px;bottom:calc(52px + var(--sb))} #mb-ult span{font-size:26px} #mb-ult em{font-size:11px}
+  #mb-pause{flex-basis:40px;width:40px;height:40px}
+  .zone{width:92px;height:92px;bottom:calc(18px + var(--sb))} .zone b{font-size:26px}
+  #hint{bottom:calc(132px + var(--sb));padding:4px 16px 6px;font-size:14px;max-width:52vw} #hint b{display:inline;font-size:18px;margin-right:6px;animation:none} #hint small{font-size:12px}
+  #upg{justify-content:center;background:rgba(10,4,20,.72)} #upg p{margin-bottom:8px}
+  #upg-list{flex-direction:row;max-width:860px}
+  .uc{flex:1;flex-direction:column;text-align:center;min-height:0;padding:10px 8px;gap:6px} .uc .ic{flex-basis:auto;width:54px;height:54px;font-size:32px}
+  .uc .tt{font-size:19px} .uc .ds{font-size:13px}
+  #end{flex-direction:row;flex-wrap:wrap;align-content:center;justify-content:center;column-gap:18px}
+  #end h2{margin-top:0;font-size:42px;flex-basis:100%} #end-sub{flex-basis:100%;margin-top:2px;font-size:14px}
+  #end-score{font-size:46px;margin-top:4px;flex-basis:100%} #end-rec{margin-top:2px;font-size:16px}
+  #end-toph{display:none}
+  #end-stats{margin-top:8px;max-width:330px} #end-top{margin-top:8px;max-width:300px;font-size:13px} #end-top li{padding:2px 10px} #end-top li:nth-child(n+4){display:none}
+  #end .cta{margin-top:10px;flex-basis:100%;max-width:340px}
+  #pause h2{font-size:38px} #pause .pset{margin:6px 0 10px;padding:2px 18px} .set{min-height:40px}
+  #pause .cta{min-height:54px;font-size:24px;max-width:340px} .ghost{margin-top:8px;min-height:44px}
+}
+@media (max-height:700px) and (min-height:501px){ .how{margin-top:12px} .ufo{font-size:48px} .hen{font-size:36px} #end-top li:nth-child(n+4){display:none} }
+</style>
+</head>
+<body>
+<div id="err"></div>
+<script>
+(function(){
+  function showErr(msg){ var el = document.getElementById('err'); if (!el) return; el.textContent += msg + '\n'; el.classList.add('show'); }
+  window.addEventListener('error', function(e){ var st = e.error && e.error.stack ? '\n' + e.error.stack.split('\n').slice(0,3).join('\n') : ''; showErr('ERR: ' + (e.message || '?') + ' @ ' + (e.filename ? e.filename.split('/').pop() : '?') + ':' + (e.lineno || '?') + st); });
+  window.addEventListener('unhandledrejection', function(e){ showErr('REJECT: ' + ((e.reason && e.reason.message) || e.reason || '?')); });
+  window.__showErr = showErr;
+})();
+// Recorde e ranking da versão mobile ficam em chaves próprias: uma partida de 3 waves não entra
+// no recorde nem no ranking do jogo principal (que mora no mesmo site e usa o mesmo localStorage).
+(function(){
+  try {
+    var MAP = { cr3_best: 'crm_best', cr3_scores: 'crm_scores' };
+    var get = Storage.prototype.getItem, set = Storage.prototype.setItem;
+    Storage.prototype.getItem = function (k) { return get.call(this, MAP[k] || k); };
+    Storage.prototype.setItem = function (k, v) { return set.call(this, MAP[k] || k, v); };
+  } catch (e) {}
+})();
+</script>
+
+<div id="pad"></div>
+
+<div id="start">
+  <div id="lang"><button data-l="pt">🇧🇷 PT</button><button data-l="en">🇺🇸 EN</button><button data-l="fi">🇫🇮 FI</button></div>
+  <div class="hero"><span class="ufo">🛸</span><span class="hen">🐔</span></div>
+  <h1>CHICKEN<br>RANCHER <span class="v">MOBILE</span></h1>
+  <div class="tag" id="s-tag">Defenda as galinhas dos aliens a ovadas!</div>
+  <div class="how">
+    <div id="s-how1"><b>👀</b>polegar esquerdo<br>olha em volta</div>
+    <div id="s-how2"><b>🥚</b>polegar direito<br>atira os ovos</div>
+    <div id="s-how3"><b>👾</b>3 waves<br>3 chefes</div>
+  </div>
+  <div class="best">🏆 <span id="s-best">RECORDE</span> <b id="best-score">0</b></div>
+  <button class="cta" id="cta">CARREGANDO…</button>
+  <div class="foot"><a href="../" id="s-full">jogo completo: 10 waves, VR e PC</a></div>
+</div>
+
+<div id="mh">
+  <div class="mh-l">
+    <div class="row"><button id="mb-pause" aria-label="pausa"><svg viewBox="0 0 20 20" width="20" height="20"><rect x="4" y="3" width="4.5" height="14" rx="1.5" fill="#fff"/><rect x="11.5" y="3" width="4.5" height="14" rx="1.5" fill="#fff"/></svg></button><div class="chip" id="mh-chk">🐔 <b>7</b></div></div>
+    <div id="mh-hp"><div id="mh-hpfill"></div><div id="mh-hptxt"></div></div>
+    <div id="mh-pow"></div>
+  </div>
+  <div class="mh-r"><div id="mh-score">0</div><div id="mh-wave">WAVE 1/3</div><div id="mh-combo"></div></div>
+  <div id="mh-boss"><span></span><div><i></i></div></div>
+</div>
+<div id="m-cross"></div>
+<div id="hint"></div>
+<div class="zone" id="zl"><b>👀</b><span id="zl-t">OLHAR</span></div>
+<div class="zone" id="zr"></div>
+<div id="g-egg">🥚</div><div id="g-aim"></div>
+<button id="mb-ult" aria-label="chuva de ovos"><span>🥚</span><em>0%</em></button>
+
+<div id="upg"><h2 id="upg-h">ESCOLHA UMA MELHORIA</h2><p id="upg-p">vale para o resto da partida</p><div id="upg-list"></div></div>
+
+<div id="end">
+  <h2 id="end-h">VITÓRIA!</h2>
+  <div id="end-sub"></div>
+  <div id="end-score">0</div>
+  <div id="end-rec">NOVO RECORDE!</div>
+  <div id="end-stats"></div>
+  <div id="end-toph">🏠 MELHORES NESTE APARELHO</div>
+  <ol id="end-top"></ol>
+  <button class="cta" id="end-again">JOGAR DE NOVO</button>
+</div>
+
+<div id="pause">
+  <h2 id="p-h">PAUSADO</h2><p id="p-p"></p>
+  <div class="pset" id="p-set">
+    <div class="set"><label id="pl-music">🎵 Música</label><input id="p-music" type="range" min="0" max="100"></div>
+    <div class="set"><label id="pl-sfx">🔊 Efeitos</label><input id="p-sfx" type="range" min="0" max="100"></div>
+    <div class="set"><label id="pl-mouse">🎯 Mira</label><input id="p-mouse" type="range" min="50" max="250"></div>
+  </div>
+  <button class="cta" id="p-resume">CONTINUAR</button>
+  <button class="ghost" id="p-quit">sair da partida</button>
+</div>
+
+<!-- Elementos que os módulos de src/ (hud.js) procuram ao carregar. Aqui ficam escondidos: o HUD mobile é o de cima. -->
+<div hidden>
+  <div id="hud"><span id="h-wave"></span><span id="h-weapon"></span><div id="h-chk"></div><div id="h-hp"><div id="h-hpfill"></div><div id="h-hptxt"></div></div><div id="h-power"></div>
+    <div id="h-score"></div><span id="h-lbl"></span><span id="h-best"></span><div id="h-combo"></div><div id="h-combobar"></div></div>
+  <div id="wbar"></div><div id="skillbar"></div><div id="ultbtn"><span></span><em></em></div><div id="crosshair"></div>
+  <button id="m-switch"></button><button id="m-pause"></button><div id="rot-hint"></div>
+</div>
+
+<script>
+// Idioma: o mesmo do jogo principal (pt, en, fi), salvo em localStorage.
+(function(){
+  var L = null;
+  try { L = localStorage.getItem('cr_lang'); } catch (e) {}
+  if (L !== 'pt' && L !== 'en' && L !== 'fi') { var n = (navigator.language || 'pt').toLowerCase(); L = n.indexOf('pt') === 0 ? 'pt' : n.indexOf('fi') === 0 ? 'fi' : 'en'; }
+  window.CR_LANG = L;
+  document.documentElement.lang = L === 'pt' ? 'pt-BR' : L;
+  var H = {
+    en: { 's-tag': 'Defend the chickens from the aliens with eggs!', 's-how1': '<b>👀</b>left thumb<br>looks around', 's-how2': '<b>🥚</b>right thumb<br>throws eggs', 'zl-t': 'LOOK', 's-how3': '<b>👾</b>3 waves<br>3 bosses',
+      's-best': 'BEST', 'cta': 'LOADING…', 's-full': 'full game: 10 waves, VR and PC', 'upg-h': 'CHOOSE AN UPGRADE', 'upg-p': 'lasts for the rest of the game',
+      'end-rec': 'NEW RECORD!', 'end-toph': '🏠 BEST ON THIS DEVICE', 'end-again': 'PLAY AGAIN', 'p-h': 'PAUSED', 'pl-music': '🎵 Music', 'pl-sfx': '🔊 Effects', 'pl-mouse': '🎯 Aim', 'p-resume': 'RESUME', 'p-quit': 'quit game' },
+    fi: { 's-tag': 'Puolusta kanoja alieneilta munilla!', 's-how1': '<b>👀</b>vasen peukalo<br>katselee', 's-how2': '<b>🥚</b>oikea peukalo<br>heittää munia', 'zl-t': 'KATSO', 's-how3': '<b>👾</b>3 aaltoa<br>3 pomoa',
+      's-best': 'ENNÄTYS', 'cta': 'LADATAAN…', 's-full': 'koko peli: 10 aaltoa, VR ja PC', 'upg-h': 'VALITSE PARANNUS', 'upg-p': 'kestää koko pelin',
+      'end-rec': 'UUSI ENNÄTYS!', 'end-toph': '🏠 TÄMÄN LAITTEEN PARHAAT', 'end-again': 'PELAA UUDELLEEN', 'p-h': 'TAUKO', 'pl-music': '🎵 Musiikki', 'pl-sfx': '🔊 Efektit', 'pl-mouse': '🎯 Tähtäys', 'p-resume': 'JATKA', 'p-quit': 'lopeta peli' }
+  };
+  var T = H[L];
+  if (T) for (var id in T) { var el = document.getElementById(id); if (el) el.innerHTML = T[id]; }
+  var bs = document.querySelectorAll('#lang button');
+  for (var i = 0; i < bs.length; i++) {
+    if (bs[i].getAttribute('data-l') === L) bs[i].className = 'on';
+    bs[i].addEventListener('click', function () {
+      var l = this.getAttribute('data-l');
+      if (l === window.CR_LANG) return;
+      try { localStorage.setItem('cr_lang', l); } catch (err) {}
+      location.reload();
+    });
+  }
+})();
+</script>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}
+</script>
+<script type="module" src="main.js"></script>
+</body>
+</html>

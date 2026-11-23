@@ -16,6 +16,28 @@
 > **visual toon com contorno, personagens instanciados, especial carregado por abates, nota de wave e menu VR de atirar**.
 > As armas estão na **seção 3** (com o guia de portar na 3.6).
 
+**Versão MOBILE (`mobile/`, só no site de teste) — partida curta para celular, sem editar `src/`:**
+- **Jogar:** https://marcofurtado-hub.github.io/chicken-rancher-vr-teste/mobile/ · página própria `mobile/index.html`.
+- **Partida:** 3 waves (uns 4 minutos), um chefe por wave: **Batedor → Vigia → Imperador** (o Imperador chama os dois
+  primeiros de volta). 3 armas, uma por wave, sem troca: **ovos na mão → estilingue → gatling**. 1 melhoria de 3 entre
+  as waves (ovo grandão, ricochete, ovo duplo, coração, ninhada). O rancheiro **fica parado** na varanda.
+- **Controle de dois polegares:** metade ESQUERDA da tela = **direcional de olhar** (aparece onde o polegar encosta);
+  metade DIREITA = **atirar, com um gesto por arma**: 🥚 **deslizar** na direção da nave · 🎯 **puxar para trás e
+  soltar** (um alvo amarelo mostra onde o ovo vai; puxão cheio = dano 3) · 🔥 **segurar** (arrastar ajusta a mira).
+  O ovo persegue a nave que o gesto escolheu. Setas na borda avisam galinha sendo levada / nave fora da tela (toque
+  na seta para olhar lá). Botão da Chuva de Ovos embaixo no meio; pause em cima à esquerda.
+- **Como é feito:** `mobile/setup.js` roda antes do resto e troca, em memória, `WAVES`, `WEAPON_ORDER`, `BOSS_ORDER`,
+  vida dos chefes, dicas e `SKILLS` (balancear a versão mobile = mexer só nesse arquivo). `mobile/main.js` importa os
+  módulos de `src/`, chama `boot()` e embrulha o `gameLoop` com `pre()` (polegares → `playerInput` e `desktopShoot`) e
+  `post()` (HUD, cartas de melhoria e fim de partida em HTML). Uma camada `#pad` por cima do canvas recebe os toques,
+  então os controles de toque do jogo principal não disparam. O banner 3D vira HTML (o mesmo canvas, mostrado grande)
+  e o painel 3D de ranking sai das camadas da câmera.
+- **Recorde e ranking separados:** a página remapeia `cr3_best`/`cr3_scores` para `crm_best`/`crm_scores` no
+  `localStorage`, e o ranking mundial fica desligado nela. O jogo principal não enxerga as partidas mobile.
+- **Teste por script:** além de `window.__cr`, a página expõe `window.__crm` (`play`, `step(n, dt)`, `setView`, `view`,
+  `toScreen`, `gesture`, `IN`, `LOOK`, `FIRE`, `SA`). Gestos se simulam com `PointerEvent` no `#pad`.
+  Hoje: 42 programas de shader, todos aquecidos no boot.
+
 **Branch `chefes-e-final` (teste) — 10 waves, 10 chefes diferentes e ranking — vale por cima de tudo abaixo:**
 - **10 waves**, cada uma com um **chefe de corpo e mecânica próprios** (`src/bosses.js`; vida/nome/dica em `BOSSES`
   de `config.js`). O chefe **só chega no FIM da wave**, depois que todas as naves comuns foram embora. A wave 10
